@@ -100,3 +100,80 @@ window.CHEM_ORGANIC = {
     explanation: 'Both arrows occur in one concerted step: the oxygen lone pair attacks carbon as the C–Br bond electrons move onto bromine. There is no carbocation intermediate in SN2.'
   }
 };
+
+// General Chemistry is loaded as an extension so the existing static shell can
+// remain GitHub-Pages friendly without introducing a framework or build step.
+(() => {
+  function installGenChemShell() {
+    if (document.querySelector('link[href="genchem.css"]') === null) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'genchem.css';
+      document.head.appendChild(link);
+    }
+
+    const nav = document.querySelector('.nav-list');
+    if (nav && !document.querySelector('.genchem-nav')) {
+      const button = document.createElement('button');
+      button.className = 'genchem-nav';
+      button.setAttribute('data-genchem-open', '');
+      button.innerHTML = '<span>Σ</span> Gen Chem Foundations';
+      const modelLab = nav.querySelector('[data-view="lab"]');
+      nav.insertBefore(button, modelLab || null);
+    }
+
+    if (!document.getElementById('genchemView')) {
+      const section = document.createElement('section');
+      section.id = 'genchemView';
+      section.className = 'view';
+      section.innerHTML = '<div id="genchemApp" aria-live="polite"></div>';
+      const organicView = document.getElementById('organicView');
+      if (organicView) organicView.before(section);
+      else document.querySelector('.main')?.appendChild(section);
+    }
+
+    const heroActions = document.querySelector('#homeView .hero-actions');
+    if (heroActions && !heroActions.querySelector('[data-genchem-open]')) {
+      const start = document.createElement('button');
+      start.className = 'primary-button';
+      start.setAttribute('data-genchem-open', '');
+      start.textContent = 'Start General Chemistry';
+      heroActions.prepend(start);
+    }
+
+    const progress = document.querySelector('#homeView .progress-card');
+    const next = progress?.querySelector('.next-lesson');
+    if (progress && next) {
+      progress.querySelector('.eyebrow').textContent = 'FOUNDATION COURSE';
+      progress.querySelector('h3').textContent = 'General Chemistry I + II';
+      next.removeAttribute('data-jump');
+      next.setAttribute('data-genchem-open', '');
+      next.setAttribute('data-genchem-module', 'measurement');
+      const icon = next.querySelector('.lesson-icon');
+      const title = next.querySelector('strong');
+      const detail = next.querySelector('small');
+      if (icon) icon.textContent = '01';
+      if (title) title.textContent = 'Measurement, Units & Chemical Reasoning';
+      if (detail) detail.textContent = 'Reading + worked example + mastery check';
+    }
+
+    const toolGrid = document.querySelector('#homeView .tool-grid');
+    const firstTool = toolGrid?.querySelector('.tool-card');
+    if (firstTool && !toolGrid.querySelector('[data-genchem-open]')) {
+      firstTool.removeAttribute('data-jump');
+      firstTool.setAttribute('data-genchem-open', '');
+      firstTool.innerHTML = '<span>Σ</span><strong>Gen Chem Course</strong><small>19 learning modules + practice</small>';
+    }
+
+    const dataScript = document.createElement('script');
+    dataScript.src = 'data/genchem.js';
+    dataScript.onload = () => {
+      const appScript = document.createElement('script');
+      appScript.src = 'genchem.js';
+      document.body.appendChild(appScript);
+    };
+    document.body.appendChild(dataScript);
+  }
+
+  window.addEventListener('load', installGenChemShell, { once: true });
+})();
