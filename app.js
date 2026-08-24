@@ -1,7 +1,7 @@
 (() => {
   const data = window.CHEM_CURRICULUM;
-  const views = { home: 'homeView', curriculum: 'curriculumView', courses: 'coursesView', lab: 'labView' };
-  const titles = { home: 'Your chemistry roadmap', curriculum: 'Curriculum map', courses: 'Course library', lab: 'Interactive model lab' };
+  const views = { home: 'homeView', curriculum: 'curriculumView', courses: 'coursesView', lab: 'labView', organic: 'organicView' };
+  const titles = { home: 'Your chemistry roadmap', curriculum: 'Curriculum map', courses: 'Course library', lab: 'Interactive model lab', organic: 'Organic Chemistry Studio' };
   let currentStyle = 'stick';
 
   // Lightweight self-contained 3D renderer. It uses the XYZ coordinates in the
@@ -44,9 +44,10 @@
       <article class="course-card ${c.id === 'genchem1' ? 'featured' : ''}">
         <span class="course-code">${c.code}</span><h3>${c.name}</h3><p>${c.description}</p>
         <div class="module-list">${c.modules.slice(0,7).map(m => `<span>${m.title}</span>`).join('')}</div>
-        <div class="course-actions"><small>${c.modules.length} modules • ${c.completion}% complete</small>${c.id === 'genchem1' ? '<button class="text-button open-lab">Open lesson →</button>' : '<span class="pill">Scaffolded</span>'}</div>
+        <div class="course-actions"><small>${c.modules.length} modules • ${c.completion}% complete</small>${c.id === 'genchem1' ? '<button class="text-button open-lab">Open VSEPR lab →</button>' : c.id === 'organic1' ? '<button class="text-button open-organic">Open Organic Studio →</button>' : '<span class="pill">Scaffolded</span>'}</div>
       </article>`).join('');
     root.querySelector('.open-lab')?.addEventListener('click', () => showView('lab'));
+    root.querySelector('.open-organic')?.addEventListener('click', () => showView('organic'));
   }
 
   function parseXYZ(xyz) {
