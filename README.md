@@ -24,6 +24,16 @@ Live site: `https://dhwisdom.github.io/chematlas/`
 - CH4, NH3, H2O, CO2, BF3, PCl5 and SF6 with stick and space-filling representations
 - Geometry, bond-angle, introductory hybridization and polarity explanations
 
+### General Chemistry Foundation Practice Lab
+- **Periodic Trends Explorer** for the first 36 elements with approximate atomic radius, first-ionization-energy, and electronegativity data plus randomized comparison challenges
+- **Lewis Structure & Formal Charge Builder** for CO2, NH4+, NO3−, and SO2 with bond-order selection, electron-budget checking, inferred terminal lone pairs, and formal-charge calculation
+- **Equation Balancing Trainer** with randomized reactions, coefficient input, full reactant/product atom counts, and smallest-whole-number-ratio feedback
+- **Randomized Stoichiometry Generator** using dimensional analysis, molar-mass calculation from molecular formulas, mole ratios, and answer validation
+- **Acid–Base & Buffer Workbench** for ideal strong acids/bases plus Henderson–Hasselbalch buffer calculations and target-pH ratio reasoning
+- **Reaction Quotient + ICE Table Explorer** with Q-vs-K direction prediction and numerical equilibrium solving without relying on a small-x approximation
+- **Virtual Coffee-Cup Calorimetry Lab** for HCl/NaOH neutralization with adjustable volumes, concentrations, initial temperature, limiting-reagent calculation, q = mcΔT, and predicted final temperature
+- Local practice-tool mastery tracking across all seven interactive engines
+
 ### Phase 2 — Organic Chemistry Studio
 - **R/S stereochemistry trainer** with CIP priorities, wedge/dash bonds and multiple challenges
 - **Newman projection explorer** for butane with a rotatable C2–C3 dihedral angle, conformation labels and approximate relative-energy profile
@@ -69,7 +79,7 @@ Users
 
 ## Current build priorities
 
-Before expanding deeply into later courses, General Chemistry is being treated as the platform’s prerequisite backbone. Future additions can deepen individual Gen Chem modules with more practice banks, interactive periodic trends, Lewis-structure drawing, stoichiometry generators, virtual-lab datasets, and cumulative exams.
+General Chemistry remains the platform’s prerequisite backbone. The next depth upgrades should add larger randomized problem banks, limiting-reactant and percent-yield modes, weak-acid/base equilibrium practice, titration curves, solubility-product simulations, kinetics data fitting, cumulative unit exams, and richer virtual-lab datasets before later courses are treated as complete.
 
 ## Next major phase — Biochemistry systems
 
@@ -93,4 +103,4 @@ A later production version can migrate to:
 - D3 for metabolic pathways and concept graphs
 - KaTeX for mathematical and chemical notation
 
-The current renderer and Organic Studio are intentionally self-contained so the public prototype works on GitHub Pages with no API keys or external runtime dependencies.
+The current renderer, General Chemistry reader/practice lab, and Organic Studio are intentionally self-contained so the public prototype works on GitHub Pages with no API keys or external runtime dependencies.
