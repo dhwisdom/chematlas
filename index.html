@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="ChemAtlas — an interactive, college-sequenced chemistry learning prototype." />
+  <title>ChemAtlas — Interactive Chemistry Curriculum</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">C</div>
+        <div><strong>ChemAtlas</strong><span>Learn chemistry spatially.</span></div>
+      </div>
+      <nav class="nav-list">
+        <button class="nav-item active" data-view="home"><span>⌂</span> Dashboard</button>
+        <button class="nav-item" data-view="curriculum"><span>⌘</span> Curriculum</button>
+        <button class="nav-item" data-view="courses"><span>▦</span> Courses</button>
+        <button class="nav-item" data-view="lab"><span>⚗</span> Model Lab</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="source-chip">Prototype curriculum<br><strong>UArk 2026–27</strong></div>
+        <p>Built as an expandable learning architecture, not a replacement for official advising.</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <button id="mobileMenu" class="icon-button mobile-only" aria-label="Toggle navigation">☰</button>
+        <div>
+          <p class="eyebrow">COLLEGE CHEMISTRY • INTERACTIVE</p>
+          <h1 id="pageTitle">Your chemistry roadmap</h1>
+        </div>
+        <div class="top-actions">
+          <div class="streak"><span>◈</span><div><strong>1</strong><small>day streak</small></div></div>
+          <button class="avatar" aria-label="Profile">CT</button>
+        </div>
+      </header>
+
+      <section id="homeView" class="view active-view">
+        <div class="hero-grid">
+          <article class="hero-card">
+            <div>
+              <p class="eyebrow">START HERE</p>
+              <h2>See chemistry as a connected system.</h2>
+              <p>Move from atomic structure to organic mechanisms to metabolism without losing the prerequisite relationships between them.</p>
+              <div class="hero-actions">
+                <button class="primary-button" data-jump="lesson">Open molecular geometry lab</button>
+                <button class="secondary-button" data-view-target="curriculum">View degree map</button>
+              </div>
+            </div>
+            <div class="orbital-art" aria-hidden="true">
+              <div class="nucleus">C</div><i class="ring r1"></i><i class="ring r2"></i><i class="ring r3"></i>
+              <b class="electron e1"></b><b class="electron e2"></b><b class="electron e3"></b>
+            </div>
+          </article>
+
+          <article class="progress-card">
+            <div class="section-heading"><div><p class="eyebrow">CURRENT COURSE</p><h3>General Chemistry I</h3></div><span class="pill">18%</span></div>
+            <div class="progress-track"><span style="width:18%"></span></div>
+            <p class="muted">Next concept</p>
+            <button class="next-lesson" data-jump="lesson">
+              <span class="lesson-icon">V</span><span><strong>Molecular Geometry & VSEPR</strong><small>Interactive model • ~12 min</small></span><b>→</b>
+            </button>
+          </article>
+        </div>
+
+        <div class="section-heading spaced"><div><p class="eyebrow">THE BIG PICTURE</p><h2>From atoms to metabolism</h2></div><button class="text-button" data-view-target="curriculum">Full curriculum →</button></div>
+        <div class="pathway-strip">
+          <div class="path-step done"><span>01</span><strong>Atomic structure</strong><small>Electrons & orbitals</small></div><i>→</i>
+          <div class="path-step active"><span>02</span><strong>Bonding</strong><small>Shape & polarity</small></div><i>→</i>
+          <div class="path-step"><span>03</span><strong>Organic chemistry</strong><small>Mechanisms</small></div><i>→</i>
+          <div class="path-step"><span>04</span><strong>Physical chemistry</strong><small>Energy & kinetics</small></div><i>→</i>
+          <div class="path-step"><span>05</span><strong>Biochemistry</strong><small>Living systems</small></div>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="section-heading"><div><p class="eyebrow">EXPLORE</p><h3>Interactive tools</h3></div></div>
+            <div class="tool-grid">
+              <button class="tool-card enabled" data-jump="lesson"><span>⬡</span><strong>3D Molecules</strong><small>Rotate VSEPR geometries</small></button>
+              <button class="tool-card"><span>↻</span><strong>Mechanisms</strong><small>Coming in Organic I</small></button>
+              <button class="tool-card"><span>⌁</span><strong>Pathways</strong><small>Krebs + ETC planned</small></button>
+              <button class="tool-card"><span>∿</span><strong>Spectra</strong><small>IR/NMR planned</small></button>
+            </div>
+          </article>
+          <article class="panel concept-panel">
+            <p class="eyebrow">CONCEPT OF THE DAY</p>
+            <h3>Why does shape change chemistry?</h3>
+            <p>Molecular geometry changes dipole cancellation, orbital overlap, steric accessibility and ultimately reactivity. VSEPR is the first bridge from a flat Lewis structure to three-dimensional chemistry.</p>
+            <button class="text-button" data-jump="lesson">Explore with molecules →</button>
+          </article>
+        </div>
+      </section>
+
+      <section id="curriculumView" class="view">
+        <div class="intro-copy">
+          <p class="eyebrow">ACADEMIC BACKBONE</p>
+          <h2>Four-year chemistry + biochemistry map</h2>
+          <p>Degree-level ordering follows the University of Arkansas 2026–27 B.S. Chemistry with Biochemistry concentration. ChemAtlas adds interactive learning modules beneath each course.</p>
+        </div>
+        <div id="degreeMap" class="degree-map"></div>
+        <article class="standards-note panel">
+          <strong>Design principle</strong>
+          <p>ACS guidance expects introductory chemistry followed by breadth across analytical, biochemistry, inorganic, organic and physical chemistry. The platform architecture keeps those domains separate enough to teach deeply, but links concepts across courses.</p>
+        </article>
+      </section>
+
+      <section id="coursesView" class="view">
+        <div class="intro-copy"><p class="eyebrow">COURSE LIBRARY</p><h2>Choose a course</h2><p>The prototype includes a detailed General Chemistry I sequence and scaffolds for later courses.</p></div>
+        <div id="courseCards" class="course-grid"></div>
+      </section>
+
+      <section id="labView" class="view">
+        <div class="lesson-header">
+          <div><p class="eyebrow">GENERAL CHEMISTRY I • BONDING</p><h2>Molecular Geometry & VSEPR</h2><p>Turn a Lewis structure into a 3D mental model. Rotate each molecule, compare electron domains, and predict polarity.</p></div>
+          <div class="lesson-status"><span>Interactive lesson</span><strong>~12 min</strong></div>
+        </div>
+
+        <div class="lab-layout">
+          <article class="panel molecule-panel">
+            <div class="model-toolbar">
+              <label for="moleculeSelect">Molecule</label>
+              <select id="moleculeSelect">
+                <option value="ch4">CH₄ — Methane</option>
+                <option value="nh3">NH₃ — Ammonia</option>
+                <option value="h2o">H₂O — Water</option>
+                <option value="co2">CO₂ — Carbon dioxide</option>
+                <option value="bf3">BF₃ — Boron trifluoride</option>
+                <option value="pcl5">PCl₅ — Phosphorus pentachloride</option>
+                <option value="sf6">SF₆ — Sulfur hexafluoride</option>
+              </select>
+              <div class="segmented" aria-label="Display style">
+                <button class="seg active" data-style="stick">Stick</button>
+                <button class="seg" data-style="sphere">Space fill</button>
+              </div>
+            </div>
+            <div id="viewer" class="viewer" aria-label="Interactive 3D molecular model">
+              <canvas id="moleculeCanvas" aria-label="Rotatable ball-and-stick molecular model"></canvas>
+            </div>
+            <p class="viewer-help">Drag to rotate • scroll to zoom • right-drag / modifier-drag to translate</p>
+          </article>
+
+          <aside class="model-info">
+            <article class="panel identity-card"><p class="eyebrow">CURRENT MODEL</p><div class="formula-row"><div><h3 id="molName">Methane</h3><span id="molFormula">CH₄</span></div><span id="polarityBadge" class="polarity-badge">Nonpolar</span></div></article>
+            <article class="panel property-list">
+              <div><span>Electron domains</span><strong id="domains">4 bonding / 0 lone pairs</strong></div>
+              <div><span>Molecular geometry</span><strong id="geometry">Tetrahedral</strong></div>
+              <div><span>Ideal angle</span><strong id="angle">109.5°</strong></div>
+              <div><span>Intro hybridization</span><strong id="hybridization">sp³</strong></div>
+            </article>
+            <article class="panel why-card"><p class="eyebrow">WHY THIS SHAPE?</p><p id="whyText"></p></article>
+          </aside>
+        </div>
+
+        <div class="lesson-grid">
+          <article class="panel lesson-copy">
+            <p class="eyebrow">MENTAL MODEL</p><h3>VSEPR in three moves</h3>
+            <ol>
+              <li><span>1</span><div><strong>Draw a valid Lewis structure.</strong><p>Count valence electrons and identify the central atom.</p></div></li>
+              <li><span>2</span><div><strong>Count electron domains.</strong><p>Each bond — single, double or triple — counts as one domain; each lone pair is one domain.</p></div></li>
+              <li><span>3</span><div><strong>Separate domains in 3D.</strong><p>Electron domains arrange to reduce repulsion. Lone pairs generally repel more strongly than bonding pairs.</p></div></li>
+            </ol>
+          </article>
+
+          <article class="panel quiz-card">
+            <p class="eyebrow">MASTERY CHECK</p><h3>Predict before you rotate</h3>
+            <div id="quizArea"></div>
+            <div id="quizResult" class="quiz-result" aria-live="polite"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="data/curriculum.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
