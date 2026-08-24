@@ -1,26 +1,36 @@
-# ChemAtlas — Interactive Chemistry Curriculum Prototype
+# ChemAtlas — Interactive Chemistry Curriculum
 
-ChemAtlas is a browser-based prototype for a college-sequenced chemistry learning platform. The goal is to connect formal curriculum structure with interactive models so students can move from **atomic structure → bonding → organic chemistry → physical chemistry → biochemistry** without treating each course as an isolated subject.
+ChemAtlas is a browser-based learning platform prototype that connects a real college chemistry sequence to interactive models. The goal is to let students move from **atomic structure → bonding → organic chemistry → physical chemistry → biochemistry** while preserving the conceptual links between courses.
 
-## What is implemented
+Live site: `https://dhwisdom.github.io/chematlas/`
 
+## Implemented
+
+### Curriculum + platform shell
 - Dashboard with a prerequisite-oriented chemistry pathway
 - Four-year curriculum map based on the **University of Arkansas 2026–27 B.S. Chemistry with Biochemistry concentration**
-- Course library with a detailed General Chemistry I scaffold
+- Course library with General Chemistry I, General Chemistry II, Organic Chemistry I/II, and Biochemistry scaffolds
+- PostgreSQL/Supabase-ready normalized data model in `schema.sql`
+- Responsive static architecture suitable for GitHub Pages
+
+### Phase 1 — General Chemistry modeling
 - Interactive **Molecular Geometry & VSEPR** lesson
-- Self-contained rotatable 3D molecular rendering using a lightweight Canvas renderer
-- Molecule selector for CH4, NH3, H2O, CO2, BF3, PCl5 and SF6
+- Self-contained rotatable Canvas molecular renderer
+- CH4, NH3, H2O, CO2, BF3, PCl5 and SF6
 - Stick and space-filling representations
 - Geometry, bond-angle, introductory hybridization and polarity explanations
-- Three-question mastery check with lightweight local progress storage
-- PostgreSQL/Supabase-ready data model in `schema.sql`
+- Mastery quiz with lightweight local progress storage
 
-## Run it
+### Phase 2 — Organic Chemistry Studio
+- **R/S stereochemistry trainer** with CIP priorities, wedge/dash bonds and multiple challenges
+- **Newman projection explorer** for butane with a rotatable C2–C3 dihedral angle, conformation labels and approximate relative-energy profile
+- **Cyclohexane chair-flip explorer** showing axial/equatorial interchange, 1,3-diaxial contacts and substituent size effects
+- **Curved-arrow mechanism trainer** for an SN2 reaction, enforcing the rule that arrows begin at electron pairs or bonds
+- Expanded Organic Chemistry I curriculum modules and an Organic Chemistry II course scaffold
 
-The project is intentionally static for the first prototype.
+## Run locally
 
-1. Open `index.html` directly in a modern browser, or
-2. For a local web server, run:
+The current version is intentionally framework-free.
 
 ```bash
 python -m http.server 8000
@@ -28,15 +38,17 @@ python -m http.server 8000
 
 Then open `http://localhost:8000`.
 
+You can also open `index.html` directly in a modern browser, although serving the directory locally more closely matches GitHub Pages behavior.
+
 ## Academic grounding
 
-The degree sequence is modeled on the University of Arkansas 2026–27 B.S. Chemistry with Biochemistry concentration. It contains general chemistry, analytical chemistry, organic chemistry I/II, physical chemistry I/II, biochemistry, genetics, biochemical techniques and instrumental analysis.
+The degree sequence is modeled on the University of Arkansas 2026–27 B.S. Chemistry with Biochemistry concentration. It includes general chemistry, analytical chemistry, organic chemistry I/II, physical chemistry I/II, biochemistry, genetics, biochemical techniques and instrumental analysis.
 
-ACS curriculum guidance is used as a second design constraint: introductory chemistry should lead into breadth across analytical, biochemistry, inorganic, organic and physical chemistry. ASBMB's core-concept framing is a good future constraint for the biochemistry branch, especially energy/metabolism, structure/function, information flow and quantitative scientific skills.
+ACS curriculum guidance is used as a second design constraint: introductory chemistry should lead into breadth across analytical, biochemistry, inorganic, organic and physical chemistry. ASBMB's core-concept framing is a future constraint for the biochemistry branch, especially energy/metabolism, structure/function, information flow and quantitative scientific skills.
 
-The lesson/module breakdown inside individual courses is a ChemAtlas instructional design proposal, not a reproduction of a University of Arkansas syllabus.
+The lesson and module breakdowns inside courses are ChemAtlas instructional-design proposals, not reproductions of University of Arkansas syllabi.
 
-## Suggested product architecture
+## Architecture
 
 ```text
 Programs
@@ -52,48 +64,26 @@ Users
   └── Learner progress / mastery
 ```
 
-See `schema.sql` for a normalized implementation.
+## Next phase — Biochemistry systems
 
-## Next development phases
-
-### Phase 2 — Organic Chemistry modeling
-- 3D structure builder
-- stereochemistry / R-S assignment
-- Newman projections
-- chair conformations
-- mechanism player with curved-arrow steps
-- reaction-family knowledge graph
-
-### Phase 3 — Biochemistry systems
 - amino-acid ionization visualizer
 - protein structure viewer
 - enzyme kinetics simulator
 - glycolysis + Krebs cycle interactive carbon tracing
 - electron transport / chemiosmosis simulation
-- pathway overlays: ATP, NADH, FADH2, carbon loss, fasting/fed state
+- pathway overlays for ATP, NADH, FADH2 and carbon loss
+- fed/fasting pathway-state comparisons
 
-### Phase 4 — Full learning platform
-- Supabase authentication
-- saved progress and mastery
-- instructor/admin curriculum editor
-- spaced repetition
-- adaptive quizzes
-- virtual labs
-- content authoring and citations
-- accessibility audit
+## Production direction
 
-## Tech direction
-
-For a production version, a practical stack would be:
+A later production version can migrate to:
 
 - Next.js / TypeScript
 - Supabase / PostgreSQL
-- A production molecular library such as 3Dmol.js for small-molecule visualization
-- Mol* for proteins and macromolecular structures
-- RDKit service for cheminformatics
-- D3 for pathways / concept graphs
-- KaTeX for math and chemical equations
+- 3Dmol.js for small-molecule visualization
+- Mol* for proteins and macromolecules
+- RDKit services for cheminformatics
+- D3 for metabolic pathways and concept graphs
+- KaTeX for mathematical and chemical notation
 
-## Renderer note
-
-The prototype is fully self-contained and uses a small Canvas-based 3D renderer for the VSEPR models. For production-scale structures, surfaces, electron densities, proteins and imported chemical files, replace or augment it with a dedicated molecular visualization library such as 3Dmol.js or Mol*.
+The current renderer and Organic Studio are intentionally self-contained so the public prototype works on GitHub Pages with no API keys or external runtime dependencies.
