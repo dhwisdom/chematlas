@@ -6,6 +6,7 @@
   <meta name="description" content="ChemAtlas — an interactive, college-sequenced chemistry learning prototype." />
   <title>ChemAtlas — Interactive Chemistry Curriculum</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="organic.css" />
 </head>
 <body>
   <div class="app-shell">
@@ -19,6 +20,7 @@
         <button class="nav-item" data-view="curriculum"><span>⌘</span> Curriculum</button>
         <button class="nav-item" data-view="courses"><span>▦</span> Courses</button>
         <button class="nav-item" data-view="lab"><span>⚗</span> Model Lab</button>
+        <button class="nav-item" data-view="organic"><span>⌬</span> Organic Studio</button>
       </nav>
       <div class="sidebar-foot">
         <div class="source-chip">Prototype curriculum<br><strong>UArk 2026–27</strong></div>
@@ -81,7 +83,7 @@
             <div class="section-heading"><div><p class="eyebrow">EXPLORE</p><h3>Interactive tools</h3></div></div>
             <div class="tool-grid">
               <button class="tool-card enabled" data-jump="lesson"><span>⬡</span><strong>3D Molecules</strong><small>Rotate VSEPR geometries</small></button>
-              <button class="tool-card"><span>↻</span><strong>Mechanisms</strong><small>Coming in Organic I</small></button>
+              <button class="tool-card enabled" data-view-target="organic"><span>↻</span><strong>Organic Studio</strong><small>Stereochemistry + mechanisms</small></button>
               <button class="tool-card"><span>⌁</span><strong>Pathways</strong><small>Krebs + ETC planned</small></button>
               <button class="tool-card"><span>∿</span><strong>Spectra</strong><small>IR/NMR planned</small></button>
             </div>
@@ -111,6 +113,109 @@
       <section id="coursesView" class="view">
         <div class="intro-copy"><p class="eyebrow">COURSE LIBRARY</p><h2>Choose a course</h2><p>The prototype includes a detailed General Chemistry I sequence and scaffolds for later courses.</p></div>
         <div id="courseCards" class="course-grid"></div>
+      </section>
+
+      <section id="organicView" class="view">
+        <div class="organic-intro">
+          <article class="panel organic-hero">
+            <p class="eyebrow">ORGANIC CHEMISTRY I • PHASE 2</p>
+            <h2>Organic Chemistry Studio</h2>
+            <p>Practice the spatial skills that make organic chemistry click: assign stereochemistry, rotate conformations, flip cyclohexane chairs, and build reaction mechanisms by following electron flow.</p>
+            <div class="hero-actions">
+              <button class="primary-button" data-organic-tool="stereo">Start with R/S stereochemistry</button>
+              <button class="secondary-button" data-organic-tool="mechanism">Practice an SN2 mechanism</button>
+            </div>
+          </article>
+          <article class="panel organic-bridge">
+            <p class="eyebrow">CONCEPT BRIDGE</p>
+            <h3>Geometry becomes reactivity.</h3>
+            <p>General chemistry gave us orbitals, geometry, polarity, and acid–base ideas. Organic chemistry uses those same concepts to explain which face reacts, which conformation is favored, and where electrons move.</p>
+            <span class="formula-chip">structure → conformation → mechanism</span>
+          </article>
+        </div>
+
+        <div class="organic-tabs" role="tablist" aria-label="Organic chemistry tools">
+          <button class="organic-tab active" data-organic-tool="stereo"><strong>R / S Trainer</strong><small>CIP priorities + wedge/dash</small></button>
+          <button class="organic-tab" data-organic-tool="newman"><strong>Newman Projection</strong><small>Rotate butane C2–C3</small></button>
+          <button class="organic-tab" data-organic-tool="chair"><strong>Chair Flip</strong><small>Axial vs equatorial</small></button>
+          <button class="organic-tab" data-organic-tool="mechanism"><strong>Mechanism Trainer</strong><small>Curved-arrow electron flow</small></button>
+        </div>
+
+        <section id="stereoPanel" class="organic-tool-panel active">
+          <div class="organic-tool-grid">
+            <article class="panel organic-visual">
+              <div class="organic-toolbar">
+                <div class="grow"><p class="eyebrow">STEREOCHEMISTRY CHALLENGE</p><strong id="stereoName">Lactic acid stereocenter</strong></div>
+                <span id="stereoCounter" class="organic-counter">1 / 3</span>
+                <button id="toggleCip" class="organic-button ghost">Hide CIP priorities</button>
+              </div>
+              <div class="organic-stage"><svg id="stereoSvg" viewBox="0 0 400 400" role="img" aria-label="Tetrahedral stereocenter with wedge and dash bonds"></svg></div>
+            </article>
+            <aside class="organic-info">
+              <article class="panel">
+                <p class="eyebrow">ASSIGN THE CENTER</p>
+                <h3 id="stereoFormula">CH₃–CH(OH)–CO₂H</h3>
+                <p>Rank substituents 1 → 4 using CIP rules. Then orient priority 4 away from you and read 1 → 2 → 3.</p>
+                <div class="organic-answer-row"><button class="organic-answer" data-stereo-answer="R">R</button><button class="organic-answer" data-stereo-answer="S">S</button></div>
+                <div class="organic-actions" style="margin-top:10px"><button id="checkStereo" class="organic-button primary">Check assignment</button><button id="nextStereo" class="organic-button">Next challenge</button></div>
+                <div id="stereoFeedback" class="organic-feedback" aria-live="polite"></div>
+              </article>
+              <article class="panel">
+                <p class="eyebrow">CIP QUICK RULE</p>
+                <p>Higher atomic number gets higher priority. If the first atoms tie, compare the next atoms outward until the first point of difference. Multiple bonds are treated with duplicate-atom bookkeeping.</p>
+              </article>
+            </aside>
+          </div>
+        </section>
+
+        <section id="newmanPanel" class="organic-tool-panel">
+          <div class="organic-tool-grid">
+            <article class="panel organic-visual">
+              <div class="organic-toolbar">
+                <label for="dihedralSlider">Dihedral angle</label><input id="dihedralSlider" class="grow" type="range" min="0" max="360" step="1" value="180"><strong id="dihedralValue">180°</strong>
+              </div>
+              <div class="organic-stage"><svg id="newmanSvg" viewBox="0 0 420 380" role="img" aria-label="Interactive Newman projection of butane"></svg></div>
+            </article>
+            <aside class="organic-info">
+              <article class="panel">
+                <p class="eyebrow">BUTANE • C2–C3</p><h3 id="newmanConformation">anti</h3>
+                <div class="organic-metric"><span>Relative energy</span><strong id="newmanEnergy">0.0 kcal/mol</strong></div>
+                <p id="newmanNote"></p>
+                <div class="newman-presets"><button data-dihedral="0">0° eclipsed</button><button data-dihedral="60">60° gauche</button><button data-dihedral="120">120° eclipsed</button><button data-dihedral="180">180° anti</button><button data-dihedral="240">240° eclipsed</button><button data-dihedral="300">300° gauche</button></div>
+              </article>
+              <article class="panel"><p class="eyebrow">WHY IT MATTERS</p><p>Conformations interconvert without breaking σ bonds, but they do not have equal energy. Steric and torsional strain shape which conformers are most populated and can affect reaction pathways.</p></article>
+            </aside>
+          </div>
+        </section>
+
+        <section id="chairPanel" class="organic-tool-panel">
+          <div class="organic-tool-grid">
+            <article class="panel organic-visual">
+              <div class="organic-toolbar">
+                <label for="chairSubstituent">Substituent</label><select id="chairSubstituent"><option value="methyl">Methyl</option><option value="ethyl">Ethyl</option><option value="tertButyl">tert-Butyl</option></select>
+                <div class="grow"></div><button id="toggleDiaxial" class="organic-button ghost">Hide 1,3-diaxial contacts</button><button id="chairFlip" class="organic-button primary">Flip chair</button>
+              </div>
+              <div class="organic-stage"><svg id="chairSvg" viewBox="0 0 500 360" role="img" aria-label="Cyclohexane chair with axial or equatorial substituent"></svg></div>
+            </article>
+            <aside class="organic-info">
+              <article class="panel"><p class="eyebrow">CURRENT CONFORMER</p><h3 id="chairState">Methyl axial up</h3><div class="organic-metric"><span>Approx. axial penalty</span><strong id="chairPenalty">+1.7 kcal/mol</strong></div><p id="chairPreference" class="chair-preference"></p></article>
+              <article class="panel"><p class="eyebrow">CHAIR-FLIP RULE</p><p>A chair flip preserves whether a substituent is <strong>up or down</strong>, but swaps <strong>axial ↔ equatorial</strong>. Bulky groups usually favor equatorial positions.</p><p id="chairNote"></p></article>
+            </aside>
+          </div>
+        </section>
+
+        <section id="mechanismPanel" class="organic-tool-panel">
+          <div class="mechanism-layout">
+            <article class="panel organic-visual">
+              <div class="organic-toolbar"><div><p class="eyebrow">CURVED-ARROW PRACTICE</p><strong id="mechanismTitle">SN2</strong></div></div>
+              <div class="organic-stage mechanism-stage"><svg id="mechanismSvg" viewBox="0 0 500 330" role="img" aria-label="SN2 mechanism canvas"></svg></div>
+            </article>
+            <aside class="organic-info">
+              <article class="panel"><p class="eyebrow">REACTION</p><div id="mechanismEquation" class="mechanism-equation"></div><p id="mechanismPrompt"></p><div class="mech-columns"><div><small class="muted">ELECTRON SOURCE</small><div id="sourceChoices"></div></div><div><small class="muted">DESTINATION</small><div id="targetChoices"></div></div></div><div id="mechanismSelection" class="mechanism-selection"></div><div class="organic-actions"><button id="addMechanismArrow" class="organic-button primary">Add curved arrow</button><button id="mechanismHint" class="organic-button">Hint</button><button id="resetMechanism" class="organic-button ghost">Reset</button></div><div id="mechanismFeedback" class="organic-feedback" aria-live="polite">Build the mechanism one electron-flow arrow at a time.</div></article>
+              <article class="panel"><p class="eyebrow">MECHANISM RULE #1</p><p>Curved arrows describe movement of electron pairs. The tail must begin at electrons — a lone pair, negative charge, π bond, or σ bond — not at an electron-poor atom.</p></article>
+            </aside>
+          </div>
+        </section>
       </section>
 
       <section id="labView" class="view">
@@ -175,6 +280,8 @@
     </main>
   </div>
   <script src="data/curriculum.js"></script>
+  <script src="data/organic.js"></script>
   <script src="app.js"></script>
+  <script src="organic.js"></script>
 </body>
 </html>
