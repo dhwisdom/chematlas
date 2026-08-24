@@ -99,10 +99,26 @@ window.CHEM_CURRICULUM = {
       code: "CHEM 37073",
       name: "Organic Chemistry I",
       description: "Structure, stereochemistry, conformations and mechanism-first organic chemistry.",
+      completion: 12,
+      modules: [
+        { id: "org-structure", title: "Structure & Bonding", lessons: ["Hybridization revisited", "Line-angle structures", "Formal charge", "Resonance"] },
+        { id: "org-functional", title: "Functional Groups", lessons: ["Hydrocarbons", "Alcohols and ethers", "Carbonyl families", "Amines"] },
+        { id: "org-acidbase", title: "Acid–Base Chemistry", lessons: ["pKa reasoning", "Conjugate bases", "Induction", "Resonance stabilization"] },
+        { id: "org-stereo", title: "Stereochemistry", lessons: ["Chirality", "CIP priorities", "R/S assignment", "Enantiomers and diastereomers"], featured: true },
+        { id: "org-conformation", title: "Conformations", lessons: ["Newman projections", "Butane energy profile", "Cyclohexane chairs", "Axial vs equatorial"], featured: true },
+        { id: "org-sn", title: "Substitution & Elimination", lessons: ["Curved arrows", "SN2", "SN1", "E2 and E1"], featured: true }
+      ]
+    },
+    {
+      id: "organic2",
+      code: "CHEM 37203",
+      name: "Organic Chemistry II",
+      description: "Aromatic chemistry, carbonyl reactions, spectroscopy and multi-step synthesis built on mechanism patterns.",
       completion: 0,
       modules: [
-        { title: "Structure & Bonding" }, { title: "Functional Groups" }, { title: "Acid–Base Chemistry" },
-        { title: "Stereochemistry" }, { title: "Conformations" }, { title: "Substitution & Elimination" }
+        { title: "Aromaticity & Electrophilic Aromatic Substitution" }, { title: "Alcohol Oxidation & Reduction" },
+        { title: "Aldehydes & Ketones" }, { title: "Carboxylic Acid Derivatives" }, { title: "Enolates" },
+        { title: "Amines" }, { title: "IR & NMR Spectroscopy" }, { title: "Multi-step Synthesis" }
       ]
     },
     {
