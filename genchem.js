@@ -327,4 +327,17 @@
   setupEntryPoints();
   updateHomeProgress();
   render();
+
+  // Load the interactive General Chemistry Practice Lab after the reader is ready.
+  if (!document.querySelector('link[href="genchem-tools.css"]')) {
+    const practiceStyle = document.createElement('link');
+    practiceStyle.rel = 'stylesheet';
+    practiceStyle.href = 'genchem-tools.css';
+    document.head.appendChild(practiceStyle);
+  }
+  if (!document.querySelector('script[src="genchem-tools.js"]')) {
+    const practiceScript = document.createElement('script');
+    practiceScript.src = 'genchem-tools.js';
+    document.body.appendChild(practiceScript);
+  }
 })();
