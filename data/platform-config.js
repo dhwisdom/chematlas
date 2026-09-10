@@ -4,3 +4,5 @@ window.CHEMATLAS_CONFIG = {
   tutorEndpoint: '/api/tutor',
   canonicalHost: 'chematlas-red.vercel.app'
 };
+
+// Server-side tutor credentials are configured only in Vercel environment variables.
