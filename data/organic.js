@@ -177,3 +177,41 @@ window.CHEM_ORGANIC = {
 
   window.addEventListener('load', installGenChemShell, { once: true });
 })();
+
+// Learner-first product layer: landing page, clean routes, adaptive progress,
+// optional Supabase sync, and the course-grounded AI Tutor.
+(() => {
+  function installPlatform() {
+    if (!document.querySelector('link[href="platform.css"]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'platform.css';
+      document.head.appendChild(link);
+    }
+
+    const loadApp = () => {
+      if (document.querySelector('script[src="platform.js"]')) return;
+      const app = document.createElement('script');
+      app.src = 'platform.js';
+      app.onload = () => {
+        if (!document.querySelector('script[src="platform-route-fix.js"]')) {
+          const fix = document.createElement('script');
+          fix.src = 'platform-route-fix.js';
+          document.body.appendChild(fix);
+        }
+      };
+      document.body.appendChild(app);
+    };
+
+    if (window.CHEMATLAS_CONFIG) {
+      loadApp();
+    } else if (!document.querySelector('script[src="data/platform-config.js"]')) {
+      const config = document.createElement('script');
+      config.src = 'data/platform-config.js';
+      config.onload = loadApp;
+      document.body.appendChild(config);
+    }
+  }
+
+  window.addEventListener('load', installPlatform, { once: true });
+})();
