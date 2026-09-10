@@ -1,25 +1,37 @@
-# ChemAtlas — Interactive Chemistry Curriculum
+# ChemAtlas — Interactive Chemistry Learning Platform
 
-ChemAtlas is a browser-based learning platform prototype that connects a real college chemistry sequence to interactive models. The goal is to let students move from **atomic structure → bonding → organic chemistry → physical chemistry → biochemistry** while preserving the conceptual links between courses.
+ChemAtlas is a learner-first chemistry platform that connects a college chemistry sequence to original learning material, interactive models, reasoning-first practice, progress analytics, and course-grounded AI tutoring. The goal is to help learners move from **atomic structure → bonding → organic chemistry → physical chemistry → biochemistry** without losing the conceptual links between courses.
 
-Live site: `https://dhwisdom.github.io/chematlas/`
+**Production site:** `https://chematlas-red.vercel.app/`
 
-## Implemented
+See `PRODUCT_ARCHITECTURE.md` for the product North Star, learner capabilities, data model, AI approach, governance principles, and outcome measures.
+
+## Product experience
+
+### Learner-first platform layer
+- Dedicated first-visit landing experience rather than dropping new learners into a tool dashboard
+- Goal-based onboarding for foundations, Organic Chemistry preparation, General Chemistry II review, and Biochemistry preparation
+- Adaptive next-step recommendations based on learning goal and current local/cloud mastery state
+- **My Progress** center with module mastery, practice-engine mastery, VSEPR score, active practice days, and recent learning activity
+- Practice-history instrumentation built around meaningful mastery events rather than page-view vanity metrics
+- Clean Vercel URLs such as `/dashboard`, `/progress`, `/tutor`, `/organic`, and `/genchem/:module`
+- Useful guest mode using browser storage; profiles add continuity rather than gating the learning material
+- Supabase-ready profile and cross-device synchronization layer
+- Course-grounded **ChemAtlas AI Tutor** UI with optional web context
 
 ### Curriculum + platform shell
 - Dashboard with a prerequisite-oriented chemistry pathway
 - Four-year curriculum map based on the **University of Arkansas 2026–27 B.S. Chemistry with Biochemistry concentration**
 - Course library with General Chemistry I, General Chemistry II, Organic Chemistry I/II, and Biochemistry scaffolds
 - PostgreSQL/Supabase-ready normalized data model in `schema.sql`
-- Responsive static architecture suitable for GitHub Pages
+- Responsive architecture deployed through Vercel from GitHub `main`
 
 ### General Chemistry Foundations — learning + modeling
 - Full two-semester **General Chemistry Foundations** reader with 19 modules
 - Original learning material covering measurement, atoms/moles, formulas, stoichiometry, aqueous chemistry, thermochemistry, electronic structure, periodicity, bonding, molecular geometry, gases, intermolecular forces, solutions, kinetics, equilibrium, acids/bases, solubility, thermodynamics, and electrochemistry
 - Every module includes learning objectives, concept explanations, core equations, a worked example, vocabulary, a course-connection note, and an auto-checked mastery question
-- Local progress tracking for completed modules and semester progress
 - Searchable module navigator and Gen Chem I / Gen Chem II semester switcher
-- Lab-connection callouts, including explicit ties to the UArk majors-lab emphasis on density, reaction types, separations, solubility, hydrates, gas laws, freezing-point depression, and data interpretation
+- Lab-connection callouts and explicit prerequisite/transfer links into later chemistry courses
 - Interactive **Molecular Geometry & VSEPR** lesson with a self-contained rotatable Canvas molecular renderer
 - CH4, NH3, H2O, CO2, BF3, PCl5 and SF6 with stick and space-filling representations
 - Geometry, bond-angle, introductory hybridization and polarity explanations
@@ -34,24 +46,47 @@ Live site: `https://dhwisdom.github.io/chematlas/`
 - **Virtual Coffee-Cup Calorimetry Lab** for HCl/NaOH neutralization with adjustable volumes, concentrations, initial temperature, limiting-reagent calculation, q = mcΔT, and predicted final temperature
 - Local practice-tool mastery tracking across all seven interactive engines
 
-### Phase 2 — Organic Chemistry Studio
+### Organic Chemistry Studio
 - **R/S stereochemistry trainer** with CIP priorities, wedge/dash bonds and multiple challenges
 - **Newman projection explorer** for butane with a rotatable C2–C3 dihedral angle, conformation labels and approximate relative-energy profile
 - **Cyclohexane chair-flip explorer** showing axial/equatorial interchange, 1,3-diaxial contacts and substituent size effects
 - **Curved-arrow mechanism trainer** for an SN2 reaction, enforcing the rule that arrows begin at electron pairs or bonds
 - Expanded Organic Chemistry I curriculum modules and an Organic Chemistry II course scaffold
 
-## Run locally
+## AI Tutor architecture
 
-The current version is intentionally framework-free.
+`api/tutor.js` is a Vercel server-side endpoint using the OpenAI Responses API. The browser performs lightweight retrieval over ChemAtlas course material, sends only the most relevant course context plus the learner question to the endpoint, and asks the tutor to teach from ChemAtlas context first. The learner can optionally allow web context for current or external information.
 
-```bash
-python -m http.server 8000
+The OpenAI API key must exist only as the Vercel server-side environment variable `OPENAI_API_KEY`. It must never be committed to GitHub or placed in browser configuration. `OPENAI_MODEL` is optional; the current endpoint defaults to `gpt-5.6-luna`.
+
+Until `OPENAI_API_KEY` is configured, the AI Tutor surface remains visible and explains that server configuration is still required instead of breaking the rest of the site.
+
+## Profiles and cross-device progress
+
+ChemAtlas uses a guest-first state model. Learners can use all current learning content and practice tools without an account. Progress is stored locally in the browser.
+
+When the dedicated ChemAtlas Supabase project is configured, `data/platform-config.js` will contain only the public Supabase project URL and publishable key. Signed-in learners can then merge and synchronize the same state through the `learner_state` table. The schema also includes normalized tables for profiles, lesson progress, practice attempts, tutor threads, and tutor messages.
+
+Row Level Security policies in `schema.sql` restrict learner-owned tables to `auth.uid() = user_id`. Service-role keys and other secrets must not appear in browser code.
+
+## Clean routing
+
+Vercel rewrites in `vercel.json` keep the current static architecture while providing product-like URLs:
+
+```text
+/                         first-time / public landing
+/dashboard                learner dashboard
+/curriculum               degree map
+/courses                  course library
+/progress                 learner mastery + history
+/tutor                    ChemAtlas AI Tutor
+/model-lab                VSEPR model lab
+/genchem                  General Chemistry Foundations
+/genchem/:module          individual Gen Chem module
+/organic                  Organic Chemistry Studio
 ```
 
-Then open `http://localhost:8000`.
-
-You can also open `index.html` directly in a modern browser, although serving the directory locally more closely matches GitHub Pages behavior.
+Friendly General Chemistry aliases are canonicalized to the actual course module IDs so saved/deep links remain stable.
 
 ## Academic grounding
 
@@ -61,46 +96,40 @@ ACS curriculum guidance is used as a second design constraint: introductory chem
 
 The General Chemistry sequence is an original ChemAtlas instructional design aligned to the UArk degree/course context, ACS introductory-chemistry expectations, and the common two-semester scope represented by OpenStax Chemistry 2e. It is **not** a reproduction of or substitute for an official University of Arkansas syllabus. Learning text and worked examples in ChemAtlas are original content.
 
+## Run locally
+
+The current release intentionally keeps the learning client framework-light while Vercel supplies the server-side tutor route.
+
+```bash
+python -m http.server 8000
+```
+
+Static learning features work locally. The `/api/tutor` endpoint requires a Vercel-compatible server environment and the `OPENAI_API_KEY` environment variable.
+
 ## Architecture
 
 ```text
-Programs
+Program / degree spine
   └── Courses
        └── Modules
             └── Lessons
-                 ├── Concepts
-                 │    └── Concept prerequisites
+                 ├── Concepts + prerequisites
                  ├── Visualizations
                  └── Assessments
 
-Users
-  └── Learner progress / mastery
+Learner
+  ├── Goal / preferences
+  ├── Mastery + progress
+  ├── Practice attempts
+  ├── Adaptive next step
+  └── Tutor history
+
+ChemAtlas Tutor
+  └── relevant course context → server-side OpenAI response → optional web context
 ```
 
 ## Current build priorities
 
 General Chemistry remains the platform’s prerequisite backbone. The next depth upgrades should add larger randomized problem banks, limiting-reactant and percent-yield modes, weak-acid/base equilibrium practice, titration curves, solubility-product simulations, kinetics data fitting, cumulative unit exams, and richer virtual-lab datasets before later courses are treated as complete.
 
-## Next major phase — Biochemistry systems
-
-- amino-acid ionization visualizer
-- protein structure viewer
-- enzyme kinetics simulator
-- glycolysis + Krebs cycle interactive carbon tracing
-- electron transport / chemiosmosis simulation
-- pathway overlays for ATP, NADH, FADH2 and carbon loss
-- fed/fasting pathway-state comparisons
-
-## Production direction
-
-A later production version can migrate to:
-
-- Next.js / TypeScript
-- Supabase / PostgreSQL
-- 3Dmol.js for small-molecule visualization
-- Mol* for proteins and macromolecules
-- RDKit services for cheminformatics
-- D3 for metabolic pathways and concept graphs
-- KaTeX for mathematical and chemical notation
-
-The current renderer, General Chemistry reader/practice lab, and Organic Studio are intentionally self-contained so the public prototype works on GitHub Pages with no API keys or external runtime dependencies.
+The next platform milestones are to activate the dedicated Supabase project, turn cloud sync on, configure the Tutor API key in Vercel, deepen practice-event analytics, and then build the Biochemistry systems layer: amino-acid ionization, proteins, enzyme kinetics, glycolysis/Krebs carbon tracing, and electron transport/chemiosmosis.
