@@ -1,0 +1,16 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/curriculum", "destination": "/index.html" },
+    { "source": "/courses", "destination": "/index.html" },
+    { "source": "/progress", "destination": "/index.html" },
+    { "source": "/tutor", "destination": "/index.html" },
+    { "source": "/model-lab", "destination": "/index.html" },
+    { "source": "/organic", "destination": "/index.html" },
+    { "source": "/organic/:path*", "destination": "/index.html" },
+    { "source": "/genchem", "destination": "/index.html" },
+    { "source": "/genchem/:path*", "destination": "/index.html" }
+  ]
+}
