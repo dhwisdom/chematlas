@@ -7,8 +7,10 @@ function extractResult(payload) {
   const citations = [];
   const webSources = new Map();
   let cursor = 0;
+  let webSearchUsed = false;
 
   for (const item of payload?.output || []) {
+    if (item?.type === 'web_search_call') { webSearchUsed = true; continue; }
     if (item?.type !== 'message') continue;
     for (const part of item?.content || []) {
       if (part?.type !== 'output_text' || !part?.text) continue;
@@ -33,7 +35,7 @@ function extractResult(payload) {
   }
 
   const answer = pieces.join('\n').trim() || (typeof payload?.output_text === 'string' ? payload.output_text.trim() : '');
-  return { answer, citations, webSources: [...webSources.values()] };
+  return { answer, citations, webSources: [...webSources.values()], webSearchUsed };
 }
 
 function sanitizeConversation(value) {
@@ -54,7 +56,7 @@ module.exports = async function handler(req, res) {
 
   const question = String(req.body?.question || '').trim().slice(0, 5000);
   const context = String(req.body?.context || '').slice(0, MAX_CONTEXT_CHARS);
-  const includeWeb = Boolean(req.body?.includeWeb);
+  const includeWeb = req.body?.includeWeb === true || req.body?.includeWeb === 'true';
   const learner = req.body?.learner && typeof req.body.learner === 'object' ? req.body.learner : {};
   const conversation = sanitizeConversation(req.body?.conversation);
   if (!question) return res.status(400).json({ error: 'Ask a chemistry question first.' });
@@ -109,7 +111,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       answer: result.answer,
       model: body.model,
-      usedWeb: includeWeb,
+      usedWeb: result.webSearchUsed,
       responseId: payload?.id || null,
       citations: result.citations,
       webSources: result.webSources
