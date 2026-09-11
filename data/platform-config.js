@@ -6,3 +6,4 @@ window.CHEMATLAS_CONFIG = {
 };
 
 // Server-side tutor credentials are configured only in Vercel environment variables.
+// Deployment refresh marker: 2026-09-11 tutor environment activation.
