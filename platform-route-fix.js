@@ -35,7 +35,6 @@
     open();
   }
 
-  // Preserve a clean URL when a learner chooses a module inside the reader.
   document.addEventListener('click', event => {
     const target = event.target.closest('[data-module],[data-module-nav]');
     if (!target) return;
@@ -43,14 +42,11 @@
     if (id && target.closest('#genchemView')) setTimeout(() => setPath(id, 'pushState'), 0);
   }, true);
 
-  // platform.js opens the dynamic Gen Chem button after routing. Its original
-  // listener normalizes to /genchem; restore the more useful module URL after it.
   document.addEventListener('click', event => {
     const nav = event.target.closest('.genchem-nav');
     if (nav?.dataset.genchemModule) setTimeout(() => setPath(nav.dataset.genchemModule), 0);
   });
 
-  // Correct the friendly Gen Chem II onboarding alias to the actual module id.
   document.addEventListener('click', event => {
     const goal = event.target.closest('[data-goal="genchem2"]');
     if (goal) setTimeout(() => openCanonicalModule('imf'), 10);
@@ -70,4 +66,22 @@
   window.addEventListener('popstate', repairLocation);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', repairLocation, { once:true });
   else repairLocation();
+})();
+
+(() => {
+  if (window.__CHEMATLAS_TUTOR_V2_LOADER__) return;
+  window.__CHEMATLAS_TUTOR_V2_LOADER__ = true;
+
+  if (!document.querySelector('link[href="tutor-enhancements.css"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'tutor-enhancements.css';
+    document.head.appendChild(link);
+  }
+
+  if (!document.querySelector('script[src="tutor-enhancements.js"]')) {
+    const script = document.createElement('script');
+    script.src = 'tutor-enhancements.js';
+    document.body.appendChild(script);
+  }
 })();
