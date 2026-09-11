@@ -85,3 +85,21 @@
     document.body.appendChild(script);
   }
 })();
+
+(() => {
+  if (window.__CHEMATLAS_TUTOR_ACTIONS_LOADER__) return;
+  window.__CHEMATLAS_TUTOR_ACTIONS_LOADER__ = true;
+
+  if (!document.querySelector('link[href="tutor-actions.css"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'tutor-actions.css';
+    document.head.appendChild(link);
+  }
+
+  if (!document.querySelector('script[src="tutor-actions.js"]')) {
+    const script = document.createElement('script');
+    script.src = 'tutor-actions.js';
+    document.body.appendChild(script);
+  }
+})();
