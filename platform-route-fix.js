@@ -133,3 +133,15 @@
     document.head.appendChild(link);
   }
 })();
+
+(() => {
+  if (window.__CHEMATLAS_MOBILE_SITE_LOCK__) return;
+  window.__CHEMATLAS_MOBILE_SITE_LOCK__ = true;
+
+  if (!document.querySelector('link[href="mobile-site-lock.css"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'mobile-site-lock.css';
+    document.head.appendChild(link);
+  }
+})();
