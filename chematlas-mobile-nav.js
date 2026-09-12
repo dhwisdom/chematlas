@@ -53,6 +53,7 @@
   }
 
   function boot() {
+    document.title = 'ChemAtlas Mobile — Interactive Chemistry';
     installViewportBehavior();
     ensureNav();
     updateActive();
