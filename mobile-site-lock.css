@@ -1,0 +1,94 @@
+/* Dedicated ChemAtlas Mobile shell. Keep this branch mobile-shaped at every viewport. */
+@media (min-width: 960px) {
+  html { background: #07080a; }
+  body {
+    width: min(100%, 480px);
+    min-height: 100vh;
+    margin: 0 auto;
+    padding-bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+    box-shadow: 0 0 0 1px #20242c, 0 24px 90px rgba(0,0,0,.38);
+  }
+
+  .app-shell { display: block !important; grid-template-columns: none !important; }
+  .sidebar { display: none !important; }
+  .main { max-width: none !important; width: auto !important; padding: 0 16px 34px !important; }
+
+  .topbar {
+    position: sticky !important;
+    top: 0;
+    z-index: 45;
+    min-height: 62px !important;
+    margin: 0 -16px 24px !important;
+    padding: 0 16px !important;
+    background: rgba(11,12,15,.90) !important;
+    border-bottom: 1px solid var(--border) !important;
+    backdrop-filter: blur(18px) saturate(1.15) !important;
+  }
+  .topbar .eyebrow { display: none !important; }
+  .topbar h1 { font-size: 16px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top-actions .streak { display: none !important; }
+  .ca-sync-status { min-height: 40px !important; min-width: 40px !important; padding: 8px !important; }
+  .ca-sync-status b, .ca-sync-status small { display: none !important; }
+
+  .ca-mobile-nav {
+    display: grid !important;
+    left: 50% !important;
+    right: auto !important;
+    width: min(100%, 480px) !important;
+    transform: translateX(-50%);
+  }
+
+  .hero-grid, .dashboard-grid, .course-grid, .degree-map, .lab-layout, .lesson-grid,
+  .organic-intro, .organic-tool-grid, .ca-progress-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .hero-card { display: block !important; }
+  .orbital-art { display: none !important; }
+
+  .model-toolbar { display: grid !important; grid-template-columns: 1fr !important; }
+  .model-toolbar select { width: 100% !important; min-width: 0 !important; }
+  .segmented { margin-left: 0 !important; width: 100% !important; display: grid !important; grid-template-columns: 1fr 1fr !important; }
+  .viewer { height: clamp(300px, 72vw, 390px) !important; }
+  .answers { grid-template-columns: 1fr !important; }
+
+  .gc-hero { grid-template-columns: 1fr !important; }
+  .gc-progress-card { grid-template-columns: 1fr !important; }
+  .gc-semester-tabs { display: flex !important; overflow-x: auto !important; }
+  .gc-semester-tab { min-width: 88% !important; }
+  .gc-workspace { grid-template-columns: 1fr !important; }
+  .gc-syllabus { position: static !important; max-height: none !important; }
+  .gc-module-nav {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: calc(100vw - 64px) !important;
+    grid-template-columns: none !important;
+    overflow-x: auto !important;
+  }
+  .gc-reading { grid-template-columns: 1fr !important; }
+  .gc-section-label { display: none !important; }
+  .gc-equation-grid, .gc-check-options, .gc-connections, .gc-reader-nav { grid-template-columns: 1fr !important; }
+
+  .organic-intro, .organic-tool-grid { grid-template-columns: 1fr !important; }
+  .organic-tabs { display: flex !important; overflow-x: auto !important; }
+
+  .ca-hero-wrap { grid-template-columns: 1fr !important; padding: 42px 16px 32px !important; min-height: 0 !important; }
+  .ca-orbit-scene { height: 220px !important; transform: scale(.72) !important; margin: -10px 0 !important; }
+  .ca-capabilities, .ca-stat-grid, .ca-tutor-side { grid-template-columns: 1fr !important; }
+  .ca-learning-path > div { grid-template-columns: 1fr !important; }
+  .ca-learning-path > div > i { display: none !important; }
+
+  #caTutorV2.ca-tutor-v2 { display: block !important; }
+  #caTutorV2 .ca-thread-rail, #caTutorV2 .ca-tutor-side-v2 { position: static !important; }
+  #caTutorV2 .ca-thread-list {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: minmax(180px,78%) !important;
+    overflow-x: auto !important;
+  }
+  #caTutorV2 .ca-thread-sync { display: none !important; }
+  #caTutorV2 .ca-chat-v2 { height: auto !important; min-height: 52vh !important; max-height: none !important; }
+  #caTutorV2 .ca-tutor-form-v2 {
+    position: sticky !important;
+    bottom: calc(68px + env(safe-area-inset-bottom)) !important;
+  }
+}
