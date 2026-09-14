@@ -1,10 +1,13 @@
 (() => {
-  if (!document.querySelector('link[href="prototype-polish.css"]')) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'prototype-polish.css';
-    document.head.appendChild(link);
-  }
+  const stylesheets = ['prototype-polish.css', 'prototype-desktop-polish.css'];
+  stylesheets.forEach(href => {
+    if (!document.querySelector(`link[href="${href}"]`)) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      document.head.appendChild(link);
+    }
+  });
 })();
 
 (() => {
@@ -24,19 +27,19 @@
     electronegativity: {
       title: 'Electronegativity',
       copy: 'A measure of an atom’s pull on shared electrons. Start here to predict how matter behaves.',
-      eq: 'χF − χH  →  δ− / δ+',
+      eq: 'χ(F) − χ(H) → δ− / δ+',
       note: 'The difference in electronegativity predicts the distribution of charge.'
     },
     bonding: {
       title: 'Bonding',
       copy: 'Electron sharing and transfer determine which atoms can connect and how strongly they interact.',
-      eq: 'Δχ  →  bond character',
+      eq: 'Δχ → bond character',
       note: 'Bond type is better understood as a continuum than a set of rigid boxes.'
     },
     polarity: {
       title: 'Polarity',
       copy: 'Bond dipoles become molecular behavior only after geometry decides whether those vectors reinforce or cancel.',
-      eq: 'Σ μ⃗  →  molecular dipole',
+      eq: 'Σ μ(bond) → molecular dipole',
       note: 'The same polar bond can produce a polar or nonpolar molecule depending on shape.'
     },
     shape: {
@@ -104,6 +107,7 @@
   const acidVal = document.querySelector('#acidVal');
   const absorbance = document.querySelector('#absorbance');
   const lambda = document.querySelector('#lambda');
+  const lambdaMetric = document.querySelector('#lambdaMetric');
   const curve = document.querySelector('#spectrumCurve');
   const marker = document.querySelector('#spectrumMarker');
   const markerLabel = document.querySelector('#markerLabel');
@@ -116,10 +120,17 @@
     const lm = Math.round(410 + (7.2 - pH) * 12);
     const abs = 0.19 + ((t - 10) / 40) * 0.07 + ((7.2 - pH) / 10) * 0.025;
     if (lambda) lambda.textContent = `${lm} nm`;
+    if (lambdaMetric) lambdaMetric.textContent = `${lm} nm`;
     if (absorbance) absorbance.textContent = abs.toFixed(3);
     const x = 120 + ((lm - 380) / 520) * 700;
-    if (marker) marker.setAttribute('x1', x); marker?.setAttribute('x2', x);
-    if (markerLabel) { markerLabel.setAttribute('x', x + 10); markerLabel.textContent = `λmax ${lm} nm`; }
+    if (marker) {
+      marker.setAttribute('x1', x);
+      marker.setAttribute('x2', x);
+    }
+    if (markerLabel) {
+      markerLabel.setAttribute('x', x + 10);
+      markerLabel.textContent = `λmax ${lm} nm`;
+    }
     if (curve) {
       const pts = [];
       for (let px = 0; px <= 820; px += 8) {
@@ -143,6 +154,12 @@
     light?.animate([{ opacity: .25 }, { opacity: 1 }, { opacity: .25 }], { duration: 850, iterations: 2 });
     updateLab();
   });
+
+  const lessonEq = document.querySelector('.equation-panel strong');
+  if (lessonEq) lessonEq.textContent = 'μ(molecule) = Σ μ(bond)';
+
+  const recordFormula = document.querySelector('.formula');
+  if (recordFormula) recordFormula.textContent = 'A = εbc  →  ΔE = hν';
 
   selectConcept('electronegativity');
   updateLab();
