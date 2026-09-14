@@ -1,0 +1,287 @@
+/* ChemAtlas prototype visual polish
+   Direction: inky scientific atlas + editorial warmth + instrument-grade lab contrast. */
+
+:root{
+  --ink:#07111d;
+  --ink-2:#0a1826;
+  --ink-3:#0e2233;
+  --ink-4:#122b40;
+  --paper:#eef4f5;
+  --paper-warm:#f0e7dc;
+  --muted:#90a4b4;
+  --muted-2:#688096;
+  --line:#1c3448;
+  --line-soft:rgba(126,169,196,.16);
+  --cyan:#63e6e2;
+  --cyan-bright:#8cf4ff;
+  --cyan-soft:#b7f5f2;
+  --blue:#8db9d4;
+  --copper:#d88961;
+  --copper-soft:#f0b48a;
+  --green:#73d9bc;
+  --danger:#ff9f9a;
+}
+
+html{background:var(--ink)}
+body{
+  background:
+    radial-gradient(circle at 76% -12%,rgba(99,230,226,.08),transparent 31%),
+    radial-gradient(circle at 16% 16%,rgba(141,185,212,.045),transparent 26%),
+    var(--ink);
+  color:#dce8ed;
+}
+
+.prototype-shell{
+  position:relative;
+  background:
+    linear-gradient(rgba(110,159,190,.026) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(110,159,190,.026) 1px,transparent 1px),
+    transparent;
+  background-size:48px 48px;
+}
+.prototype-shell::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  background:linear-gradient(180deg,rgba(7,17,29,0),rgba(7,17,29,.22) 54%,rgba(7,17,29,.5));
+}
+.prototype-topbar,main{position:relative;z-index:1}
+
+.prototype-topbar{
+  border-bottom:1px solid #173047;
+  background:rgba(7,17,29,.9);
+  box-shadow:0 10px 34px rgba(0,0,0,.12);
+}
+.brand-mark{border-color:var(--cyan);box-shadow:0 0 22px rgba(99,230,226,.08)}
+.brand-mark span{color:var(--cyan-bright)}
+.brand-copy strong b{color:var(--cyan)}
+.primary-nav button{color:#8298aa}
+.primary-nav button:hover{color:#dceef1}
+.primary-nav button.active::after{background:var(--cyan);box-shadow:0 0 12px rgba(99,230,226,.4)}
+.primary-nav button.tutor{color:var(--copper-soft)}
+.session i{background:var(--cyan);box-shadow:0 0 10px rgba(99,230,226,.55)}
+.avatar{border-color:#2d5169;color:var(--cyan-soft);background:rgba(12,35,50,.5)}
+
+.kicker{color:#7896aa}
+.kicker.orange{color:var(--copper-soft)}
+
+/* ATLAS — cool, luminous, cartographic */
+#atlasPage .page-wrap{position:relative}
+#atlasPage .page-wrap::before{
+  content:'';
+  position:absolute;
+  width:520px;height:520px;
+  right:6%;top:95px;
+  border-radius:50%;
+  pointer-events:none;
+  background:radial-gradient(circle,rgba(99,230,226,.065),rgba(99,230,226,.018) 38%,transparent 68%);
+  filter:blur(2px);
+}
+.atlas-hero{
+  position:relative;
+  isolation:isolate;
+  border-bottom-color:#173047;
+  overflow:hidden;
+}
+.atlas-hero::after{
+  content:'';
+  position:absolute;
+  right:4%;top:10%;
+  width:310px;height:310px;
+  border:1px solid rgba(99,230,226,.07);
+  border-radius:50%;
+  box-shadow:
+    0 0 0 46px rgba(99,230,226,.025),
+    0 0 0 92px rgba(99,230,226,.018);
+  z-index:-1;
+}
+.atlas-hero h1{color:var(--paper);text-shadow:0 10px 32px rgba(0,0,0,.16)}
+.atlas-hero h1 em{color:var(--copper);position:relative}
+.atlas-hero h1 em::after{
+  content:'';
+  position:absolute;
+  left:2px;bottom:-10px;
+  width:92px;height:1px;
+  background:linear-gradient(90deg,var(--copper),transparent);
+}
+.atlas-hero .lede{color:#afc0ca}
+
+.solid{
+  border-color:var(--cyan);
+  background:var(--cyan);
+  color:#061716;
+  font-weight:650;
+  box-shadow:0 10px 28px rgba(99,230,226,.12);
+}
+.solid:hover{background:var(--cyan-bright);border-color:var(--cyan-bright);filter:none;transform:translateY(-1px)}
+.ghost{border-color:#254158;background:rgba(10,28,42,.34);color:#c9d8df}
+.ghost:hover{border-color:#3c687f;background:rgba(14,38,56,.6)}
+
+.current-path{border-left-color:#244052;position:relative}
+.current-path::before{background:linear-gradient(90deg,var(--cyan),var(--blue));box-shadow:0 0 16px rgba(99,230,226,.18)}
+.current-path .num{color:var(--cyan-soft)}
+.current-path h3{color:var(--paper)}
+.mini-progress{background:#203342}.mini-progress span{background:linear-gradient(90deg,var(--cyan),var(--blue))}
+.resume{color:var(--cyan-soft)}
+
+.atlas-stage{border-bottom-color:#173047}
+.atlas-intro{border-right-color:#173047}
+.atlas-intro h2{color:var(--paper-warm)}
+.atlas-intro h2 em{color:var(--copper)}
+.atlas-intro p{color:#91a4b0}
+.vertical-label{color:#628b95}
+
+.network-zone{
+  background:
+    radial-gradient(circle at 50% 58%,rgba(99,230,226,.06),transparent 27%),
+    linear-gradient(rgba(99,230,226,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(99,230,226,.022) 1px,transparent 1px);
+  background-size:auto,32px 32px,32px 32px;
+}
+.figure-head{border-top-color:#35526a}
+.figure-head span{color:#7290a5}
+.figure-head strong{color:var(--paper)}
+.concept-map::before{
+  content:'';
+  position:absolute;
+  left:50%;top:58%;
+  width:305px;height:305px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  border:1px dashed rgba(99,230,226,.12);
+  box-shadow:0 0 0 42px rgba(99,230,226,.017),0 0 70px rgba(99,230,226,.035);
+}
+.map-node{
+  border-color:#27465c;
+  background:rgba(10,27,41,.92);
+  color:#a9bcc7;
+  backdrop-filter:blur(8px);
+  box-shadow:0 8px 24px rgba(0,0,0,.16);
+}
+.map-node:hover,.map-node.active{
+  border-color:var(--cyan);
+  color:#efffff;
+  background:#103345;
+  box-shadow:0 0 0 4px rgba(99,230,226,.07),0 10px 28px rgba(0,0,0,.2);
+}
+.map-node.center{
+  background:radial-gradient(circle at 45% 35%,#1c4a55,#113443 58%,#0a1d2b 100%);
+  border-color:#56b9b5;
+  box-shadow:0 0 0 8px rgba(99,230,226,.035),0 0 45px rgba(99,230,226,.09),inset 0 0 28px rgba(99,230,226,.035);
+}
+.map-node.center strong{color:#ecffff}
+.map-node.center small{color:#89aeb6}
+.map-node.center::before{color:var(--copper-soft)}
+.relationship{border-left-color:#173047}
+.relationship .dot{background:var(--cyan);box-shadow:0 0 16px rgba(99,230,226,.4)}
+.relationship h3{color:#e9f4f6}
+.relationship p{color:#8fa4b1}
+.relationship .eq{color:#c9eeee;border-color:#254257;background:linear-gradient(90deg,rgba(99,230,226,.035),transparent);padding-left:10px}
+.relationship button{border-color:#2b746f;background:linear-gradient(180deg,#123c3f,#0e3034);color:#e3fffb}
+.relationship button:hover{border-color:var(--cyan);box-shadow:0 8px 26px rgba(99,230,226,.08)}
+
+/* LESSON — warm editorial core inside the cool atlas shell */
+#lessonPage{
+  background:
+    radial-gradient(circle at 58% 18%,rgba(216,137,97,.035),transparent 28%),
+    linear-gradient(180deg,rgba(12,28,42,.72),rgba(7,17,29,.98));
+}
+.lesson-layout{position:relative}
+.lesson-toc{border-right-color:#1f374a}
+.lesson-toc .title{color:#7894a5}
+.lesson-toc button{color:#778e9e}
+.lesson-toc button.active{border-left-color:var(--cyan);color:#e1eef2;background:linear-gradient(90deg,rgba(99,230,226,.06),transparent)}
+.lesson-article .eyebrow{color:#7c98a7}
+.lesson-article h1{color:var(--paper-warm);text-shadow:0 8px 28px rgba(0,0,0,.14)}
+.lesson-article .dek{color:#b6c1c3}
+.lesson-path{border-color:#223b4e;color:#7890a0}
+.lesson-path b{color:var(--cyan-soft)}
+.lesson-section{border-bottom-color:rgba(126,169,196,.14);position:relative}
+.lesson-section::before{
+  content:'';
+  position:absolute;
+  left:-18px;top:40px;
+  width:3px;height:28px;
+  background:linear-gradient(var(--copper),transparent);
+  opacity:.55;
+}
+.lesson-section h2{color:var(--paper-warm)}
+.lesson-section p{color:#bdc7c9}
+.margin-number{color:var(--copper-soft);letter-spacing:.12em}
+.equation-panel{
+  border-left-color:var(--cyan);
+  background:linear-gradient(90deg,rgba(99,230,226,.065),rgba(11,28,42,.84) 22%,rgba(10,25,38,.9));
+  box-shadow:inset 0 0 0 1px rgba(99,230,226,.045);
+}
+.equation-panel strong{color:#e6ffff}
+.worked{background:#0d1f2d;border-color:#243e51;box-shadow:0 18px 44px rgba(0,0,0,.12)}
+.worked .head{color:var(--copper-soft);border-bottom-color:#284255;background:linear-gradient(90deg,rgba(216,137,97,.05),transparent)}
+.step span{border-color:#396077;color:#9dc7d6;background:#0c2636}
+.quick-check{border-color:#2e5267;background:linear-gradient(180deg,#0c2130,#091a27)}
+.quick-check h3{color:var(--paper-warm)}
+.choices button{border-color:#254155;background:#0d2231;color:#b1c1c9}
+.choices button:hover,.choices button.selected{border-color:var(--cyan);background:#103644;color:#f1ffff}
+.side-note{border-top-color:#44677c}
+.side-note span{color:#7bb9be}
+.side-note h4{color:var(--paper-warm)}
+.side-note p{color:#879ba8}
+.side-note button{color:var(--cyan-soft)}
+
+/* LAB — intentionally high-contrast, instrument-like */
+#labPage{
+  background:
+    radial-gradient(circle at 76% 36%,rgba(99,230,226,.045),transparent 30%),
+    #071320;
+}
+.lab-page{position:relative}
+.lab-head{border-bottom-color:#1e3b50}
+.lab-head h1{color:#eaf3f7}
+.lab-head h1 em{color:var(--cyan-bright);text-shadow:0 0 20px rgba(99,230,226,.13)}
+.lab-head p{color:#91a7b8}
+.lab-grid{gap:22px}
+.controls{border-right-color:#1e3b50}
+.controls h3{border-bottom-color:#244256;color:#e2edf1}
+.reading{border-left-color:var(--cyan);background:linear-gradient(90deg,rgba(99,230,226,.055),transparent);padding-top:4px;padding-bottom:4px}
+.reading small{color:#79c9cc}
+.reading strong{color:var(--cyan-bright);text-shadow:0 0 18px rgba(99,230,226,.08)}
+.control label{color:#cedae0}
+.control label b{color:var(--cyan-bright)}
+.solvents button{border-color:#203b4e;background:#091a27;color:#8199aa}
+.solvents button.active{background:#103342;color:var(--cyan-bright);border-color:#3b7680}
+.instrument-note{border-top-color:#244256;color:#7e95a7}
+
+.instrument{
+  border-color:#23465c !important;
+  background:
+    linear-gradient(rgba(99,230,226,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(99,230,226,.025) 1px,transparent 1px),
+    linear-gradient(180deg,#0c2030,#091a28) !important;
+  background-size:38px 38px,38px 38px,auto !important;
+  box-shadow:0 22px 60px rgba(0,0,0,.2),inset 0 0 0 1px rgba(99,230,226,.025);
+}
+.instrument::before{
+  content:'LIVE INSTRUMENT';
+  position:absolute;
+  right:18px;top:13px;
+  font-size:8px;letter-spacing:.16em;
+  color:#61bec2;
+  opacity:.7;
+}
+.instrument-tabs{border-bottom-color:#26495f !important;background:rgba(8,25,38,.7)}
+.instrument-tabs button.active{color:var(--cyan-bright) !important;border-bottom-color:var(--cyan) !important}
+.spectrum{filter:drop-shadow(0 0 5px rgba(99,230,226,.22))}
+
+/* Shared micro-detailing */
+button{transition:border-color .16s ease,background .16s ease,color .16s ease,transform .16s ease,box-shadow .16s ease}
+button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+
+@media(max-width:900px){
+  .atlas-hero::after,#atlasPage .page-wrap::before{opacity:.45}
+  .lesson-section::before{display:none}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *{transition:none!important;scroll-behavior:auto!important}
+}
