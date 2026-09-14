@@ -1,4 +1,13 @@
 (() => {
+  if (!document.querySelector('link[href="prototype-polish.css"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'prototype-polish.css';
+    document.head.appendChild(link);
+  }
+})();
+
+(() => {
   const pages = [...document.querySelectorAll('.page')];
   const navButtons = [...document.querySelectorAll('[data-page]')];
 
