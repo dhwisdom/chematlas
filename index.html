@@ -3,285 +3,208 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="ChemAtlas — an interactive, college-sequenced chemistry learning prototype." />
-  <title>ChemAtlas — Interactive Chemistry Curriculum</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="organic.css" />
+  <meta name="description" content="ChemAtlas unified design prototype — atlas, lesson, and laboratory experiences." />
+  <title>ChemAtlas — Unified Design Prototype</title>
+  <link rel="stylesheet" href="prototype.css" />
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="sidebar" aria-label="Primary navigation">
+  <div class="prototype-shell">
+    <header class="prototype-topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">C</div>
-        <div><strong>ChemAtlas</strong><span>Learn chemistry spatially.</span></div>
+        <div class="brand-mark"><span>χ</span></div>
+        <div class="brand-copy"><strong>Chem<b>Atlas</b></strong><small>a connected chemistry atlas</small></div>
       </div>
-      <nav class="nav-list">
-        <button class="nav-item active" data-view="home"><span>⌂</span> Dashboard</button>
-        <button class="nav-item" data-view="curriculum"><span>⌘</span> Curriculum</button>
-        <button class="nav-item" data-view="courses"><span>▦</span> Courses</button>
-        <button class="nav-item" data-view="lab"><span>⚗</span> Model Lab</button>
-        <button class="nav-item" data-view="organic"><span>⌬</span> Organic Studio</button>
+      <nav class="primary-nav" aria-label="Prototype views">
+        <button class="active" data-page="atlasPage">Atlas</button>
+        <button data-page="lessonPage">Lesson</button>
+        <button data-page="labPage">Lab</button>
+        <button class="tutor" data-page="lessonPage">✦ AI Tutor</button>
       </nav>
-      <div class="sidebar-foot">
-        <div class="source-chip">Prototype curriculum<br><strong>UArk 2026–27</strong></div>
-        <p>Built as an expandable learning architecture, not a replacement for official advising.</p>
-      </div>
-    </aside>
+      <div class="session"><i></i><span>Prototype 01</span><div class="avatar">CA</div></div>
+    </header>
 
-    <main class="main">
-      <header class="topbar">
-        <button id="mobileMenu" class="icon-button mobile-only" aria-label="Toggle navigation">☰</button>
-        <div>
-          <p class="eyebrow">COLLEGE CHEMISTRY • INTERACTIVE</p>
-          <h1 id="pageTitle">Your chemistry roadmap</h1>
-        </div>
-        <div class="top-actions">
-          <div class="streak"><span>◈</span><div><strong>1</strong><small>day streak</small></div></div>
-          <button class="avatar" aria-label="Profile">CT</button>
-        </div>
-      </header>
-
-      <section id="homeView" class="view active-view">
-        <div class="hero-grid">
-          <article class="hero-card">
+    <main>
+      <section id="atlasPage" class="page active">
+        <div class="page-wrap">
+          <div class="atlas-hero">
             <div>
-              <p class="eyebrow">START HERE</p>
-              <h2>See chemistry as a connected system.</h2>
-              <p>Move from atomic structure to organic mechanisms to metabolism without losing the prerequisite relationships between them.</p>
+              <div class="kicker orange">GENERAL CHEMISTRY · OPENING ARGUMENT</div>
+              <h1>Chemistry is <em>a connected system.</em></h1>
+              <p class="lede">Trace one electron through chemistry. Follow how a single tendency becomes bonding, shape, polarity, intermolecular forces, reactivity, energy—and eventually life.</p>
               <div class="hero-actions">
-                <button class="primary-button" data-jump="lesson">Open molecular geometry lab</button>
-                <button class="secondary-button" data-view-target="curriculum">View degree map</button>
+                <button class="solid" data-go="lessonPage">Continue learning →</button>
+                <button class="ghost" data-go="atlasPage">Browse the atlas</button>
               </div>
             </div>
-            <div class="orbital-art" aria-hidden="true">
-              <div class="nucleus">C</div><i class="ring r1"></i><i class="ring r2"></i><i class="ring r3"></i>
-              <b class="electron e1"></b><b class="electron e2"></b><b class="electron e3"></b>
+            <aside class="current-path">
+              <div class="kicker">YOUR CURRENT PATH</div>
+              <div class="num">04</div>
+              <h3>The architecture<br>of a molecule</h3>
+              <p>6 min read · Foundations</p>
+              <div class="mini-progress"><span></span></div>
+              <button class="resume" data-go="lessonPage">Resume chapter →</button>
+            </aside>
+          </div>
+
+          <div class="atlas-stage">
+            <aside class="atlas-intro">
+              <div class="vertical-label">THE ATLAS / 01</div>
+              <div class="kicker">A WORKING INDEX</div>
+              <h2>Begin with a tendency.<br><em>Keep the connections.</em></h2>
+              <p>Electronegativity is a number, but it is also a lens. Use the map as an annotated figure: each branch is a new question about where electrons prefer to be.</p>
+            </aside>
+
+            <div class="network-zone">
+              <div class="figure-head"><div><span>FIG. 1.4 · ANNOTATED CONCEPT MAP</span><br><strong>One idea, many consequences</strong></div><span>01 / 03</span></div>
+              <div class="concept-map">
+                <svg viewBox="0 0 1000 500" aria-hidden="true">
+                  <g stroke="#315064" stroke-width="1.2" fill="none" opacity=".88">
+                    <line x1="500" y1="290" x2="180" y2="150"/><line x1="500" y1="290" x2="820" y2="140"/>
+                    <line x1="500" y1="290" x2="860" y2="320"/><line x1="500" y1="290" x2="720" y2="440"/>
+                    <line x1="500" y1="290" x2="310" y2="430"/><line x1="500" y1="290" x2="140" y2="315"/>
+                  </g>
+                  <g fill="#58d9de" opacity=".9">
+                    <circle cx="350" cy="225" r="3"/><circle cx="660" cy="215" r="3"/><circle cx="680" cy="302" r="3"/><circle cx="600" cy="365" r="3"/><circle cx="405" cy="360" r="3"/><circle cx="330" cy="300" r="3"/>
+                  </g>
+                  <g stroke="#274456" fill="none" opacity=".55"><circle cx="500" cy="290" r="120"/><circle cx="500" cy="290" r="145" stroke-dasharray="2 8"/></g>
+                </svg>
+                <button class="map-node n-bond" data-concept="bonding">Bonding</button>
+                <button class="map-node n-polar" data-concept="polarity">Polarity</button>
+                <button class="map-node n-shape" data-concept="shape">Molecular geometry</button>
+                <button class="map-node n-imf" data-concept="imf">Intermolecular forces</button>
+                <button class="map-node n-organic" data-concept="organic">Organic reactivity</button>
+                <button class="map-node n-biochem" data-concept="biochem">Biochemistry</button>
+                <button class="map-node center n-center active" data-concept="electronegativity"><span><strong>Electronegativity</strong><small>anchor concept · χ</small></span></button>
+              </div>
             </div>
-          </article>
 
-          <article class="progress-card">
-            <div class="section-heading"><div><p class="eyebrow">CURRENT COURSE</p><h3>General Chemistry I</h3></div><span class="pill">18%</span></div>
-            <div class="progress-track"><span style="width:18%"></span></div>
-            <p class="muted">Next concept</p>
-            <button class="next-lesson" data-jump="lesson">
-              <span class="lesson-icon">V</span><span><strong>Molecular Geometry & VSEPR</strong><small>Interactive model • ~12 min</small></span><b>→</b>
-            </button>
-          </article>
-        </div>
-
-        <div class="section-heading spaced"><div><p class="eyebrow">THE BIG PICTURE</p><h2>From atoms to metabolism</h2></div><button class="text-button" data-view-target="curriculum">Full curriculum →</button></div>
-        <div class="pathway-strip">
-          <div class="path-step done"><span>01</span><strong>Atomic structure</strong><small>Electrons & orbitals</small></div><i>→</i>
-          <div class="path-step active"><span>02</span><strong>Bonding</strong><small>Shape & polarity</small></div><i>→</i>
-          <div class="path-step"><span>03</span><strong>Organic chemistry</strong><small>Mechanisms</small></div><i>→</i>
-          <div class="path-step"><span>04</span><strong>Physical chemistry</strong><small>Energy & kinetics</small></div><i>→</i>
-          <div class="path-step"><span>05</span><strong>Biochemistry</strong><small>Living systems</small></div>
-        </div>
-
-        <div class="dashboard-grid">
-          <article class="panel">
-            <div class="section-heading"><div><p class="eyebrow">EXPLORE</p><h3>Interactive tools</h3></div></div>
-            <div class="tool-grid">
-              <button class="tool-card enabled" data-jump="lesson"><span>⬡</span><strong>3D Molecules</strong><small>Rotate VSEPR geometries</small></button>
-              <button class="tool-card enabled" data-view-target="organic"><span>↻</span><strong>Organic Studio</strong><small>Stereochemistry + mechanisms</small></button>
-              <button class="tool-card"><span>⌁</span><strong>Pathways</strong><small>Krebs + ETC planned</small></button>
-              <button class="tool-card"><span>∿</span><strong>Spectra</strong><small>IR/NMR planned</small></button>
-            </div>
-          </article>
-          <article class="panel concept-panel">
-            <p class="eyebrow">CONCEPT OF THE DAY</p>
-            <h3>Why does shape change chemistry?</h3>
-            <p>Molecular geometry changes dipole cancellation, orbital overlap, steric accessibility and ultimately reactivity. VSEPR is the first bridge from a flat Lewis structure to three-dimensional chemistry.</p>
-            <button class="text-button" data-jump="lesson">Explore with molecules →</button>
-          </article>
+            <aside class="relationship">
+              <div class="kicker">SELECTED RELATIONSHIP</div>
+              <div class="dot"></div>
+              <div class="kicker" style="color:var(--cyan)">CURRENT ANCHOR</div>
+              <h3 id="relationshipTitle">Electronegativity</h3>
+              <p id="relationshipCopy"></p>
+              <div class="eq" id="relationshipEq"></div>
+              <p id="relationshipNote"></p>
+              <button data-go="lessonPage">Continue with this concept →</button>
+            </aside>
+          </div>
         </div>
       </section>
 
-      <section id="curriculumView" class="view">
-        <div class="intro-copy">
-          <p class="eyebrow">ACADEMIC BACKBONE</p>
-          <h2>Four-year chemistry + biochemistry map</h2>
-          <p>Degree-level ordering follows the University of Arkansas 2026–27 B.S. Chemistry with Biochemistry concentration. ChemAtlas adds interactive learning modules beneath each course.</p>
-        </div>
-        <div id="degreeMap" class="degree-map"></div>
-        <article class="standards-note panel">
-          <strong>Design principle</strong>
-          <p>ACS guidance expects introductory chemistry followed by breadth across analytical, biochemistry, inorganic, organic and physical chemistry. The platform architecture keeps those domains separate enough to teach deeply, but links concepts across courses.</p>
-        </article>
-      </section>
+      <section id="lessonPage" class="page">
+        <div class="lesson-layout">
+          <aside class="lesson-toc">
+            <div class="title">CHAPTER 04 / CONTENTS</div>
+            <button class="active" data-scroll="lessonOpening">Orientation</button>
+            <button data-scroll="lessonDipoles">Bond dipoles</button>
+            <button data-scroll="lessonShape">Shape decides</button>
+            <button data-scroll="lessonExample">Worked example</button>
+            <button data-scroll="lessonCheck">Quick check</button>
+          </aside>
 
-      <section id="coursesView" class="view">
-        <div class="intro-copy"><p class="eyebrow">COURSE LIBRARY</p><h2>Choose a course</h2><p>The prototype includes a detailed General Chemistry I sequence and scaffolds for later courses.</p></div>
-        <div id="courseCards" class="course-grid"></div>
-      </section>
+          <article class="lesson-article">
+            <div id="lessonOpening" class="eyebrow">CHEM 101 · FOUNDATIONS · MODULE 04</div>
+            <h1>The architecture<br>of a molecule.</h1>
+            <p class="dek">A Lewis structure is a map of connectivity. Geometry is the moment chemistry becomes spatial—and properties begin to emerge.</p>
+            <div class="lesson-path"><span>YOU ARE HERE</span><span>Atoms</span><span>→</span><span>Bonding</span><span>→</span><b>Shape</b><span>→</span><span>Polarity</span><span>→</span><span>Intermolecular forces</span></div>
 
-      <section id="organicView" class="view">
-        <div class="organic-intro">
-          <article class="panel organic-hero">
-            <p class="eyebrow">ORGANIC CHEMISTRY I • PHASE 2</p>
-            <h2>Organic Chemistry Studio</h2>
-            <p>Practice the spatial skills that make organic chemistry click: assign stereochemistry, rotate conformations, flip cyclohexane chairs, and build reaction mechanisms by following electron flow.</p>
-            <div class="hero-actions">
-              <button class="primary-button" data-organic-tool="stereo">Start with R/S stereochemistry</button>
-              <button class="secondary-button" data-organic-tool="mechanism">Practice an SN2 mechanism</button>
-            </div>
-          </article>
-          <article class="panel organic-bridge">
-            <p class="eyebrow">CONCEPT BRIDGE</p>
-            <h3>Geometry becomes reactivity.</h3>
-            <p>General chemistry gave us orbitals, geometry, polarity, and acid–base ideas. Organic chemistry uses those same concepts to explain which face reacts, which conformation is favored, and where electrons move.</p>
-            <span class="formula-chip">structure → conformation → mechanism</span>
-          </article>
-        </div>
+            <section class="lesson-section" id="lessonDipoles">
+              <div class="margin-number">04.1</div>
+              <h2>A polar bond is not yet a polar molecule.</h2>
+              <p>When two atoms share electrons unequally, the bond carries a dipole. But molecular behavior depends on what all of those bond dipoles do together. Geometry determines whether they reinforce one another or cancel.</p>
+              <p>This is why carbon dioxide and water can contain polar bonds yet behave very differently as complete molecules.</p>
+              <div class="equation-panel"><small>VECTOR MODEL</small><strong>μ⃗molecule = Σ μ⃗bond</strong></div>
+            </section>
 
-        <div class="organic-tabs" role="tablist" aria-label="Organic chemistry tools">
-          <button class="organic-tab active" data-organic-tool="stereo"><strong>R / S Trainer</strong><small>CIP priorities + wedge/dash</small></button>
-          <button class="organic-tab" data-organic-tool="newman"><strong>Newman Projection</strong><small>Rotate butane C2–C3</small></button>
-          <button class="organic-tab" data-organic-tool="chair"><strong>Chair Flip</strong><small>Axial vs equatorial</small></button>
-          <button class="organic-tab" data-organic-tool="mechanism"><strong>Mechanism Trainer</strong><small>Curved-arrow electron flow</small></button>
-        </div>
+            <section class="lesson-section" id="lessonShape">
+              <div class="margin-number">04.2</div>
+              <h2>Shape decides what survives.</h2>
+              <p>In linear CO₂, the two C=O bond dipoles point in opposite directions with equal magnitude, so their vector sum is zero. In bent H₂O, the O–H dipoles do not oppose each other directly, leaving a net molecular dipole.</p>
+              <p>The important idea is not to memorize which molecules are polar. It is to reason from <em>bond polarity + geometry</em>.</p>
+            </section>
 
-        <section id="stereoPanel" class="organic-tool-panel active">
-          <div class="organic-tool-grid">
-            <article class="panel organic-visual">
-              <div class="organic-toolbar">
-                <div class="grow"><p class="eyebrow">STEREOCHEMISTRY CHALLENGE</p><strong id="stereoName">Lactic acid stereocenter</strong></div>
-                <span id="stereoCounter" class="organic-counter">1 / 3</span>
-                <button id="toggleCip" class="organic-button ghost">Hide CIP priorities</button>
-              </div>
-              <div class="organic-stage"><svg id="stereoSvg" viewBox="0 0 400 400" role="img" aria-label="Tetrahedral stereocenter with wedge and dash bonds"></svg></div>
-            </article>
-            <aside class="organic-info">
-              <article class="panel">
-                <p class="eyebrow">ASSIGN THE CENTER</p>
-                <h3 id="stereoFormula">CH₃–CH(OH)–CO₂H</h3>
-                <p>Rank substituents 1 → 4 using CIP rules. Then orient priority 4 away from you and read 1 → 2 → 3.</p>
-                <div class="organic-answer-row"><button class="organic-answer" data-stereo-answer="R">R</button><button class="organic-answer" data-stereo-answer="S">S</button></div>
-                <div class="organic-actions" style="margin-top:10px"><button id="checkStereo" class="organic-button primary">Check assignment</button><button id="nextStereo" class="organic-button">Next challenge</button></div>
-                <div id="stereoFeedback" class="organic-feedback" aria-live="polite"></div>
-              </article>
-              <article class="panel">
-                <p class="eyebrow">CIP QUICK RULE</p>
-                <p>Higher atomic number gets higher priority. If the first atoms tie, compare the next atoms outward until the first point of difference. Multiple bonds are treated with duplicate-atom bookkeeping.</p>
-              </article>
-            </aside>
-          </div>
-        </section>
-
-        <section id="newmanPanel" class="organic-tool-panel">
-          <div class="organic-tool-grid">
-            <article class="panel organic-visual">
-              <div class="organic-toolbar">
-                <label for="dihedralSlider">Dihedral angle</label><input id="dihedralSlider" class="grow" type="range" min="0" max="360" step="1" value="180"><strong id="dihedralValue">180°</strong>
-              </div>
-              <div class="organic-stage"><svg id="newmanSvg" viewBox="0 0 420 380" role="img" aria-label="Interactive Newman projection of butane"></svg></div>
-            </article>
-            <aside class="organic-info">
-              <article class="panel">
-                <p class="eyebrow">BUTANE • C2–C3</p><h3 id="newmanConformation">anti</h3>
-                <div class="organic-metric"><span>Relative energy</span><strong id="newmanEnergy">0.0 kcal/mol</strong></div>
-                <p id="newmanNote"></p>
-                <div class="newman-presets"><button data-dihedral="0">0° eclipsed</button><button data-dihedral="60">60° gauche</button><button data-dihedral="120">120° eclipsed</button><button data-dihedral="180">180° anti</button><button data-dihedral="240">240° eclipsed</button><button data-dihedral="300">300° gauche</button></div>
-              </article>
-              <article class="panel"><p class="eyebrow">WHY IT MATTERS</p><p>Conformations interconvert without breaking σ bonds, but they do not have equal energy. Steric and torsional strain shape which conformers are most populated and can affect reaction pathways.</p></article>
-            </aside>
-          </div>
-        </section>
-
-        <section id="chairPanel" class="organic-tool-panel">
-          <div class="organic-tool-grid">
-            <article class="panel organic-visual">
-              <div class="organic-toolbar">
-                <label for="chairSubstituent">Substituent</label><select id="chairSubstituent"><option value="methyl">Methyl</option><option value="ethyl">Ethyl</option><option value="tertButyl">tert-Butyl</option></select>
-                <div class="grow"></div><button id="toggleDiaxial" class="organic-button ghost">Hide 1,3-diaxial contacts</button><button id="chairFlip" class="organic-button primary">Flip chair</button>
-              </div>
-              <div class="organic-stage"><svg id="chairSvg" viewBox="0 0 500 360" role="img" aria-label="Cyclohexane chair with axial or equatorial substituent"></svg></div>
-            </article>
-            <aside class="organic-info">
-              <article class="panel"><p class="eyebrow">CURRENT CONFORMER</p><h3 id="chairState">Methyl axial up</h3><div class="organic-metric"><span>Approx. axial penalty</span><strong id="chairPenalty">+1.7 kcal/mol</strong></div><p id="chairPreference" class="chair-preference"></p></article>
-              <article class="panel"><p class="eyebrow">CHAIR-FLIP RULE</p><p>A chair flip preserves whether a substituent is <strong>up or down</strong>, but swaps <strong>axial ↔ equatorial</strong>. Bulky groups usually favor equatorial positions.</p><p id="chairNote"></p></article>
-            </aside>
-          </div>
-        </section>
-
-        <section id="mechanismPanel" class="organic-tool-panel">
-          <div class="mechanism-layout">
-            <article class="panel organic-visual">
-              <div class="organic-toolbar"><div><p class="eyebrow">CURVED-ARROW PRACTICE</p><strong id="mechanismTitle">SN2</strong></div></div>
-              <div class="organic-stage mechanism-stage"><svg id="mechanismSvg" viewBox="0 0 500 330" role="img" aria-label="SN2 mechanism canvas"></svg></div>
-            </article>
-            <aside class="organic-info">
-              <article class="panel"><p class="eyebrow">REACTION</p><div id="mechanismEquation" class="mechanism-equation"></div><p id="mechanismPrompt"></p><div class="mech-columns"><div><small class="muted">ELECTRON SOURCE</small><div id="sourceChoices"></div></div><div><small class="muted">DESTINATION</small><div id="targetChoices"></div></div></div><div id="mechanismSelection" class="mechanism-selection"></div><div class="organic-actions"><button id="addMechanismArrow" class="organic-button primary">Add curved arrow</button><button id="mechanismHint" class="organic-button">Hint</button><button id="resetMechanism" class="organic-button ghost">Reset</button></div><div id="mechanismFeedback" class="organic-feedback" aria-live="polite">Build the mechanism one electron-flow arrow at a time.</div></article>
-              <article class="panel"><p class="eyebrow">MECHANISM RULE #1</p><p>Curved arrows describe movement of electron pairs. The tail must begin at electrons — a lone pair, negative charge, π bond, or σ bond — not at an electron-poor atom.</p></article>
-            </aside>
-          </div>
-        </section>
-      </section>
-
-      <section id="labView" class="view">
-        <div class="lesson-header">
-          <div><p class="eyebrow">GENERAL CHEMISTRY I • BONDING</p><h2>Molecular Geometry & VSEPR</h2><p>Turn a Lewis structure into a 3D mental model. Rotate each molecule, compare electron domains, and predict polarity.</p></div>
-          <div class="lesson-status"><span>Interactive lesson</span><strong>~12 min</strong></div>
-        </div>
-
-        <div class="lab-layout">
-          <article class="panel molecule-panel">
-            <div class="model-toolbar">
-              <label for="moleculeSelect">Molecule</label>
-              <select id="moleculeSelect">
-                <option value="ch4">CH₄ — Methane</option>
-                <option value="nh3">NH₃ — Ammonia</option>
-                <option value="h2o">H₂O — Water</option>
-                <option value="co2">CO₂ — Carbon dioxide</option>
-                <option value="bf3">BF₃ — Boron trifluoride</option>
-                <option value="pcl5">PCl₅ — Phosphorus pentachloride</option>
-                <option value="sf6">SF₆ — Sulfur hexafluoride</option>
-              </select>
-              <div class="segmented" aria-label="Display style">
-                <button class="seg active" data-style="stick">Stick</button>
-                <button class="seg" data-style="sphere">Space fill</button>
+            <div class="worked" id="lessonExample">
+              <div class="head">WORKED EXAMPLE · CO₂ VS H₂O</div>
+              <div class="body">
+                <div class="step"><span>1</span><p>Identify polar bonds. Both C=O and O–H bonds have meaningful electronegativity differences.</p></div>
+                <div class="step"><span>2</span><p>Determine geometry. CO₂ is linear; H₂O is bent because oxygen has two lone pairs.</p></div>
+                <div class="step"><span>3</span><p>Add the bond dipoles as vectors. Linear symmetry cancels in CO₂; the bent geometry leaves a net dipole in H₂O.</p></div>
               </div>
             </div>
-            <div id="viewer" class="viewer" aria-label="Interactive 3D molecular model">
-              <canvas id="moleculeCanvas" aria-label="Rotatable ball-and-stick molecular model"></canvas>
+
+            <div class="quick-check" id="lessonCheck">
+              <div class="kicker">QUICK CHECK</div>
+              <h3>Why is CO₂ nonpolar even though each C=O bond is polar?</h3>
+              <div class="choices">
+                <button>A. Carbon has no electronegativity</button>
+                <button data-correct="true">B. The equal bond dipoles cancel in a linear geometry</button>
+                <button>C. Double bonds cannot be polar</button>
+                <button>D. Oxygen loses its lone pairs</button>
+              </div>
+              <p id="quickFeedback" style="margin:14px 0 0;color:#8ba3b2;font-size:12px"></p>
             </div>
-            <p class="viewer-help">Drag to rotate • scroll to zoom • right-drag / modifier-drag to translate</p>
           </article>
 
-          <aside class="model-info">
-            <article class="panel identity-card"><p class="eyebrow">CURRENT MODEL</p><div class="formula-row"><div><h3 id="molName">Methane</h3><span id="molFormula">CH₄</span></div><span id="polarityBadge" class="polarity-badge">Nonpolar</span></div></article>
-            <article class="panel property-list">
-              <div><span>Electron domains</span><strong id="domains">4 bonding / 0 lone pairs</strong></div>
-              <div><span>Molecular geometry</span><strong id="geometry">Tetrahedral</strong></div>
-              <div><span>Ideal angle</span><strong id="angle">109.5°</strong></div>
-              <div><span>Intro hybridization</span><strong id="hybridization">sp³</strong></div>
-            </article>
-            <article class="panel why-card"><p class="eyebrow">WHY THIS SHAPE?</p><p id="whyText"></p></article>
+          <aside class="lesson-side">
+            <div class="side-note"><span>YOU ARE HERE</span><h4>Foundations map</h4><p>Bonding → <strong style="color:var(--cyan-soft)">Shape</strong> → Polarity</p><button data-go="atlasPage">Open the atlas →</button></div>
+            <div class="side-note"><span>FIGURE CONNECTION</span><h4>Try the model</h4><p>Manipulate geometry rather than treating it as a diagram.</p><button data-go="labPage">Open Lab →</button></div>
+            <div class="side-note"><span>FUTURE CONNECTION</span><h4>Organic chemistry</h4><p>Spatial access and orbital alignment become central to reaction mechanisms.</p></div>
           </aside>
         </div>
+      </section>
 
-        <div class="lesson-grid">
-          <article class="panel lesson-copy">
-            <p class="eyebrow">MENTAL MODEL</p><h3>VSEPR in three moves</h3>
-            <ol>
-              <li><span>1</span><div><strong>Draw a valid Lewis structure.</strong><p>Count valence electrons and identify the central atom.</p></div></li>
-              <li><span>2</span><div><strong>Count electron domains.</strong><p>Each bond — single, double or triple — counts as one domain; each lone pair is one domain.</p></div></li>
-              <li><span>3</span><div><strong>Separate domains in 3D.</strong><p>Electron domains arrange to reduce repulsion. Lone pairs generally repel more strongly than bonding pairs.</p></div></li>
-            </ol>
-          </article>
+      <section id="labPage" class="page">
+        <div class="lab-page">
+          <header class="lab-head">
+            <div><div class="kicker">LAB / SPECTROSCOPY · EXPERIMENT 04</div><h1>Make the invisible <em>measurable.</em></h1><p>How does environment change the color of a transition-metal complex?</p></div>
+            <div class="lab-head-actions"><button class="ghost">▣ Read method</button><button class="solid" id="runSample">▶ Run sample</button></div>
+          </header>
 
-          <article class="panel quiz-card">
-            <p class="eyebrow">MASTERY CHECK</p><h3>Predict before you rotate</h3>
-            <div id="quizArea"></div>
-            <div id="quizResult" class="quiz-result" aria-live="polite"></div>
-          </article>
+          <div class="lab-grid">
+            <aside class="controls">
+              <div class="kicker">INSTRUMENT CONTROL</div><h3>Variables</h3>
+              <div class="reading"><small>RUN 04 / LIVE</small><strong><span id="absorbance">0.231</span> <small>AU</small></strong><span>absorbance · <b id="lambda">412 nm</b></span></div>
+              <div class="control"><label>Temperature <b id="tempVal">26 °C</b></label><input id="temp" type="range" min="10" max="50" value="26"></div>
+              <div class="control"><label>Acidity <b id="acidVal">pH 6.4</b></label><input id="acidity" type="range" min="2" max="12" step="0.1" value="6.4"></div>
+              <div class="control"><label>Solvent system <b>H₂O</b></label><div class="solvents"><button class="active">H₂O</button><button>EtOH</button><button>CH₃CN</button></div></div>
+              <div class="instrument-note">ⓘ Change one variable at a time. A measured result is evidence; your interpretation is the model.</div>
+            </aside>
+
+            <div>
+              <section class="instrument">
+                <div class="instrument-tabs"><button class="active">Absorbance spectrum</button><button>Equilibrium trace</button><button>Reaction view</button><span id="liveDot" style="margin-left:auto;align-self:center;margin-right:16px;color:var(--cyan);font-size:9px">● live sample</span></div>
+                <div class="spectrum">
+                  <svg viewBox="0 0 920 300" role="img" aria-label="Interactive absorbance spectrum">
+                    <g stroke="#1e3749" stroke-width="1">
+                      <line x1="45" y1="250" x2="865" y2="250"/><line x1="45" y1="200" x2="865" y2="200"/><line x1="45" y1="150" x2="865" y2="150"/><line x1="45" y1="100" x2="865" y2="100"/><line x1="45" y1="50" x2="865" y2="50"/>
+                    </g>
+                    <line x1="45" y1="20" x2="45" y2="250" stroke="#547085"/><line x1="45" y1="250" x2="865" y2="250" stroke="#547085"/>
+                    <polyline id="spectrumCurve" fill="none" stroke="#58d9de" stroke-width="3" points=""/>
+                    <line id="spectrumMarker" x1="0" y1="24" x2="0" y2="250" stroke="#58d9de" stroke-dasharray="4 6" opacity=".6"/>
+                    <text id="markerLabel" x="0" y="44" fill="#b8e9ea" font-size="12">λmax</text>
+                    <text x="410" y="287" fill="#6e8698" font-size="11">wavelength / nm</text>
+                    <text x="8" y="145" fill="#6e8698" font-size="11" transform="rotate(-90 8 145)">absorbance / AU</text>
+                  </svg>
+                </div>
+                <div class="observation"><span class="kicker" style="margin-right:16px">FIG. 04A</span><b>Observed:</b> the maximum absorbance shifts as pH changes. Ask what molecular property could account for that shift.</div>
+                <div class="metric-strip">
+                  <div class="metric"><span>λmax</span><strong id="lambdaMetric">412 nm</strong><small>± 18 nm</small></div>
+                  <div class="metric"><span>ε (molar)</span><strong>13.1 L·mol⁻¹·cm⁻¹</strong><small>calculated</small></div>
+                  <div class="metric"><span>pH / solvent</span><strong>6.4 / H₂O</strong><small>aqueous run</small></div>
+                  <div class="metric"><span>interpretation</span><strong>☑ consistent</strong><small>3 observations agree</small></div>
+                </div>
+              </section>
+              <div class="lab-record">
+                <div><h3>Notation / your record</h3><div class="formula">A = εbc &nbsp;→&nbsp; ΔE = hν</div></div>
+                <div><h3>Interpretation</h3><p>At pH 6.4, the complex absorbs near 412 nm. Temperature changes the signal amplitude, while the solvent alters the local environment around the metal center. The instrument gives a trace; chemistry explains why it moved.</p></div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </main>
   </div>
-  <script src="data/curriculum.js"></script>
-  <script src="data/organic.js"></script>
-  <script src="app.js"></script>
-  <script src="organic.js"></script>
+  <script src="prototype.js"></script>
 </body>
 </html>
