@@ -27,7 +27,7 @@
     if (!validModule(slug)) return;
     const open = () => {
       const nav = document.querySelector('.genchem-nav');
-      if (!nav) return setTimeout(open, 100);
+      if (!nav || nav.dataset.genchemReady !== '1') return setTimeout(open, 100);
       nav.dataset.genchemModule = slug;
       nav.click();
       setTimeout(() => setPath(slug), 0);

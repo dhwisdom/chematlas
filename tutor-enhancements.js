@@ -305,8 +305,7 @@
     if (cloudInitStarted || !cfg.supabaseUrl || !cfg.supabasePublishableKey) return;
     cloudInitStarted = true;
     try {
-      if (!(await waitForSupabaseLibrary())) return;
-      tutorCloud = window.supabase.createClient(cfg.supabaseUrl, cfg.supabasePublishableKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+      tutorCloud = await window.ChemAtlasCloud();
       const { data } = await tutorCloud.auth.getSession(); tutorSession = data.session;
       tutorCloud.auth.onAuthStateChange((_event, nextSession) => { tutorSession = nextSession; if (nextSession) mergeCloudThreads().catch(error => console.warn('ChemAtlas tutor cloud merge:', error.message)); renderTutorV2(); });
       if (tutorSession) await mergeCloudThreads(); renderTutorV2();

@@ -101,6 +101,7 @@
       const p=routeForView[btn.dataset.view]; if(p) setUrl(p);
     }));
     window.addEventListener('popstate', routeFromLocation);
+    window.addEventListener('chematlas:genchem-ready', () => { if(location.pathname.startsWith('/genchem'))routeFromLocation(); });
     window.addEventListener('storage', () => { renderProgress(); renderLandingRecommendation(); });
     const overlayClose=(e)=>{ if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); };
     document.getElementById('caAccountOverlay')?.addEventListener('click',overlayClose);
@@ -143,8 +144,8 @@
     let attempts=0;
     const tryOpen=()=>{
       const btn=document.querySelector('.genchem-nav');
-      if(btn){ if(moduleId) btn.dataset.genchemModule=moduleId; else delete btn.dataset.genchemModule; btn.click(); return; }
-      if(attempts++<20) setTimeout(tryOpen,150); else clickCore('courses');
+      if(btn?.dataset.genchemReady==='1'){ if(moduleId) btn.dataset.genchemModule=moduleId; else delete btn.dataset.genchemModule; btn.click(); return; }
+      if(attempts++<60) setTimeout(tryOpen,150); else clickCore('courses');
     }; tryOpen();
   }
 
@@ -262,7 +263,17 @@
 
   async function initCloud(){
     if(!cfg.supabaseUrl||!cfg.supabasePublishableKey){updateSyncBadge();return;}
-    try{await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js');cloud=window.supabase?.createClient(cfg.supabaseUrl,cfg.supabasePublishableKey);if(!cloud)return;const {data}=await cloud.auth.getSession();session=data.session;cloud.auth.onAuthStateChange((_event,s)=>{session=s;updateSyncBadge();if(s)queueCloudSync();});updateSyncBadge();if(session)await mergeCloudState();}catch(e){console.warn('ChemAtlas cloud init:',e.message)}
+    try{cloud=await window.ChemAtlasCloud();if(!cloud)return;const {data}=await cloud.auth.getSession();session=data.session;refreshAdminAccess();cloud.auth.onAuthStateChange((_event,s)=>{session=s;updateSyncBadge();refreshAdminAccess();if(s)queueCloudSync();});updateSyncBadge();if(session)await mergeCloudState();}catch(e){console.warn('ChemAtlas cloud init:',e.message)}
+  }
+  let adminAccessRequest=0;
+  async function refreshAdminAccess(){
+    const request=++adminAccessRequest;
+    document.querySelectorAll('[data-site-admin-link]').forEach(el=>el.remove());
+    if(!cloud||!session)return;
+    const {data,error}=await cloud.from('site_admins').select('user_id').eq('user_id',session.user.id).maybeSingle();
+    if(request!==adminAccessRequest||error||!data)return;
+    const link=document.createElement('a');link.href='/admin';link.dataset.siteAdminLink='';link.className='ca-admin-entry';link.textContent='Manage site';
+    document.querySelector('.sidebar')?.appendChild(link);
   }
   function loadScript(src){return new Promise((resolve,reject)=>{if(document.querySelector(`script[src="${src}"]`))return resolve();const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Could not load cloud client'));document.head.appendChild(s);});}
 
