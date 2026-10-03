@@ -218,6 +218,9 @@
     const current = learning.current;
     const next = learning.next;
     const history = safeJson(LS.history, []);
+    const renderSignature = [current?.id || '', learning.completed.join(','), history.length, history[0]?.id || history[0]?.at || ''].join('|');
+    if (root.dataset.renderSignature === renderSignature) return;
+    root.dataset.renderSignature = renderSignature;
     const featured = ['electronic','bonding','stoichiometry','geometry']
       .map(id => learning.all.find(m => m.id === id)).filter(Boolean);
     const pct = Math.max(learning.pct, current && !learning.completed.includes(current.id) ? Math.min(95, learning.pct + 5) : learning.pct);
