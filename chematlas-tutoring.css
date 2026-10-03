@@ -433,3 +433,141 @@ body.ca-landing-mode .ca-landing-bottom{
     padding-top:46px!important;
   }
 }
+
+
+/* Landing palette coherence: light academic shell, teal science accent, restrained amber. */
+body.ca-landing-mode{
+  background:#f7f8f4!important;
+}
+body.ca-landing-mode .ca-landing{
+  background:
+    radial-gradient(circle at 76% 24%,rgba(11,123,121,.045),transparent 26%),
+    radial-gradient(circle at 22% 76%,rgba(215,156,62,.025),transparent 24%),
+    #f7f8f4!important;
+}
+body.ca-landing-mode .ca-landing-nav{
+  background:#ffffff!important;
+  border-bottom:1px solid #e6ebe7!important;
+}
+body.ca-landing-mode .ca-wordmark{
+  color:#17324a!important;
+}
+body.ca-landing-mode .ca-wordmark span{
+  background:#0b7b79!important;
+  color:#fff!important;
+}
+body.ca-landing-mode .ca-landing-nav>div button{
+  color:#526b76!important;
+}
+body.ca-landing-mode .ca-landing-nav>div button:hover{
+  color:#0b7b79!important;
+  background:#f3f8f5!important;
+}
+body.ca-landing-mode .ca-landing-nav .ca-nav-cta{
+  background:#0b7b79!important;
+  border:1px solid #0b7b79!important;
+  color:#fff!important;
+}
+body.ca-landing-mode .ca-landing-nav .ca-nav-cta:hover{
+  background:#075f61!important;
+  color:#fff!important;
+}
+body.ca-landing-mode .ca-hero-copy .eyebrow{
+  color:#0b7b79!important;
+}
+body.ca-landing-mode .ca-hero-copy h1{
+  color:#17324a!important;
+}
+body.ca-landing-mode .ca-hero-copy>p:not(.eyebrow){
+  color:#647982!important;
+}
+body.ca-landing-mode .ca-hero-proof span{
+  color:#7f8f92!important;
+  border-left-color:#dfe6e2!important;
+}
+body.ca-landing-mode .ca-hero-proof b{
+  color:#17324a!important;
+}
+
+/* Replace the leftover dark/blue "science dashboard" art with a softer tutoring illustration. */
+body.ca-landing-mode .ca-orbit-scene{
+  background:
+    radial-gradient(circle at 50% 50%,rgba(11,123,121,.055),transparent 38%),
+    linear-gradient(145deg,#fbfdfb,#f3f8f5)!important;
+  border:1px solid #dfe8e3!important;
+  box-shadow:0 14px 34px rgba(38,72,68,.055)!important;
+}
+body.ca-landing-mode .ca-orbit-core{
+  background:radial-gradient(circle at 35% 30%,#6db8aa 0,#16847c 42%,#0b6664 76%)!important;
+  color:#fff!important;
+  box-shadow:0 8px 28px rgba(11,123,121,.18)!important;
+}
+body.ca-landing-mode .ca-orbit-scene>i{
+  border-color:rgba(11,123,121,.19)!important;
+}
+body.ca-landing-mode .ca-dot{
+  background:#0b7b79!important;
+  box-shadow:0 0 0 5px rgba(11,123,121,.055),0 4px 12px rgba(11,123,121,.16)!important;
+}
+body.ca-landing-mode .ca-orbit-note{
+  background:rgba(255,255,255,.96)!important;
+  border:1px solid #dbe7e1!important;
+  box-shadow:0 8px 22px rgba(44,73,69,.065)!important;
+  backdrop-filter:none!important;
+}
+body.ca-landing-mode .ca-orbit-note small{
+  color:#7e908f!important;
+}
+body.ca-landing-mode .ca-orbit-note strong{
+  color:#254b59!important;
+}
+body.ca-landing-mode .ca-orbit-note.n1{
+  border-left:3px solid #0b7b79!important;
+}
+body.ca-landing-mode .ca-orbit-note.n2{
+  border-left:3px solid #4f918b!important;
+}
+body.ca-landing-mode .ca-orbit-note.n3{
+  border-left:3px solid #d79c3e!important;
+}
+
+/* Keep the supporting cards in the same family instead of introducing extra dark colors. */
+body.ca-landing-mode .ca-capabilities article{
+  background:#fff!important;
+  border:1px solid #e1e8e4!important;
+  box-shadow:0 6px 20px rgba(38,72,68,.035)!important;
+}
+body.ca-landing-mode .ca-capabilities article span{
+  color:#0b7b79!important;
+}
+body.ca-landing-mode .ca-capabilities article:nth-child(3) span{
+  color:#b37a25!important;
+}
+body.ca-landing-mode .ca-capabilities article h3{
+  color:#17324a!important;
+}
+body.ca-landing-mode .ca-capabilities article p{
+  color:#6d7f85!important;
+}
+body.ca-landing-mode .ca-learning-path{
+  background:#fff!important;
+  border-color:#e1e8e4!important;
+}
+body.ca-landing-mode .ca-learning-path button{
+  background:#f8faf8!important;
+  border-color:#e1e8e4!important;
+  color:#17324a!important;
+}
+body.ca-landing-mode .ca-learning-path button:hover:not(:disabled){
+  background:#f0f7f3!important;
+  border-color:#bed8cf!important;
+}
+body.ca-landing-mode .ca-learning-path button span{
+  color:#0b7b79!important;
+}
+body.ca-landing-mode .ca-learning-path button small{
+  color:#78888d!important;
+}
+body.ca-landing-mode .ca-landing-bottom{
+  border-color:#dfe6e2!important;
+}
