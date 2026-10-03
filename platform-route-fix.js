@@ -105,19 +105,19 @@
 })();
 
 (() => {
-  if (window.__CHEMATLAS_V2_LOADER__) return;
-  window.__CHEMATLAS_V2_LOADER__ = true;
+  if (window.__CHEMATLAS_TUTORING_UI_LOADER__) return;
+  window.__CHEMATLAS_TUTORING_UI_LOADER__ = true;
 
-  if (!document.querySelector('link[href="chematlas-v2.css"]')) {
+  if (!document.querySelector('link[href="chematlas-tutoring.css"]')) {
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'chematlas-v2.css';
+    link.href = 'chematlas-tutoring.css';
     document.head.appendChild(link);
   }
 
-  if (!document.querySelector('script[src="chematlas-v2.js"]')) {
+  if (!document.querySelector('script[src="chematlas-tutoring.js"]')) {
     const script = document.createElement('script');
-    script.src = 'chematlas-v2.js';
+    script.src = 'chematlas-tutoring.js';
     document.body.appendChild(script);
   }
 })();
