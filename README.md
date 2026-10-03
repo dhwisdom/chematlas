@@ -196,3 +196,9 @@ Validation: `node tests/periodic-table.test.cjs`; `tests/periodic-ui.cjs` with j
 - Guests can use the first two Learn modules; later Learn modules prompt account creation. Other existing tools remain available. This is a product preview gate, not a content paywall: the curriculum is still bundled publicly. Database editing and private progress remain protected by Supabase permissions/RLS.
 
 Verification: `node --test tests/assessment.test.cjs tests/content-store.test.cjs tests/startup.test.cjs tests/periodic-table.test.cjs`; run `tests/learn-assessment-ui.cjs`, `tests/admin-ui.cjs`, `tests/dashboard-ui.cjs`, and `tests/periodic-ui.cjs` with jsdom available. `tests/assessment-sync.sql` verifies atomic merge, immutable event IDs, anonymous exclusion, and cross-account isolation inside a rolled-back transaction.
+
+## n8n learning summary
+
+`GET /api/learning-summary` provides a read-only report for one server-configured account. It reuses the site's assessment rules, respects published lesson edits, and separates dated completions from undated legacy progress. Requests require a dedicated Bearer credential; the Supabase secret stays server-side. Missing configuration fails closed with HTTP 503.
+
+See [setup and n8n node settings](docs/n8n-learning-summary.md). Configure the three production environment variables in `.env.example` and redeploy before using the endpoint. This feature does not send email, schedule a workflow, or change progress.
