@@ -800,3 +800,677 @@ body.ca-landing-mode .main{background:#f7f8f5!important}
 @media(max-width:520px){
   .ca-flow-grid{grid-template-columns:1fr!important}.ca-demo-card{grid-template-columns:1fr!important}.ca-demo-molecule{min-height:145px}.ca-marketing-copy h1{font-size:34px!important}
 }
+
+
+/* ========================================================================
+   LEARN FOCUS MODE — accessible, progressive, learner-first
+   ======================================================================== */
+
+#genchemView{
+  max-width:1120px!important;
+  margin:0 auto!important;
+}
+#genchemView .gc-hero{
+  display:none!important;
+}
+.ca-learn-summary{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:30px;
+  margin:8px 0 14px;
+  padding:0 2px 18px;
+  border-bottom:1px solid #e4e9e5;
+}
+.ca-learn-summary>div:first-child{
+  max-width:650px;
+}
+.ca-learn-overline{
+  margin:0 0 5px;
+  color:#0b7b79;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.15px;
+}
+.ca-learn-summary h2{
+  margin:0;
+  color:#19364d;
+  font-family:"Plus Jakarta Sans","DM Sans",sans-serif!important;
+  font-size:25px;
+  font-weight:750;
+  letter-spacing:-.8px;
+}
+.ca-learn-summary p{
+  margin:5px 0 0;
+  color:#6e8088;
+  font-size:13px;
+  line-height:1.55;
+}
+.ca-learn-progress{
+  width:210px;
+  flex:0 0 210px;
+}
+.ca-learn-progress>span{
+  display:block;
+  margin-bottom:7px;
+  color:#718188;
+  font-size:11px;
+  text-align:right;
+}
+.ca-learn-progress>span b{
+  color:#0b7b79;
+  font-size:14px;
+}
+.ca-learn-progress>div{
+  height:5px;
+  overflow:hidden;
+  border-radius:999px;
+  background:#e8eeea;
+}
+.ca-learn-progress i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:#0b7b79;
+}
+
+/* Semester is a quiet course switch, not a hero element. */
+#genchemView .gc-semester-tabs{
+  display:flex!important;
+  width:max-content!important;
+  max-width:100%!important;
+  gap:3px!important;
+  margin:0 0 14px!important;
+  padding:3px!important;
+  border:1px solid #e4e9e5!important;
+  border-radius:8px!important;
+  background:#fff!important;
+}
+#genchemView .gc-semester-tab{
+  min-height:36px!important;
+  width:auto!important;
+  padding:0 12px!important;
+  border:0!important;
+  border-radius:6px!important;
+  background:transparent!important;
+  color:#75858b!important;
+}
+#genchemView .gc-semester-tab span{
+  display:none!important;
+}
+#genchemView .gc-semester-tab strong{
+  display:block!important;
+  color:inherit!important;
+  font-size:11px!important;
+  font-weight:700!important;
+}
+#genchemView .gc-semester-tab small{
+  display:none!important;
+}
+#genchemView .gc-semester-tab.active{
+  background:#eaf4f1!important;
+  color:#075f61!important;
+  box-shadow:none!important;
+}
+
+/* Course contents stays useful, but visually quiet. */
+#genchemView .gc-workspace{
+  grid-template-columns:236px minmax(0,1fr)!important;
+  gap:22px!important;
+  align-items:start!important;
+}
+#genchemView .gc-syllabus{
+  top:80px!important;
+  max-height:calc(100vh - 100px)!important;
+  border-color:#e5eae6!important;
+  border-radius:9px!important;
+  box-shadow:none!important;
+}
+#genchemView .gc-syllabus-head{
+  padding:13px 13px 10px!important;
+}
+#genchemView .gc-syllabus-head .eyebrow{
+  display:none!important;
+}
+#genchemView .gc-syllabus-head h3{
+  margin:0!important;
+  color:#385265!important;
+  font-size:12px!important;
+  font-weight:750!important;
+}
+#genchemView .gc-count{
+  padding:3px 6px!important;
+  background:#f4f7f4!important;
+  color:#89969a!important;
+  font-size:8px!important;
+}
+#genchemView .gc-search{
+  margin:8px 8px 4px!important;
+  min-height:38px!important;
+}
+#genchemView .gc-search input{
+  font-size:11px!important;
+}
+#genchemView .gc-module-nav{
+  padding:4px 6px 8px!important;
+}
+#genchemView .gc-module-link{
+  min-height:44px!important;
+  padding:7px 8px!important;
+  gap:8px!important;
+  border-radius:6px!important;
+}
+#genchemView .gc-module-link strong{
+  font-size:11px!important;
+  line-height:1.25!important;
+}
+#genchemView .gc-module-link small{
+  display:none!important;
+}
+#genchemView .gc-module-number{
+  width:26px!important;
+  min-width:26px!important;
+  height:26px!important;
+  border-radius:6px!important;
+  font-size:9px!important;
+}
+
+/* Module header only answers: what am I learning and why? */
+#genchemView .gc-reader{
+  min-width:0!important;
+}
+#genchemView .gc-module-header{
+  padding:24px 26px 20px!important;
+  border:1px solid #e4e9e5!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+#genchemView .gc-module-kicker{
+  margin-bottom:7px!important;
+}
+#genchemView .gc-module-kicker>span:first-child{
+  color:#0b7b79!important;
+  font-size:9px!important;
+}
+#genchemView .gc-status{
+  border:0!important;
+  background:#f2f5f2!important;
+  color:#73827f!important;
+  font-size:9px!important;
+}
+#genchemView .gc-status.complete{
+  background:#eaf4ed!important;
+  color:#347c62!important;
+}
+#genchemView .gc-module-header h2{
+  max-width:650px!important;
+  margin:6px 0 7px!important;
+  color:#19364d!important;
+  font-size:30px!important;
+  line-height:1.12!important;
+  letter-spacing:-1px!important;
+}
+#genchemView .gc-module-header>p{
+  max-width:660px!important;
+  margin:0!important;
+  color:#657a83!important;
+  font-size:14px!important;
+  line-height:1.6!important;
+}
+.ca-inline-tutor{
+  min-height:40px!important;
+  margin-top:13px!important;
+  padding:0!important;
+  color:#075f61!important;
+  font-size:11px!important;
+}
+.ca-lesson-goals{
+  margin-top:14px;
+  border-top:1px solid #edf0ed;
+}
+.ca-lesson-goals>summary{
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  color:#5f747d;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  list-style:none;
+}
+.ca-lesson-goals>summary::-webkit-details-marker{
+  display:none;
+}
+.ca-lesson-goals>summary::before{
+  content:"+";
+  width:20px;
+  color:#0b7b79;
+  font-size:15px;
+}
+.ca-lesson-goals[open]>summary::before{
+  content:"−";
+}
+.ca-lesson-goals-body{
+  display:grid;
+  gap:8px;
+  padding:0 0 8px 20px;
+}
+.ca-lesson-goals .gc-prereq{
+  margin:0!important;
+  padding:9px 11px!important;
+  border-left:2px solid #d79c3e!important;
+  background:#fcf8ef!important;
+  color:#68756f!important;
+  font-size:11px!important;
+}
+.ca-lesson-goals .gc-objectives{
+  margin:0!important;
+  padding:10px 0 0!important;
+  border-top:0!important;
+}
+.ca-lesson-goals .gc-objectives .eyebrow{
+  display:none!important;
+}
+.ca-lesson-goals .gc-objectives ul{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:5px!important;
+  margin:0!important;
+  padding-left:18px!important;
+}
+.ca-lesson-goals .gc-objectives li{
+  color:#687c84!important;
+  font-size:12px!important;
+  line-height:1.45!important;
+}
+
+/* The core accessibility change: one learning step is visible at a time. */
+.ca-focus-shell{
+  margin-top:14px;
+  padding:15px 18px 11px;
+  border:1px solid #e3e9e5;
+  border-bottom:0;
+  border-radius:10px 10px 0 0;
+  background:#fbfcfa;
+}
+.ca-focus-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:24px;
+}
+.ca-focus-count{
+  display:block;
+  color:#869498;
+  font-size:9px;
+  font-weight:750;
+  letter-spacing:.9px;
+}
+.ca-focus-count b{
+  color:#0b7b79;
+}
+.ca-focus-kind{
+  display:inline-block;
+  margin-top:7px;
+  color:#0b7b79;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:1px;
+}
+.ca-focus-title{
+  margin:3px 0 0;
+  color:#294557;
+  font-family:"Plus Jakarta Sans","DM Sans",sans-serif!important;
+  font-size:15px;
+  font-weight:750;
+}
+.ca-focus-meter{
+  width:145px;
+  height:4px;
+  margin-top:5px;
+  overflow:hidden;
+  border-radius:99px;
+  background:#e7ece8;
+}
+.ca-focus-meter span{
+  display:block;
+  width:0;
+  height:100%;
+  border-radius:inherit;
+  background:#0b7b79;
+  transition:width .18s ease;
+}
+.ca-focus-dots{
+  display:flex;
+  gap:7px;
+  margin-top:13px;
+}
+.ca-focus-dots button{
+  width:28px;
+  height:28px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:transparent;
+  cursor:pointer;
+}
+.ca-focus-dots button span{
+  display:block;
+  width:7px;
+  height:7px;
+  margin:auto;
+  border-radius:50%;
+  background:#c8d1cd;
+  transition:.15s ease;
+}
+.ca-focus-dots button:hover span{
+  background:#7fa99e;
+}
+.ca-focus-dots button.active span{
+  width:9px;
+  height:9px;
+  background:#0b7b79;
+  box-shadow:0 0 0 4px #e5f2ed;
+}
+.ca-focus-panel[hidden]{
+  display:none!important;
+}
+#genchemView .ca-focus-panel{
+  margin:0!important;
+  padding:28px 30px 30px!important;
+  border:1px solid #e3e9e5!important;
+  border-radius:0!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+#genchemView .ca-focus-panel.gc-reading h3{
+  margin:0 0 14px!important;
+  color:#1e3a4f!important;
+  font-size:23px!important;
+  line-height:1.2!important;
+}
+#genchemView .ca-focus-panel.gc-reading p{
+  max-width:68ch!important;
+  color:#445f6c!important;
+  font-size:16px!important;
+  line-height:1.72!important;
+}
+#genchemView .ca-focus-panel.gc-reading p+p{
+  margin-top:15px!important;
+}
+#genchemView .ca-focus-panel.gc-equations{
+  padding-top:25px!important;
+}
+#genchemView .gc-equations>div:first-child h3{
+  color:#1e3a4f!important;
+  font-size:21px!important;
+}
+#genchemView .gc-equation-grid{
+  gap:8px!important;
+}
+#genchemView .gc-equation-grid>div{
+  min-height:70px!important;
+  padding:13px 15px!important;
+  background:#f7faf8!important;
+}
+#genchemView .gc-equation-grid span{
+  color:#76878d!important;
+  font-size:10px!important;
+}
+#genchemView .gc-equation-grid strong{
+  color:#244f58!important;
+  font-size:17px!important;
+}
+#genchemView .ca-focus-panel.gc-example{
+  padding:0!important;
+}
+#genchemView .gc-example-title{
+  padding:19px 22px!important;
+}
+#genchemView .gc-example-title>span{
+  font-size:9px!important;
+}
+#genchemView .gc-example-title h3{
+  margin-top:5px!important;
+  color:#284457!important;
+  font-size:18px!important;
+}
+#genchemView .gc-example ol{
+  padding:19px 24px!important;
+}
+#genchemView .gc-example ol li{
+  margin-bottom:12px!important;
+}
+#genchemView .gc-example ol li span{
+  width:28px!important;
+  height:28px!important;
+}
+#genchemView .gc-example ol li p{
+  color:#4c6570!important;
+  font-size:14px!important;
+  line-height:1.55!important;
+}
+#genchemView .gc-example-answer{
+  padding:14px 22px!important;
+  background:#f4f8f5!important;
+}
+#genchemView .gc-example-answer strong{
+  color:#214f53!important;
+  font-size:15px!important;
+}
+#genchemView .ca-focus-panel.gc-check{
+  padding:24px 26px 27px!important;
+}
+#genchemView .gc-check-head h3{
+  max-width:680px!important;
+  color:#1e3a4f!important;
+  font-size:20px!important;
+  line-height:1.35!important;
+}
+#genchemView .gc-check-options{
+  grid-template-columns:1fr!important;
+  gap:8px!important;
+}
+#genchemView .gc-check-choice{
+  min-height:48px!important;
+  padding:11px 13px!important;
+  color:#435e69!important;
+  font-size:13px!important;
+  text-align:left!important;
+}
+#genchemView .gc-check-choice span{
+  width:26px!important;
+  min-width:26px!important;
+}
+#genchemView .gc-check-actions{
+  margin-top:13px!important;
+  align-items:center!important;
+}
+#genchemView #gcCheckAnswer{
+  min-height:42px!important;
+}
+#genchemView .gc-feedback{
+  max-width:590px!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+
+.ca-focus-footer{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:14px;
+  min-height:58px;
+  padding:9px 13px;
+  border:1px solid #e3e9e5;
+  border-top:0;
+  border-radius:0 0 10px 10px;
+  background:#fbfcfa;
+}
+.ca-focus-footer button{
+  min-height:40px;
+  padding:0 12px;
+  border:1px solid #dfe6e2;
+  border-radius:7px;
+  background:#fff;
+  color:#38566a;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+}
+.ca-focus-footer .ca-focus-next{
+  border-color:#0b7b79;
+  background:#0b7b79;
+  color:#fff;
+}
+.ca-focus-footer button:hover:not(:disabled){
+  transform:translateY(-1px);
+  border-color:#b8d4cb;
+}
+.ca-focus-footer .ca-focus-next:hover:not(:disabled){
+  border-color:#075f61;
+  background:#075f61;
+}
+.ca-focus-footer button:disabled{
+  opacity:.38;
+  cursor:not-allowed;
+}
+.ca-focus-helper{
+  color:#88969a;
+  font-size:10px;
+  text-align:center;
+}
+
+.ca-lesson-more{
+  margin-top:12px;
+  border:1px solid #e5eae6;
+  border-radius:9px;
+  background:#fff;
+}
+.ca-lesson-more>summary{
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  padding:0 14px;
+  color:#5c737d;
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  list-style:none;
+}
+.ca-lesson-more>summary::-webkit-details-marker{
+  display:none;
+}
+.ca-lesson-more>summary::before{
+  content:"+";
+  width:20px;
+  color:#0b7b79;
+  font-size:15px;
+}
+.ca-lesson-more[open]>summary::before{
+  content:"−";
+}
+.ca-lesson-more-body{
+  display:grid;
+  gap:9px;
+  padding:0 10px 10px;
+}
+.ca-lesson-more-body .gc-connections{
+  grid-template-columns:1fr!important;
+  gap:8px!important;
+}
+.ca-lesson-more-body .gc-connection,
+.ca-lesson-more-body .gc-vocab,
+.ca-lesson-more-body .gc-scope{
+  margin:0!important;
+  box-shadow:none!important;
+}
+.ca-lesson-more-body .gc-tool-launch{
+  margin:0!important;
+}
+#genchemView .ca-module-navigation{
+  margin-top:12px!important;
+}
+#genchemView .ca-module-navigation button{
+  min-height:44px!important;
+  color:#667b84!important;
+  font-size:10px!important;
+}
+
+/* Accessible typography and interaction targets. */
+#genchemView button,
+#genchemView summary,
+#genchemView input{
+  touch-action:manipulation;
+}
+@media (prefers-reduced-motion: reduce){
+  #genchemView *,
+  #genchemView *::before,
+  #genchemView *::after{
+    scroll-behavior:auto!important;
+    transition:none!important;
+    animation:none!important;
+  }
+}
+
+/* Tablet/mobile: course contents becomes normal flow, lesson remains one step at a time. */
+@media(max-width:900px){
+  .ca-learn-summary{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:12px;
+  }
+  .ca-learn-progress{
+    width:100%;
+    max-width:260px;
+    flex-basis:auto;
+  }
+  .ca-learn-progress>span{
+    text-align:left;
+  }
+  #genchemView .gc-workspace{
+    grid-template-columns:1fr!important;
+  }
+  #genchemView .gc-syllabus{
+    position:static!important;
+    max-height:300px!important;
+  }
+}
+@media(max-width:600px){
+  .ca-learn-summary h2{
+    font-size:22px;
+  }
+  #genchemView .gc-module-header{
+    padding:20px!important;
+  }
+  #genchemView .gc-module-header h2{
+    font-size:25px!important;
+  }
+  .ca-focus-head{
+    display:block;
+  }
+  .ca-focus-meter{
+    width:100%;
+    margin-top:12px;
+  }
+  #genchemView .ca-focus-panel{
+    padding:22px 20px 24px!important;
+  }
+  #genchemView .ca-focus-panel.gc-reading p{
+    font-size:15px!important;
+  }
+  .ca-focus-footer{
+    grid-template-columns:1fr 1fr;
+  }
+  .ca-focus-helper{
+    grid-column:1/-1;
+    grid-row:1;
+  }
+  .ca-focus-back{
+    grid-column:1;
+  }
+  .ca-focus-next{
+    grid-column:2;
+  }
+}
