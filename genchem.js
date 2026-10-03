@@ -16,7 +16,6 @@
     semester = Number(localStorage.getItem('chematlas-genchem-semester') || 1);
     currentId = localStorage.getItem('chematlas-genchem-current') || course.modules.find(m => m.semester === semester)?.id;
   } catch (_) {}
-  let selectedAnswer = null;
   let query = '';
 
   const esc = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
@@ -72,9 +71,9 @@
           </div>
         </div>
         <aside class="gc-progress-card">
-          <div><span>Gen Chem I</span><strong>${p1.done}/${p1.total}</strong><small>modules mastered</small></div>
+          <div><span>Gen Chem I</span><strong>${p1.done}/${p1.total}</strong><small>lessons completed</small></div>
           <div class="gc-mini-track"><span style="width:${p1.pct}%"></span></div>
-          <div><span>Gen Chem II</span><strong>${p2.done}/${p2.total}</strong><small>modules mastered</small></div>
+          <div><span>Gen Chem II</span><strong>${p2.done}/${p2.total}</strong><small>lessons completed</small></div>
           <div class="gc-mini-track"><span style="width:${p2.pct}%"></span></div>
         </aside>
       </section>
@@ -118,11 +117,11 @@
   }
 
   function moduleHtml(m) {
-    selectedAnswer = null;
+    if(window.ChemAtlasViews && !window.ChemAtlasViews.canLesson(m))return window.ChemAtlasViews.gate(m);
     const semModules = modulesForSemester(m.semester);
     const idx = semModules.findIndex(x => x.id === m.id);
     const prev = semModules[idx-1], next = semModules[idx+1];
-    const status = completed.has(m.id) ? '<span class="gc-status complete">✓ Mastered</span>' : '<span class="gc-status">In progress</span>';
+    const status = completed.has(m.id) ? '<span class="gc-status complete">✓ Lesson completed</span>' : '<span class="gc-status">In progress</span>';
 
     return `
       <article class="gc-module-header panel">
@@ -154,11 +153,7 @@
         <div class="gc-example-answer"><span>Answer</span><strong>${esc(m.example.answer)}</strong></div>
       </article>
 
-      <article class="gc-check panel">
-        <div class="gc-check-head"><div><p class="eyebrow">QUICK CHECK</p><h3>${esc(m.check.question)}</h3><button type="button" class="pt-open-inline" data-periodic-open>▦ Periodic table & ions</button></div><span>1 question</span></div>
-        <div class="gc-check-options">${m.check.choices.map((c,i) => `<button type="button" class="gc-check-choice" data-choice="${i}" aria-pressed="false"><span aria-hidden="true">${String.fromCharCode(65+i)}</span>${esc(c)}</button>`).join('')}</div>
-        <div class="gc-check-actions"><button id="gcCheckAnswer" class="primary-button" disabled>Check answer</button><div id="gcFeedback" class="gc-feedback" aria-live="polite"></div></div>
-      </article>
+      <article class="gc-check panel"></article>
 
       <div class="gc-connections">
         ${m.lab ? `<article class="panel gc-connection"><span class="gc-connection-icon">⚗</span><div><p class="eyebrow">LAB CONNECTION</p><p>${esc(m.lab)}</p></div></article>` : ''}
@@ -224,48 +219,7 @@
 
   function bindModuleInteractions() {
     const m = currentModule();
-    const checkBtn = byId('gcCheckAnswer');
-    root.querySelectorAll('.gc-check-choice').forEach(btn => btn.addEventListener('click', () => {
-      selectedAnswer = Number(btn.dataset.choice);
-      root.querySelectorAll('.gc-check-choice').forEach(b => {
-        b.classList.toggle('selected', b === btn);
-        b.setAttribute('aria-pressed', String(b === btn));
-        b.classList.remove('correct', 'wrong');
-      });
-      if (checkBtn) checkBtn.disabled = false;
-      const feedback = byId('gcFeedback');
-      if (feedback) { feedback.className='gc-feedback'; feedback.textContent=''; }
-    }));
-
-    checkBtn?.addEventListener('click', () => {
-      const feedback = byId('gcFeedback');
-      if (!Number.isInteger(selectedAnswer) || selectedAnswer < 0 || selectedAnswer >= m.check.choices.length) return;
-      const correct = selectedAnswer === m.check.answer;
-      root.querySelectorAll('.gc-check-choice').forEach(btn => {
-        const idx = Number(btn.dataset.choice);
-        btn.classList.toggle('correct', idx === m.check.answer);
-        btn.classList.toggle('wrong', idx === selectedAnswer && !correct);
-      });
-      if (correct) {
-        completed.add(m.id);
-        saveProgress();
-        updateHomeProgress();
-        updateCourseCards();
-        feedback.className='gc-feedback good';
-        feedback.textContent='Correct — ' + m.check.explanation;
-        setTimeout(() => {
-          const card = root.querySelector('.gc-progress-card');
-          if (card) {
-            root.querySelector('.gc-status')?.classList.add('complete');
-            if (root.querySelector('.gc-status')) root.querySelector('.gc-status').textContent='✓ Mastered';
-          }
-          root.querySelector(`.gc-module-link[data-module="${m.id}"]`)?.classList.add('complete');
-        }, 80);
-      } else {
-        feedback.className='gc-feedback bad';
-        feedback.textContent='Not quite. ' + m.check.explanation;
-      }
-    });
+    window.ChemAtlasAssessment?.mount(root.querySelector('.gc-check'),m);
 
     root.querySelectorAll('[data-gc-tool="lab"]').forEach(btn => btn.addEventListener('click', () => {
       document.querySelector('.nav-item[data-view="lab"]')?.click();
@@ -283,7 +237,7 @@
       if (list) list.innerHTML = mods.map(m => `<span>${esc(m.title)}</span>`).join('');
       const actions = card.querySelector('.course-actions');
       if (actions) {
-        actions.innerHTML = `<small>${mods.length} modules • ${p.done}/${p.total} mastered</small><button class="text-button gc-card-open" data-gc-sem="${sem}">Open full course →</button>`;
+        actions.innerHTML = `<small>${mods.length} modules • ${p.done}/${p.total} completed</small><button class="text-button gc-card-open" data-gc-sem="${sem}">Open full course →</button>`;
         actions.querySelector('.gc-card-open')?.addEventListener('click', () => {
           semester = sem;
           currentId = (mods.find(m => !completed.has(m.id)) || mods[0]).id;
@@ -301,7 +255,7 @@
     const pct = total ? Math.round(done / total * 100) : 0;
     const pill = card.querySelector('.pill');
     const track = card.querySelector('.progress-track span');
-    if (pill) pill.textContent = `${done}/${total} mastered`;
+    if (pill) pill.textContent = `${done}/${total} completed`;
     if (track) track.style.width = `${pct}%`;
     const next = course.modules.find(m => !completed.has(m.id)) || course.modules[0];
     const btn = card.querySelector('[data-genchem-open]');
@@ -311,7 +265,7 @@
       const small = btn.querySelector('small');
       const icon = btn.querySelector('.lesson-icon');
       if (title) title.textContent = next.title;
-      if (small) small.textContent = completed.size === total ? 'Review any module' : 'Reading + worked example + mastery check';
+      if (small) small.textContent = completed.size === total ? 'Review any module' : 'Reading + worked example + concept checks';
       if (icon) icon.textContent = String(next.number).padStart(2, '0');
     }
   }
@@ -328,6 +282,10 @@
 
     updateCourseCards();
   }
+
+  window.addEventListener('chematlas:view-changed', () => { if(root.querySelector('.ca-guest-gate') || !window.ChemAtlasViews.canLesson(currentModule()))render(); });
+  window.addEventListener('chematlas:lesson-completed', () => { completed = new Set(JSON.parse(localStorage.getItem(storageKey)||'[]')); updateHomeProgress(); updateCourseCards(); const status=root.querySelector('.gc-status'); if(status&&completed.has(currentId)){status.classList.add('complete');status.textContent='✓ Lesson completed';} });
+  window.addEventListener('chematlas:progress-synced', () => { completed = new Set(JSON.parse(localStorage.getItem(storageKey)||'[]')); updateHomeProgress(); updateCourseCards(); const status=root.querySelector('.gc-status'); if(status&&completed.has(currentId)){status.classList.add('complete');status.textContent='✓ Lesson completed';} });
 
   window.addEventListener('chematlas:content-updated', () => { render(); updateCourseCards(); });
 

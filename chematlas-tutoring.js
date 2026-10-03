@@ -344,13 +344,7 @@
   }
 
   function moduleProgress(module, learning) {
-    if (!module) return 0;
-    if (learning.completed.includes(module.id)) return 100;
-    if (module.id === learning.current?.id) return 35;
-    const currentIndex = learning.all.findIndex(m => m.id === learning.current?.id);
-    const index = learning.all.findIndex(m => m.id === module.id);
-    if (index < currentIndex) return 70;
-    return 0;
+    return module && learning.completed.includes(module.id) ? 100 : 0;
   }
 
   function recentHtml(history) {
@@ -374,17 +368,19 @@
     const current = learning.current;
     const next = learning.next;
     const history = safeJson(LS.history, []);
-    const renderSignature = [current?.id || '', learning.completed.join(','), history.length, history[0]?.id || history[0]?.at || '',JSON.stringify(window.ChemAtlasContent?.dashboard())].join('|');
+    const renderSignature = [current?.id || '', learning.completed.join(','), history.length, history[0]?.id || history[0]?.at || '',JSON.stringify(window.ChemAtlasContent?.dashboard()),localStorage.getItem('chematlas-assessment-events-v1')].join('|');
     if (root.dataset.renderSignature === renderSignature) return;
     root.dataset.renderSignature = renderSignature;
     const featured = ['electronic','bonding','stoichiometry','geometry']
       .map(id => learning.all.find(m => m.id === id)).filter(Boolean);
-    const pct = Math.max(learning.pct, current && !learning.completed.includes(current.id) ? Math.min(95, learning.pct + 5) : learning.pct);
+    const pct = learning.pct;
+    const mastered = learning.all.filter(m=>window.ChemAtlasAssessment?.summarize(m.id).mastered).length;
+    const due = learning.all.filter(m=>window.ChemAtlasAssessment?.summarize(m.id).due);
 
     root.innerHTML = `
       <header class="ca-home-welcome">
         <div><h2>Welcome back.</h2><p>One concept at a time. Your next chemistry step is ready.</p></div>
-        <div class="ca-home-course-label">GENERAL CHEMISTRY · ${learning.completed.length}/${learning.all.length} MODULES MASTERED</div>
+        <div class="ca-home-course-label">GENERAL CHEMISTRY · ${learning.completed.length}/${learning.all.length} LESSONS COMPLETED</div>
       </header>
 
       <section class="ca-continue">
@@ -392,7 +388,7 @@
           <div class="ca-continue-kicker"><i></i> PICK UP WHERE YOU LEFT OFF</div>
           <h3>${esc(current?.title || 'Molecular Geometry & Polarity')}</h3>
           <p class="ca-continue-summary">${esc(current?.subtitle || 'Connect molecular shape to polarity and intermolecular behavior.')}</p>
-          <div class="ca-lesson-meta"><span>Module ${String(current?.number || 10).padStart(2,'0')}</span><i></i><span>Guided lesson</span><i></i><span>${pct}% course mastery</span></div>
+          <div class="ca-lesson-meta"><span>Module ${String(current?.number || 10).padStart(2,'0')}</span><i></i><span>Guided lesson</span><i></i><span>${pct}% lessons completed</span></div>
           <div class="ca-continue-footer">
             <div class="ca-track"><span style="width:${pct}%"></span></div><span class="ca-percent">${pct}%</span>
             <button class="primary-button" data-home-continue>Continue lesson →</button>
@@ -414,8 +410,8 @@
 
         <div class="ca-home-side">
           <section class="ca-mastery">
-            <div class="ca-mastery-top"><h3>Course mastery</h3><strong>${learning.pct}%</strong></div>
-            <p>Overall General Chemistry progress</p>
+            <div class="ca-mastery-top"><h3>Learning progress</h3><strong>${learning.pct}% completed</strong></div>
+            <p>${mastered} of ${learning.all.length} modules with mastery demonstrated through spaced reviews.</p>
             ${featured.map(m => {
               const amount = moduleProgress(m, learning);
               return `<div class="ca-module-progress"><span>${esc(m.title)}</span><span class="bar"><i style="width:${amount}%"></i></span><b>${amount}%</b></div>`;
@@ -426,6 +422,8 @@
         </div>
       </div>
     `;
+
+    const review=document.createElement('section');review.className='panel ca-review-panel';review.innerHTML=`<p class="eyebrow">SPACED REINFORCEMENT</p><h3>${due.length?'Ready to recall':'Make room for recall'}</h3><p>${due.length?'Return to an earlier idea before moving on.':'Finish a lesson, then return on a later day to demonstrate what stayed with you.'}</p>${due.slice(0,3).map(m=>`<div class="ca-review-row"><span>${esc(m.title)}</span><a href="/genchem/${esc(m.id)}?review=1">Review →</a></div>`).join('')}`;root.appendChild(review);
 
     if(window.ChemAtlasContent?.hasDashboard()){
       const layout=window.ChemAtlasContent.dashboard();
@@ -474,10 +472,10 @@
         <div>
           <p class="ca-learn-overline">GENERAL CHEMISTRY ${semester === 2 ? 'II' : 'I'}</p>
           <h2>Learn one idea at a time.</h2>
-          <p>Short explanations, a worked example, then a quick check. Everything else stays available when you need it.</p>
+          <p>Short explanations, a worked example, then progressive checks. Revisit earlier ideas as you learn new ones.</p>
         </div>
-        <div class="ca-learn-progress" aria-label="${semesterDone} of ${semesterModules.length} modules mastered">
-          <span><b>${semesterDone}</b> / ${semesterModules.length} mastered</span>
+        <div class="ca-learn-progress" aria-label="${semesterDone} of ${semesterModules.length} lessons completed">
+          <span><b>${semesterDone}</b> / ${semesterModules.length} completed</span>
           <div><i style="width:${semesterModules.length ? Math.round(semesterDone / semesterModules.length * 100) : 0}%"></i></div>
         </div>
       `;
@@ -600,10 +598,10 @@
       next.hidden = !mastered;
       next.textContent = nextModule ? 'Next lesson' : 'View my progress';
       footer.querySelector('.ca-focus-helper').textContent = mastered
-        ? 'Module mastered. Revisit any step or keep learning.'
+        ? 'Lesson completed. Reinforcement will build lasting mastery.'
         : 'Complete the check above when you are ready.';
     }
-    check?.querySelector('#gcCheckAnswer')?.addEventListener('click', updateCheckNext);
+    check?.addEventListener('chematlas:check-state', updateCheckNext);
 
     function showStep(index, moveFocus = false) {
       activeIndex = Math.max(0, Math.min(index, steps.length - 1));
@@ -632,7 +630,7 @@
         updateCheckNext();
       } else {
         next.hidden = false;
-        next.textContent = activeIndex === steps.length - 2 ? 'Continue to quick check' : 'Continue';
+        next.textContent = activeIndex === steps.length - 2 ? 'Continue to concept checks' : 'Continue';
         footer.querySelector('.ca-focus-helper').textContent = 'Take your time. You can revisit any step.';
       }
 
@@ -654,6 +652,9 @@
       navigate(nextModule ? '/genchem/' + nextModule.id : '/progress');
     });
 
+    const params=new URLSearchParams(location.search);
+    if(params.has('review'))savedIndex=steps.length-1;
+    else if(params.has('section'))savedIndex=Math.max(0,Math.min(readings.length-1,Number(params.get('section'))||0));
     showStep(savedIndex, false);
   }
 
