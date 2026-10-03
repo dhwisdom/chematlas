@@ -20,6 +20,15 @@
   let pendingText = '';
   let cloudInitStarted = false;
   let renderQueued = false;
+  let lessonPrompt = '';
+
+  function applyLessonPrompt() {
+    const input = document.querySelector('#caTutorV2 #caTutorInput');
+    if (!input || !lessonPrompt) return;
+    input.value = input.value.trim() ? `${input.value}\n\n${lessonPrompt}` : lessonPrompt;
+    lessonPrompt = '';
+    input.focus();
+  }
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
@@ -242,6 +251,7 @@
     root.innerHTML = `<div id="caTutorV2" class="ca-tutor-v2"><aside class="ca-thread-rail panel"><div class="ca-thread-head"><div><p class="eyebrow">CONVERSATIONS</p><h3>AI Tutor history</h3></div><button class="ca-new-thread" data-tutor-new title="New conversation">＋</button></div><button class="ca-new-chat" data-tutor-new><span>✦</span> New chemistry chat</button><div class="ca-thread-list">${threadListHtml(threads, activeId)}</div><div class="ca-thread-sync"><i class="${tutorSession ? 'online' : ''}"></i><span><strong>${cloudLabel}</strong><small>${tutorSession ? 'synced with your profile' : 'sign in to sync across devices'}</small></span></div></aside>
       <section class="ca-tutor-main ca-tutor-main-v2"><div class="ca-page-head ca-tutor-head-v2"><div><p class="eyebrow">COURSE-GROUNDED AI • CONTEXT-AWARE</p><h2>${esc(thread?.title || 'Ask ChemAtlas')}</h2><p>Follow-up questions remember this conversation. Equations render as mathematics, and every answer shows which ChemAtlas or web context it used.</p></div><span class="ca-ai-status ready"><i></i> Tutor live</span></div><div class="ca-chat panel ca-chat-v2" id="caChat">${messages.length ? messages.map(renderMessage).join('') : `<div class="ca-tutor-empty"><span>✦</span><h3>Start with a concept, not a magic answer.</h3><p>Ask for an explanation, a worked problem, a comparison, or help finding the gap in your reasoning.</p><div><button data-tutor-v2-prompt="Why does molecular geometry affect polarity?">Geometry → polarity</button><button data-tutor-v2-prompt="Walk me through a limiting-reagent problem without skipping units.">Stoichiometry</button><button data-tutor-v2-prompt="How do acid-base concepts from Gen Chem show up in organic chemistry?">Bridge to Organic</button></div></div>`}${pendingThreadId === activeId ? `<div class="ca-message assistant ca-thinking"><span>C</span><div class="ca-message-body"><div class="ca-message-copy">${esc(pendingText || 'Thinking through the chemistry…')}</div></div></div>` : ''}</div><form class="ca-tutor-form ca-tutor-form-v2" id="caTutorForm"><textarea id="caTutorInput" rows="3" placeholder="Ask a chemistry question or follow up on this conversation…"></textarea><div><label><input id="caTutorWeb" type="checkbox" checked> Allow web context when useful</label><button class="primary-button" type="submit" ${pendingThreadId ? 'disabled' : ''}>${pendingThreadId ? 'Thinking…' : 'Ask Tutor ✦'}</button></div></form></section>
       <aside class="ca-tutor-side ca-tutor-side-v2">${learnerPanelHtml(snapshot)}<article class="panel"><p class="eyebrow">HOW IT ANSWERS</p><ol><li>Retrieves relevant ChemAtlas modules.</li><li>Uses this thread’s recent turns.</li><li>Shows governing chemistry and units.</li><li>Renders equations and chemical notation.</li><li>Surfaces the context and sources used.</li></ol></article><article class="panel ca-tutor-guardrail"><p class="eyebrow">LEARNING GUARDRAIL</p><p>The Tutor is assistive. Safety-critical lab decisions and externally sourced claims should still be checked against authoritative course or laboratory sources.</p></article></aside></div>`;
+    applyLessonPrompt();
     requestAnimationFrame(() => { const chat = document.getElementById('caChat'); if (chat) chat.scrollTop = chat.scrollHeight; renderMath(root); });
   }
 
@@ -343,6 +353,12 @@
   }, true);
 
   function queueRender() { if (renderQueued) return; renderQueued = true; requestAnimationFrame(() => { renderQueued = false; const root = document.getElementById('caTutorView'); if (root && !root.querySelector('#caTutorV2')) renderTutorV2(); }); }
+  window.addEventListener('chematlas:lesson-help', event => {
+    if (typeof event.detail?.prompt !== 'string') return;
+    lessonPrompt = event.detail.prompt;
+    applyLessonPrompt();
+    queueRender();
+  });
   const observer = new MutationObserver(queueRender); observer.observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('popstate', () => setTimeout(queueRender, 0));
   window.addEventListener('storage', event => { if ([THREADS_KEY, ACTIVE_KEY, MODULES_KEY, TOOLS_KEY, VSEPR_KEY, GOAL_KEY, CURRENT_MODULE_KEY].includes(event.key)) renderTutorV2(); });

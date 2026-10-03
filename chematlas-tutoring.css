@@ -1143,36 +1143,43 @@ body.ca-landing-mode .main{background:#f7f8f5!important}
 }
 .ca-focus-dots{
   display:flex;
+  flex-wrap:wrap;
   gap:7px;
   margin-top:13px;
 }
 .ca-focus-dots button{
-  width:28px;
-  height:28px;
-  padding:0;
-  border:0;
-  border-radius:50%;
-  background:transparent;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:44px;
+  padding:7px 10px;
+  border:1px solid #dfe6e2;
+  border-radius:7px;
+  background:#fff;
+  color:#38566a;
+  font-size:14px;
   cursor:pointer;
 }
 .ca-focus-dots button span{
-  display:block;
-  width:7px;
-  height:7px;
-  margin:auto;
+  display:grid;
+  place-items:center;
+  width:24px;
+  height:24px;
   border-radius:50%;
-  background:#c8d1cd;
+  background:#eef3f0;
   transition:.15s ease;
 }
 .ca-focus-dots button:hover span{
   background:#7fa99e;
 }
 .ca-focus-dots button.active span{
-  width:9px;
-  height:9px;
+  color:#fff;
   background:#0b7b79;
   box-shadow:0 0 0 4px #e5f2ed;
 }
+.ca-focus-dots button.active{border-color:#0b7b79;background:#f0f8f5}
+#genchemView button:focus-visible,
+#genchemView summary:focus-visible{outline:3px solid #0b7b79;outline-offset:3px}
 .ca-focus-panel[hidden]{
   display:none!important;
 }
@@ -1474,3 +1481,18 @@ body.ca-landing-mode .main{background:#f7f8f5!important}
     grid-column:2;
   }
 }
+
+/* Keep lesson controls and feedback readable at every breakpoint. */
+#genchemView .ca-focus-count,
+#genchemView .ca-focus-kind { font-size:12px; }
+#genchemView .ca-focus-footer button,
+#genchemView .ca-focus-helper,
+#genchemView .ca-lesson-more > summary,
+#genchemView .ca-lesson-goals > summary,
+#genchemView .ca-inline-tutor,
+#genchemView .gc-check-choice,
+#genchemView .gc-feedback,
+#genchemView .ca-module-navigation button { font-size:14px!important; }
+#genchemView .ca-focus-panel.gc-reading p,
+#genchemView .gc-example ol li p { font-size:16px!important;line-height:1.65!important; }
+#genchemView .ca-focus-footer [hidden] { display:none!important; }
