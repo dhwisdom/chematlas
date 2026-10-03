@@ -73,6 +73,144 @@
       </svg>`;
   }
 
+  function enhanceLanding() {
+    const landing = document.getElementById('caLandingView');
+    if (!landing || landing.dataset.tutoringLanding === '1') return;
+    landing.dataset.tutoringLanding = '1';
+    landing.innerHTML = `
+      <header class="ca-marketing-nav">
+        <button class="ca-marketing-brand" data-route="/"><span>⚛</span><strong>ChemAtlas</strong></button>
+        <nav>
+          <button data-route="/courses">Courses</button>
+          <button data-route="/model-lab">Labs</button>
+          <button data-route="/tutor">AI Tutor</button>
+          <button class="ca-marketing-profile" data-account-open>Create profile</button>
+        </nav>
+      </header>
+
+      <section class="ca-marketing-hero">
+        <div class="ca-marketing-copy">
+          <p class="ca-marketing-kicker">COLLEGE CHEMISTRY · BUILT TO TEACH</p>
+          <h1>A chemistry tutor that always knows <em>what comes next.</em></h1>
+          <p class="ca-marketing-lede">Learn a concept, manipulate it, practice the reasoning, and get help the moment something stops making sense. ChemAtlas keeps the path through General Chemistry clear without flattening the science.</p>
+          <div class="ca-marketing-actions">
+            <button class="primary-button" data-start-learning>Start learning</button>
+            <button class="secondary-button" data-route="/dashboard">Explore ChemAtlas</button>
+          </div>
+          <div class="ca-marketing-proof">
+            <span><strong>19</strong><small>Gen Chem modules</small></span>
+            <span><strong>7</strong><small>practice engines</small></span>
+            <span><strong>3D</strong><small>molecular tools</small></span>
+            <span><strong>AI</strong><small>course-aware tutor</small></span>
+          </div>
+        </div>
+
+        <div class="ca-marketing-demo">
+          <div class="ca-demo-top"><span>CONTINUE LEARNING</span><strong>General Chemistry I</strong></div>
+          <div class="ca-demo-card">
+            <div>
+              <small>MODULE 10 · IN PROGRESS</small>
+              <h2>Molecular Geometry & Polarity</h2>
+              <p>Connect electron domains to molecular shape, then use that shape to predict whether bond dipoles cancel.</p>
+              <div class="ca-demo-meta"><span>12 min lesson</span><i></i><span>35% complete</span></div>
+            </div>
+            <div class="ca-demo-molecule">${waterSvg()}</div>
+          </div>
+          <div class="ca-demo-next">
+            <span class="ca-demo-icon">◎</span>
+            <span><small>RECOMMENDED NEXT</small><strong>Practice VSEPR shapes</strong></span>
+            <b>→</b>
+          </div>
+          <div class="ca-demo-tutor">
+            <span>✦</span>
+            <div><small>ASK CHEMATLAS</small><strong>“Why is H₂O polar but CO₂ isn’t?”</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="ca-marketing-flow">
+        <div class="ca-flow-heading"><p>ONE LEARNING LOOP</p><h2>Everything points to the next useful action.</h2></div>
+        <div class="ca-flow-grid">
+          <article><span>01</span><div class="ca-flow-icon">▤</div><h3>Learn</h3><p>Short explanations, worked examples, and real chemistry relationships.</p></article>
+          <article><span>02</span><div class="ca-flow-icon">⚛</div><h3>Explore</h3><p>Use models and visualizations when flat diagrams stop being enough.</p></article>
+          <article><span>03</span><div class="ca-flow-icon amber">◎</div><h3>Practice</h3><p>Answer focused questions and get immediate feedback on the reasoning.</p></article>
+          <article><span>04</span><div class="ca-flow-icon">✦</div><h3>Get help</h3><p>Ask the Tutor with the current lesson and your progress already in context.</p></article>
+        </div>
+      </section>
+
+      <section class="ca-marketing-path">
+        <div><p>YOUR CHEMISTRY PATH</p><h2>Start where you are. Keep the prerequisites visible.</h2></div>
+        <div class="ca-path-steps">
+          <button data-route="/genchem"><span>01</span><strong>General Chemistry</strong><small>Particles · bonding · energy · equilibrium</small></button>
+          <i>→</i>
+          <button data-route="/organic"><span>02</span><strong>Organic Chemistry</strong><small>Structure · stereochemistry · mechanisms</small></button>
+          <i>→</i>
+          <button disabled><span>03</span><strong>Biochemistry</strong><small>Proteins · enzymes · metabolism</small></button>
+        </div>
+      </section>
+
+      <section class="ca-marketing-bottom">
+        <div><p>READY WHEN YOU ARE</p><h2 id="caLandingNext">Start with the foundation.</h2><span id="caLandingNextCopy">Tell ChemAtlas what you are working toward and it will suggest a path.</span></div>
+        <button class="primary-button" data-start-learning>Choose my learning goal →</button>
+      </section>
+    `;
+  }
+
+  function harmonizeShellDetails() {
+    const sidebar = document.querySelector('.sidebar');
+    const topbar = document.querySelector('.topbar');
+    if (!sidebar || !topbar) return;
+
+    const secondary = sidebar.querySelector('.ca-sidebar-secondary');
+    if (secondary) secondary.remove();
+
+    const sync = document.querySelector('.ca-sync-status');
+    if (sync && sync.parentElement !== sidebar) {
+      sync.classList.add('ca-student-row');
+      sidebar.appendChild(sync);
+    }
+
+    const actions = topbar.querySelector('.top-actions');
+    if (actions && !actions.querySelector('.ca-help-button')) {
+      const help = document.createElement('button');
+      help.className = 'ca-help-button';
+      help.type = 'button';
+      help.setAttribute('aria-label','Open AI Tutor');
+      help.textContent = '?';
+      help.addEventListener('click', () => navigate('/tutor'));
+      actions.prepend(help);
+    }
+
+    const titleWrap = topbar.querySelector(':scope > div:first-of-type');
+    const title = document.getElementById('pageTitle');
+    if (titleWrap && title && !titleWrap.querySelector('.ca-breadcrumb-course')) {
+      const course = document.createElement('span');
+      course.className = 'ca-breadcrumb-course';
+      course.textContent = 'General Chemistry I';
+      titleWrap.prepend(course);
+    }
+  }
+
+  function routeLabel() {
+    const p = location.pathname;
+    if (p === '/dashboard') return 'Home';
+    if (p.startsWith('/genchem')) return 'Learn';
+    if (p === '/model-lab') return 'Labs';
+    if (p === '/tutor') return 'AI Tutor';
+    if (p === '/progress') return 'Progress';
+    if (p.startsWith('/organic')) return 'Organic Studio';
+    if (p === '/courses') return 'Courses';
+    if (p === '/curriculum') return 'Curriculum';
+    return 'Home';
+  }
+
+  function updateBreadcrumb() {
+    const title = document.getElementById('pageTitle');
+    const course = document.querySelector('.ca-breadcrumb-course');
+    if (course) course.textContent = location.pathname.startsWith('/organic') ? 'Organic Chemistry' : 'General Chemistry I';
+    if (title && !document.body.classList.contains('ca-landing-mode')) title.textContent = routeLabel();
+  }
+
   function installShell() {
     const sidebar = document.querySelector('.sidebar');
     const nav = sidebar?.querySelector('.nav-list');
@@ -343,11 +481,14 @@
     requestAnimationFrame(() => {
       queued = false;
       cleanupV2();
+      enhanceLanding();
       installShell();
+      harmonizeShellDetails();
       installSearch();
       renderHome();
       enhanceGenchem();
       setActiveNav();
+      updateBreadcrumb();
     });
   }
 
