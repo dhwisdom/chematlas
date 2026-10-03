@@ -4,7 +4,7 @@
   const timeout=setTimeout(()=>{
     if(finished)return;
     const message=document.getElementById('caStartupMessage');
-    if(message)message.textContent='ChemAtlas is taking longer than expected to load.';
+    if(message)message.textContent='ChemWaypoint is taking longer than expected to load.';
     const retry=document.getElementById('caStartupRetry');
     if(retry)retry.hidden=false;
   },15000);
