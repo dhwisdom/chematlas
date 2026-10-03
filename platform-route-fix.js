@@ -19,7 +19,8 @@
     const slug = canonical(id);
     if (!validModule(slug)) return;
     const path = `/genchem/${slug}`;
-    if (location.pathname !== path) history[mode]({}, '', path);
+    const query=location.pathname===path?location.search:'';
+    if (location.pathname !== path) history[mode]({}, '', path+query);
   };
 
   function openCanonicalModule(id) {

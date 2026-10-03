@@ -35,6 +35,14 @@
     if (!Array.isArray(m.equations) || m.equations.length>30 || !m.equations.every(e=>e && text(e.label) && text(e.expression))) return 'Each equation needs a label and expression.';
     if (!m.example || !text(m.example.prompt) || !texts(m.example.steps) || !text(m.example.answer)) return 'Complete the worked example: question, steps, and answer.';
     if (!m.check || !text(m.check.question) || !texts(m.check.choices,2,6) || !Number.isInteger(m.check.answer) || m.check.answer<0 || m.check.answer>=m.check.choices.length || !text(m.check.explanation)) return 'Complete the quick check, with 2–6 choices, a valid correct choice, and explanation.';
+    if (m.checks!=null) {
+      if(!Array.isArray(m.checks)||m.checks.length<3||m.checks.length>6)return 'Use 3–5 concept checks, with an optional sixth reinforcement question.';
+      if(new Set(m.checks.map(q=>q?.id)).size!==m.checks.length)return 'Each question needs a unique ID.';
+      for(const q of m.checks) {
+        if(!q||!text(q.id,120)||!/^[a-z0-9-]+$/.test(q.id)||!text(q.level,40)||!text(q.question)||!texts(q.choices,2,6)||!Number.isInteger(q.answer)||q.answer<0||q.answer>=q.choices.length||!text(q.explanation))return 'Each check needs an ID, stage, question, choices, correct answer, and explanation.';
+        if(q.callback&&(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(q.callback.moduleId||'')||!Number.isInteger(q.callback.section)||q.callback.section<0||q.callback.section>29))return 'Choose a valid earlier module ID and section number.';
+      }
+    }
     if (!m.bridge || !text(m.bridge.course) || !text(m.bridge.text)) return 'Add a connection to a later topic or course.';
     if (m.lab!=null && typeof m.lab!=='string') return 'Lab connection must be text.';
     if (m.tool!=null && (!text(m.tool.label) || m.tool.action!=='lab')) return 'The existing interactive tool link is invalid.';

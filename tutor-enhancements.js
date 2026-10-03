@@ -64,12 +64,14 @@
     const modules = window.CHEM_GENCHEM?.modules || [];
     const currentId = localStorage.getItem(CURRENT_MODULE_KEY) || '';
     const current = modules.find(module => module.id === currentId);
-    const masteredTitles = masteredIds.map(id => modules.find(module => module.id === id)?.title).filter(Boolean);
+    const completedIds=masteredIds;
+    const demonstrated=modules.filter(m=>window.ChemAtlasAssessment?.summarize(m.id).mastered).map(m=>m.id);
+    const masteredTitles = demonstrated.map(id => modules.find(module => module.id === id)?.title).filter(Boolean);
     const next = modules.find(module => !masteredIds.includes(module.id));
     return {
       goal: goalLabel(),
       currentModule: current?.title || currentId || 'not specified',
-      masterySummary: `${masteredIds.length}/${modules.length || 19} General Chemistry modules mastered; ${toolIds.length}/7 practice engines cleared; VSEPR ${Number(localStorage.getItem(VSEPR_KEY) || 0)}/3.`,
+      masterySummary: `${completedIds.length}/${modules.length || 19} lessons completed; ${demonstrated.length} modules with mastery demonstrated in spaced reviews; ${toolIds.length}/7 practice engines cleared; VSEPR ${Number(localStorage.getItem(VSEPR_KEY) || 0)}/3.`,
       nextStep: next?.title || 'Organic Chemistry Studio',
       recentMastery: masteredTitles.slice(-6).join(' • ') || 'No module mastery recorded yet.'
     };
@@ -236,9 +238,9 @@
   }
 
   function learnerPanelHtml(snapshot) {
-    const mastered = safeJson(MODULES_KEY, []).length;
+    const completed = safeJson(MODULES_KEY, []).length;
     const tools = safeJson(TOOLS_KEY, []).length;
-    return `<article class="panel ca-memory-card"><div class="ca-memory-head"><div><p class="eyebrow">LEARNER CONTEXT MEMORY</p><h3>What the Tutor knows</h3></div><span class="ca-memory-on"><i></i> ON</span></div><div class="ca-memory-grid"><div><span>Goal</span><strong>${esc(snapshot.goal)}</strong></div><div><span>Current module</span><strong>${esc(snapshot.currentModule)}</strong></div><div><span>Gen Chem</span><strong>${mastered}/${window.CHEM_GENCHEM?.modules?.length || 19} mastered</strong></div><div><span>Practice</span><strong>${tools}/7 cleared</strong></div></div><p class="ca-memory-note">Each question carries your current goal, mastery snapshot, recommended next step, and recent turns in this conversation.</p></article>`;
+    return `<article class="panel ca-memory-card"><div class="ca-memory-head"><div><p class="eyebrow">LEARNER CONTEXT MEMORY</p><h3>What the Tutor knows</h3></div><span class="ca-memory-on"><i></i> ON</span></div><div class="ca-memory-grid"><div><span>Goal</span><strong>${esc(snapshot.goal)}</strong></div><div><span>Current module</span><strong>${esc(snapshot.currentModule)}</strong></div><div><span>Gen Chem</span><strong>${completed}/${window.CHEM_GENCHEM?.modules?.length || 19} completed</strong></div><div><span>Practice</span><strong>${tools}/7 cleared</strong></div></div><p class="ca-memory-note">Each question carries your current goal, completion and mastery evidence, recommended next step, and recent turns in this conversation.</p></article>`;
   }
 
   function renderTutorV2() {

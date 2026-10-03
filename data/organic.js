@@ -154,7 +154,7 @@ window.CHEM_ORGANIC = {
       const detail = next.querySelector('small');
       if (icon) icon.textContent = '01';
       if (title) title.textContent = 'Measurement, Units & Chemical Reasoning';
-      if (detail) detail.textContent = 'Reading + worked example + mastery check';
+      if (detail) detail.textContent = 'Reading + worked example + concept checks';
     }
 
     const toolGrid = document.querySelector('#homeView .tool-grid');
