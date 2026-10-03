@@ -1496,3 +1496,5 @@ body.ca-landing-mode .main{background:#f7f8f5!important}
 #genchemView .ca-focus-panel.gc-reading p,
 #genchemView .gc-example ol li p { font-size:16px!important;line-height:1.65!important; }
 #genchemView .ca-focus-footer [hidden] { display:none!important; }
+
+.ca-admin-entry{display:block;margin:12px 16px;padding:12px;border:1px solid #c7dfd8;border-radius:8px;color:#076b68;text-align:center;font-size:14px;text-decoration:none;font-weight:700}

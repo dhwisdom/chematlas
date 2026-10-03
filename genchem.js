@@ -312,10 +312,10 @@
   }
 
   function setupEntryPoints() {
-    document.querySelectorAll('[data-genchem-open]').forEach(btn => btn.addEventListener('click', (event) => {
+    document.querySelectorAll('[data-genchem-open]').forEach(btn => { btn.dataset.genchemReady='1'; btn.addEventListener('click', (event) => {
       event.preventDefault();
       openGenchem(btn.dataset.genchemModule || undefined);
-    }));
+    }); });
 
     document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => {
       document.querySelectorAll('.genchem-nav').forEach(n => n.classList.remove('active'));
@@ -324,9 +324,12 @@
     updateCourseCards();
   }
 
+  window.addEventListener('chematlas:content-updated', () => { render(); updateCourseCards(); });
+
   setupEntryPoints();
   updateHomeProgress();
   render();
+  window.dispatchEvent(new Event('chematlas:genchem-ready'));
 
   // Load the interactive General Chemistry Practice Lab after the reader is ready.
   if (!document.querySelector('link[href="genchem-tools.css"]')) {

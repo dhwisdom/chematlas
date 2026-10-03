@@ -133,3 +133,19 @@ ChemAtlas Tutor
 General Chemistry remains the platform’s prerequisite backbone. The next depth upgrades should add larger randomized problem banks, limiting-reactant and percent-yield modes, weak-acid/base equilibrium practice, titration curves, solubility-product simulations, kinetics data fitting, cumulative unit exams, and richer virtual-lab datasets before later courses are treated as complete.
 
 The next platform milestones are to activate the dedicated Supabase project, turn cloud sync on, configure the Tutor API key in Vercel, deepen practice-event analytics, and then build the Biochemistry systems layer: amino-acid ionization, proteins, enzyme kinetics, glycolysis/Krebs carbon tracing, and electron transport/chemiosmosis.
+
+## Site administration
+
+Open `/admin` and sign in with a verified ChemAtlas account. Admin membership is held in `public.site_admins`, which browser sessions can read only for themselves and cannot modify. A trusted project owner must assign the initial admin role after checking the account email and verification status. There is no public admin signup or first-user promotion.
+
+The editor supports sidebar tab labels/order, adding and editing General Chemistry modules and reading sections, worked examples, quick checks, private drafts, previews, publishing, and loading earlier published versions as drafts. Existing module IDs are immutable in the editor so progress stays connected. Publishing overlays the bundled course without replacing its source files. If published content is unavailable or invalid, the bundled curriculum remains usable.
+
+`site_drafts` and `site_revisions` are admin-only. `site_published` exposes published content to learners. Save/publish RPCs use invoker permissions, RLS, and optimistic version checks. No service-role key is used by the editor. Admin does not grant access to other learners' progress or Tutor history.
+
+`shared-client.js` provides one Supabase client for account, Tutor, and editor sessions. The additive migration also ensures the existing learner-state and Tutor tables are available, retaining their owner-based policies.
+
+Validation:
+- `node --test tests/content-store.test.cjs`
+- `tests/admin-permissions.sql` through a trusted SQL connection: tests RLS, draft privacy, write denial, self-promotion denial, publication, version conflicts, and history inside a rolled-back transaction.
+
+To assign an administrator, resolve the exact confirmed email in `auth.users` and insert that user's UUID into `public.site_admins` through a trusted database operation. Never infer the account from the first signup, and never expose role assignment in public signup metadata.

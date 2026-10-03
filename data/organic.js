@@ -167,7 +167,9 @@ window.CHEM_ORGANIC = {
 
     const dataScript = document.createElement('script');
     dataScript.src = 'data/genchem.js';
-    dataScript.onload = () => {
+    dataScript.onload = async () => {
+      await window.ChemAtlasContent?.ready;
+      window.ChemAtlasContent?.applyCourse();
       const appScript = document.createElement('script');
       appScript.src = 'genchem.js';
       document.body.appendChild(appScript);

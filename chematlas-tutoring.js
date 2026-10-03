@@ -262,6 +262,18 @@
       secondary.querySelectorAll('[data-route-secondary]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.routeSecondary)));
     }
 
+    const group=nav.querySelector('.ca-tutoring-nav-group');
+    const items=window.ChemAtlasContent?.navigation();
+    if(group && items){
+      const signature=JSON.stringify(items);
+      if(group.dataset.contentSignature!==signature){
+        group.dataset.contentSignature=signature;
+        items.forEach(item=>{
+          const button=item.id==='practice'?group.querySelector('[data-ca-tutor-practice]'):group.querySelector(`[data-ca-tutor-route="${item.route}"]`);
+          if(button){button.querySelector('span:not(.icon)').textContent=item.label;group.appendChild(button);}
+        });
+      }
+    }
     setActiveNav();
   }
 
@@ -668,6 +680,7 @@
     observer.observe(document.body, {childList:true,subtree:true});
     window.addEventListener('popstate', () => setTimeout(refresh, 50));
     window.addEventListener('storage', () => setTimeout(refresh, 50));
+    window.addEventListener('chematlas:content-updated', refresh);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true});
