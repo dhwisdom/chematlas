@@ -156,7 +156,7 @@
 
       <article class="gc-check panel">
         <div class="gc-check-head"><div><p class="eyebrow">QUICK CHECK</p><h3>${esc(m.check.question)}</h3></div><span>1 question</span></div>
-        <div class="gc-check-options">${m.check.choices.map((c,i) => `<button class="gc-check-choice" data-choice="${i}"><span>${String.fromCharCode(65+i)}</span>${esc(c)}</button>`).join('')}</div>
+        <div class="gc-check-options">${m.check.choices.map((c,i) => `<button type="button" class="gc-check-choice" data-choice="${i}" aria-pressed="false"><span aria-hidden="true">${String.fromCharCode(65+i)}</span>${esc(c)}</button>`).join('')}</div>
         <div class="gc-check-actions"><button id="gcCheckAnswer" class="primary-button" disabled>Check answer</button><div id="gcFeedback" class="gc-feedback" aria-live="polite"></div></div>
       </article>
 
@@ -227,7 +227,11 @@
     const checkBtn = byId('gcCheckAnswer');
     root.querySelectorAll('.gc-check-choice').forEach(btn => btn.addEventListener('click', () => {
       selectedAnswer = Number(btn.dataset.choice);
-      root.querySelectorAll('.gc-check-choice').forEach(b => b.classList.toggle('selected', b === btn));
+      root.querySelectorAll('.gc-check-choice').forEach(b => {
+        b.classList.toggle('selected', b === btn);
+        b.setAttribute('aria-pressed', String(b === btn));
+        b.classList.remove('correct', 'wrong');
+      });
       if (checkBtn) checkBtn.disabled = false;
       const feedback = byId('gcFeedback');
       if (feedback) { feedback.className='gc-feedback'; feedback.textContent=''; }
@@ -235,6 +239,7 @@
 
     checkBtn?.addEventListener('click', () => {
       const feedback = byId('gcFeedback');
+      if (!Number.isInteger(selectedAnswer) || selectedAnswer < 0 || selectedAnswer >= m.check.choices.length) return;
       const correct = selectedAnswer === m.check.answer;
       root.querySelectorAll('.gc-check-choice').forEach(btn => {
         const idx = Number(btn.dataset.choice);

@@ -1501,3 +1501,37 @@ body.ca-landing-mode .main{background:#f7f8f5!important}
 
 /* Published dashboard configuration preserves each existing learning widget. */
 .ca-configured-dashboard{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.ca-configured-dashboard>[data-width="full"]{grid-column:1/-1}.ca-configured-dashboard[data-columns="1"]{grid-template-columns:minmax(0,1fr)}.ca-configured-dashboard>[hidden]{display:none!important}.ca-custom-block{padding:24px;background:white;border:1px solid #dce6e1;border-radius:16px;overflow-wrap:anywhere}.ca-custom-block p{line-height:1.7}.ca-configured-dashboard .ca-continue{margin:0}@media(max-width:760px){.ca-configured-dashboard{grid-template-columns:minmax(0,1fr)}}
+
+/* Quick-check choices: clear neutral, hover, selected, and graded states. */
+#genchemView .gc-check-choice{
+  width:100%;min-width:0;min-height:56px!important;
+  padding:12px 16px!important;gap:12px;line-height:1.5;
+  border:2px solid #dce6e1!important;border-radius:10px!important;
+  background:#fff!important;color:#294853!important;overflow-wrap:anywhere;
+}
+#genchemView .gc-check-choice>span{
+  width:30px!important;min-width:30px!important;height:30px;
+  background:#edf3f0!important;color:#365b57!important;
+  border:1px solid #d4e2db;border-radius:8px;font-size:12px;font-weight:750;
+}
+#genchemView .gc-check-choice:hover:not(.selected):not(.correct):not(.wrong){
+  background:#f7faf8!important;border-color:#9dbeb2!important;
+}
+#genchemView .gc-check-choice.selected{
+  background:#eaf6f2!important;border-color:#087b76!important;color:#174c49!important;
+}
+#genchemView .gc-check-choice.selected>span{
+  background:#087b76!important;border-color:#087b76;color:#fff!important;
+}
+#genchemView .gc-check-choice:focus-visible{
+  outline:3px solid #087b76;outline-offset:3px;
+}
+#genchemView .gc-check-choice.correct{background:#eaf6ed!important;border-color:#287747!important;}
+#genchemView .gc-check-choice.correct>span{background:#287747!important;border-color:#287747;color:white!important;}
+#genchemView .gc-check-choice.wrong{background:#fff2f0!important;border-color:#b3443d!important;}
+#genchemView .gc-check-choice.wrong>span{background:#b3443d!important;border-color:#b3443d;color:white!important;}
+#genchemView .gc-check-choice.correct::after{content:'✓';margin-left:auto;font-weight:800;color:#287747;}
+#genchemView .gc-check-choice.wrong::after{content:'×';margin-left:auto;font-weight:800;color:#b3443d;}
+#genchemView #gcCheckAnswer:not(:disabled){background:#087b76!important;color:#fff!important;opacity:1;}
+#genchemView #gcCheckAnswer:disabled{background:#e4ece8!important;color:#5b706a!important;opacity:1!important;}
+@media(max-width:600px){#genchemView .gc-check-actions{align-items:stretch!important;flex-direction:column;}#genchemView .gc-check-choice{padding:12px!important;}}
