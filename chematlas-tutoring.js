@@ -419,43 +419,179 @@
   }
 
   function enhanceGenchem() {
-    const workspace = document.querySelector('#genchemView .gc-workspace');
+    const view = document.getElementById('genchemView');
+    const workspace = view?.querySelector('.gc-workspace');
     const reader = workspace?.querySelector('.gc-reader');
-    if (!workspace || !reader || workspace.dataset.tutoringEnhanced === '1') return;
+    if (!view || !workspace || !reader || workspace.dataset.tutoringEnhanced === '1') return;
     workspace.dataset.tutoringEnhanced = '1';
 
     workspace.querySelector('.gc-v2-context')?.remove();
+    reader.querySelector('.ca-learning-sequence')?.remove();
+
+    const allModules = modules();
+    const completed = safeJson(LS.modules, []);
+    const currentId = (() => { try { return localStorage.getItem(LS.current) || ''; } catch (_) { return ''; } })();
+    const current = allModules.find(m => m.id === currentId) || allModules[0];
+    const semester = Number((() => { try { return localStorage.getItem(LS.semester) || current?.semester || 1; } catch (_) { return current?.semester || 1; } })());
+    const semesterModules = allModules.filter(m => m.semester === semester);
+    const semesterDone = semesterModules.filter(m => completed.includes(m.id)).length;
+
+    if (!view.querySelector('.ca-learn-summary')) {
+      const summary = document.createElement('section');
+      summary.className = 'ca-learn-summary';
+      summary.innerHTML = `
+        <div>
+          <p class="ca-learn-overline">GENERAL CHEMISTRY ${semester === 2 ? 'II' : 'I'}</p>
+          <h2>Learn one idea at a time.</h2>
+          <p>Short explanations, a worked example, then a quick check. Everything else stays available when you need it.</p>
+        </div>
+        <div class="ca-learn-progress" aria-label="${semesterDone} of ${semesterModules.length} modules mastered">
+          <span><b>${semesterDone}</b> / ${semesterModules.length} mastered</span>
+          <div><i style="width:${semesterModules.length ? Math.round(semesterDone / semesterModules.length * 100) : 0}%"></i></div>
+        </div>
+      `;
+      view.insertBefore(summary, view.querySelector('.gc-semester-tabs') || workspace);
+    }
 
     const header = reader.querySelector('.gc-module-header');
-    if (header && !header.querySelector('.ca-inline-tutor')) {
-      const tutor = document.createElement('button');
-      tutor.className = 'ca-inline-tutor';
-      tutor.innerHTML = '✦ Ask Tutor about this module';
-      tutor.addEventListener('click', () => navigate('/tutor'));
-      header.appendChild(tutor);
+    if (header) {
+      const prereq = header.querySelector('.gc-prereq');
+      const objectives = header.querySelector('.gc-objectives');
+      if ((prereq || objectives) && !header.querySelector('.ca-lesson-goals')) {
+        const details = document.createElement('details');
+        details.className = 'ca-lesson-goals';
+        details.innerHTML = '<summary>What will I learn?</summary><div class="ca-lesson-goals-body"></div>';
+        const body = details.querySelector('.ca-lesson-goals-body');
+        if (prereq) body.appendChild(prereq);
+        if (objectives) body.appendChild(objectives);
+        header.appendChild(details);
+      }
+
+      if (!header.querySelector('.ca-inline-tutor')) {
+        const tutor = document.createElement('button');
+        tutor.className = 'ca-inline-tutor';
+        tutor.innerHTML = '✦ Ask Tutor about this lesson';
+        tutor.addEventListener('click', () => navigate('/tutor'));
+        header.appendChild(tutor);
+      }
     }
 
-    if (header && !reader.querySelector('.ca-learning-sequence')) {
-      const sequence = document.createElement('div');
-      sequence.className = 'ca-learning-sequence';
-      sequence.innerHTML = `
-        <button class="ca-sequence-step" data-seq="learn"><span>1</span><div><strong>Learn</strong><small>Build the idea</small></div></button>
-        <button class="ca-sequence-step" data-seq="explore"><span>2</span><div><strong>Explore</strong><small>Use a model</small></div></button>
-        <button class="ca-sequence-step" data-seq="practice"><span>3</span><div><strong>Practice</strong><small>Try problems</small></div></button>
-        <button class="ca-sequence-step" data-seq="check"><span>4</span><div><strong>Check</strong><small>Show mastery</small></div></button>`;
-      header.after(sequence);
-      sequence.querySelector('[data-seq="learn"]')?.addEventListener('click', () => reader.querySelector('.gc-reading')?.scrollIntoView({behavior:'smooth',block:'start'}));
-      sequence.querySelector('[data-seq="explore"]')?.addEventListener('click', () => navigate('/model-lab'));
-      sequence.querySelector('[data-seq="practice"]')?.addEventListener('click', () => launchPractice());
-      sequence.querySelector('[data-seq="check"]')?.addEventListener('click', () => reader.querySelector('.gc-check')?.scrollIntoView({behavior:'smooth',block:'center'}));
+    const readings = [...reader.querySelectorAll(':scope > .gc-reading')];
+    const equations = reader.querySelector(':scope > .gc-equations');
+    const example = reader.querySelector(':scope > .gc-example');
+    const check = reader.querySelector(':scope > .gc-check');
+
+    const steps = [];
+    readings.forEach((el, index) => steps.push({
+      el,
+      kind: 'Learn',
+      label: el.querySelector('h3')?.textContent?.trim() || `Concept ${index + 1}`
+    }));
+    if (equations) steps.push({ el: equations, kind: 'Reference', label: 'Key relationships' });
+    if (example) steps.push({ el: example, kind: 'Example', label: 'Worked example' });
+    if (check) steps.push({ el: check, kind: 'Check', label: 'Check your understanding' });
+
+    if (!steps.length) return;
+
+    steps.forEach(({el}) => el.classList.add('ca-focus-panel'));
+
+    const focus = document.createElement('section');
+    focus.className = 'ca-focus-shell';
+    focus.innerHTML = `
+      <header class="ca-focus-head">
+        <div>
+          <span class="ca-focus-count">STEP <b>1</b> OF ${steps.length}</span>
+          <span class="ca-focus-kind">LEARN</span>
+          <h3 class="ca-focus-title">${esc(steps[0].label)}</h3>
+        </div>
+        <div class="ca-focus-meter" aria-label="Lesson progress"><span></span></div>
+      </header>
+      <nav class="ca-focus-dots" aria-label="Lesson steps">
+        ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span></span></button>`).join('')}
+      </nav>
+    `;
+
+    steps[0].el.before(focus);
+
+    const footer = document.createElement('nav');
+    footer.className = 'ca-focus-footer';
+    footer.setAttribute('aria-label','Lesson step navigation');
+    footer.innerHTML = `
+      <button type="button" class="ca-focus-back">← Back</button>
+      <span class="ca-focus-helper">Take your time. You can revisit any step.</span>
+      <button type="button" class="ca-focus-next">Continue →</button>
+    `;
+
+    const lastStep = steps[steps.length - 1].el;
+    lastStep.after(footer);
+
+    const optional = [
+      reader.querySelector(':scope > .gc-connections'),
+      reader.querySelector(':scope > .gc-tool-launch'),
+      reader.querySelector(':scope > .gc-vocab'),
+      reader.querySelector(':scope > .gc-scope')
+    ].filter(Boolean);
+
+    if (optional.length) {
+      const more = document.createElement('details');
+      more.className = 'ca-lesson-more';
+      more.innerHTML = '<summary>More resources & connections</summary><div class="ca-lesson-more-body"></div>';
+      const body = more.querySelector('.ca-lesson-more-body');
+      optional.forEach(el => body.appendChild(el));
+      footer.after(more);
     }
 
-    const readings = [...reader.querySelectorAll('.gc-reading')];
-    const example = reader.querySelector('.gc-example');
-    const check = reader.querySelector('.gc-check');
-    if (example && readings[0] && example.previousElementSibling !== readings[0]) readings[0].after(example);
-    const checkpointAnchor = readings[1] || example || readings[0];
-    if (check && checkpointAnchor && check.previousElementSibling !== checkpointAnchor) checkpointAnchor.after(check);
+    const readerNav = reader.querySelector(':scope > .gc-reader-nav');
+    if (readerNav) readerNav.classList.add('ca-module-navigation');
+
+    let activeIndex = 0;
+
+    function showStep(index, moveFocus = false) {
+      activeIndex = Math.max(0, Math.min(index, steps.length - 1));
+      steps.forEach((step, i) => {
+        step.el.hidden = i !== activeIndex;
+        step.el.setAttribute('aria-hidden', i === activeIndex ? 'false' : 'true');
+      });
+
+      focus.querySelector('.ca-focus-count b').textContent = String(activeIndex + 1);
+      focus.querySelector('.ca-focus-kind').textContent = steps[activeIndex].kind.toUpperCase();
+      focus.querySelector('.ca-focus-title').textContent = steps[activeIndex].label;
+      focus.querySelector('.ca-focus-meter span').style.width = `${((activeIndex + 1) / steps.length) * 100}%`;
+
+      focus.querySelectorAll('[data-focus-index]').forEach((button, i) => {
+        const active = i === activeIndex;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-current', active ? 'step' : 'false');
+      });
+
+      const back = footer.querySelector('.ca-focus-back');
+      const next = footer.querySelector('.ca-focus-next');
+      back.disabled = activeIndex === 0;
+
+      if (activeIndex === steps.length - 1) {
+        next.hidden = true;
+        footer.querySelector('.ca-focus-helper').textContent = 'Complete the check above when you are ready.';
+      } else {
+        next.hidden = false;
+        next.textContent = activeIndex === steps.length - 2 ? 'Continue to quick check →' : 'Continue →';
+        footer.querySelector('.ca-focus-helper').textContent = 'Take your time. You can revisit any step.';
+      }
+
+      if (moveFocus) {
+        const heading = steps[activeIndex].el.querySelector('h2,h3,[role="heading"]') || steps[activeIndex].el;
+        heading.setAttribute('tabindex','-1');
+        heading.focus({preventScroll:true});
+        focus.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+    }
+
+    focus.querySelectorAll('[data-focus-index]').forEach(button => {
+      button.addEventListener('click', () => showStep(Number(button.dataset.focusIndex), true));
+    });
+    footer.querySelector('.ca-focus-back')?.addEventListener('click', () => showStep(activeIndex - 1, true));
+    footer.querySelector('.ca-focus-next')?.addEventListener('click', () => showStep(activeIndex + 1, true));
+
+    showStep(0, false);
   }
 
   function setActiveNav() {
