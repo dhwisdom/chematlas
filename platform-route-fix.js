@@ -103,3 +103,21 @@
     document.body.appendChild(script);
   }
 })();
+
+(() => {
+  if (window.__CHEMATLAS_V2_LOADER__) return;
+  window.__CHEMATLAS_V2_LOADER__ = true;
+
+  if (!document.querySelector('link[href="chematlas-v2.css"]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'chematlas-v2.css';
+    document.head.appendChild(link);
+  }
+
+  if (!document.querySelector('script[src="chematlas-v2.js"]')) {
+    const script = document.createElement('script');
+    script.src = 'chematlas-v2.js';
+    document.body.appendChild(script);
+  }
+})();
