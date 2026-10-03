@@ -312,7 +312,7 @@
     const rights=error?[]:(data||[]);
     window.ChemAtlasViews?.setAccount(session,rights,true);
     if(!rights.some(r=>r!=='publish'))return;
-    const link=document.createElement('a');link.href='/admin';link.dataset.siteAdminLink='';link.className='ca-admin-entry';link.textContent='Default / Admin view';
+    const link=document.createElement('a');link.href='/admin';link.dataset.siteAdminLink='';link.className='ca-admin-entry';link.textContent='Admin view';
     document.querySelector('.sidebar')?.appendChild(link);
   }
   function loadScript(src){return new Promise((resolve,reject)=>{if(document.querySelector(`script[src="${src}"]`))return resolve();const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('Could not load cloud client'));document.head.appendChild(s);});}
