@@ -100,7 +100,8 @@
       const q=extra||bank.find(q=>q.id===nextId);
       const index=run.questionIds.indexOf(q.id), callback=q.callback;
       const linked=root.CHEM_GENCHEM?.modules.find(m=>m.id===(callback?.moduleId||module.id));
-      const section=linked?.sections[callback?.section||0];
+      const sectionIndex=callback?.section??q.section??0;
+      const section=linked?.sections[sectionIndex];
       let selected=null;
       el.innerHTML=`<div class="gc-check-head"><div><p class="eyebrow">${extra?'EXTRA REINFORCEMENT':`CHECK ${index+1} OF ${run.questionIds.length}`} · ${esc(q.level||'Apply')}</p><h3>${esc(q.question)}</h3><button type="button" class="pt-open-inline" data-periodic-open>▦ Periodic table & ions</button></div><span>${run.mode==='review'?(run.eligible?'Spaced review':'Practice'):'First pass'}</span></div>
         ${callback?`<p class="ca-callback">↶ Connect to ${esc(linked?.title||callback.moduleId)}</p>`:''}
@@ -117,7 +118,7 @@
         el.querySelector('#gcCheckAnswer').disabled=true;
         const feedback=el.querySelector('#gcFeedback');feedback.className='gc-feedback '+(result.correct?'good':'bad');feedback.textContent=(result.correct?'Correct. ':'Not quite. ')+q.explanation;
         const reserve=bank.find(x=>!run.questionIds.includes(x.id)&&!answersFor(events(),run.id).has(x.id));
-        el.querySelector('.ca-check-followup').innerHTML=`${!result.correct&&section?`<details class="ca-check-revisit"><summary>Revisit: ${esc(section.title)}</summary>${section.body.map(p=>`<p>${esc(p)}</p>`).join('')}<a href="/genchem/${esc(linked.id)}?section=${callback?.section||0}">Open this explanation →</a></details>`:''}
+        el.querySelector('.ca-check-followup').innerHTML=`${!result.correct&&section?`<details class="ca-check-revisit"><summary>Revisit: ${esc(section.title)}</summary>${section.body.map(p=>`<p>${esc(p)}</p>`).join('')}<a href="/genchem/${esc(linked.id)}?section=${sectionIndex}">Open this explanation →</a></details>`:''}
           <div class="ca-check-buttons">${!result.correct&&reserve&&!extra?'<button class="secondary-button" data-fresh-question>Try a fresh question</button>':''}<button class="primary-button" data-check-next>${extra?'Return to checks':index===run.questionIds.length-1?'See results':'Next question'} →</button></div>`;
         el.querySelector('[data-fresh-question]')?.addEventListener('click',()=>{extra=reserve;showQuestion();focus();});
         el.querySelector('[data-check-next]').onclick=()=>{extra=null;showQuestion();focus();};
