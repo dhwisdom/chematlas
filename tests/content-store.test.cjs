@@ -27,3 +27,13 @@ test('published edits preserve module IDs and fall back on malformed payloads',a
  global.fetch=async()=>({ok:true,json:async()=>[{key:'module:measurement',payload:{id:'measurement'}}]});
  await store.refresh();assert.equal(global.CHEM_GENCHEM.modules[0].title,original.title);
 });
+
+test('custom navigation only accepts known ChemAtlas destinations',()=>{
+ const nav=store.normalizeNavigation({items:[{id:'custom-organic',label:'Organic',route:'/organic'},{id:'custom-unsafe',label:'Unsafe',route:'javascript:alert(1)'}]});
+ assert.equal(nav.length,7);assert.equal(nav[0].route,'/organic');assert(!nav.some(x=>x.id==='custom-unsafe'));
+});
+test('dashboard keeps continue learning and rejects unsupported blocks and destinations',()=>{
+ const layout=store.normalizeDashboard({columns:99,blocks:[{id:'continue',hidden:true},{id:'custom-hello',type:'shortcut',label:'Hello',route:'https://bad.test',width:'bogus'},{id:'custom-bad',type:'script'}]});
+ assert.equal(layout.columns,2);assert.equal(layout.blocks.length,2);assert.equal(layout.blocks[0].hidden,false);assert.equal(layout.blocks[1].route,'/genchem');assert.equal(layout.blocks[1].width,'full');
+ assert.equal(store.normalizeDashboard({blocks:[]}).blocks[0].id,'continue');
+});

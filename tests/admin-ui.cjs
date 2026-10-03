@@ -1,0 +1,30 @@
+const {JSDOM}=require('jsdom'),fs=require('fs'),assert=require('assert/strict');
+const base=require('path').resolve(__dirname,'..')+'/';
+async function setup(admin,rights=['menus','dashboards','content','publish','access']){
+ const dom=new JSDOM(fs.readFileSync(base+'admin.html','utf8'),{url:'https://example.test/admin',runScripts:'outside-only',pretendToBeVisual:true});
+ const w=dom.window,d=w.document,errors=[];w.HTMLElement.prototype.scrollIntoView=()=>{};w.confirm=()=>true;w.addEventListener('error',e=>errors.push(e.error));
+ let tables={site_admins:admin?[{user_id:'test-user'}]:[],site_drafts:[],site_published:[],site_revisions:[]};
+ const cloud={auth:{getSession:async()=>({data:{session:{user:{id:'test-user',email:'test@example.test'}}}}),onAuthStateChange:()=>{},signOut:async()=>({})},from(name){let filters=[];const query={select(){return query},eq(k,v){filters.push([k,v]);return query},order(){return query},limit(){return query},maybeSingle:async()=>({data:tables[name].find(r=>filters.every(([k,v])=>r[k]===v))||null}),then(resolve,reject){return Promise.resolve({data:tables[name].filter(r=>filters.every(([k,v])=>r[k]===v))}).then(resolve,reject)}};return query},rpc:async(name,args)=>{if(name==='site_my_rights'&&!admin)return {data:[]};if(!admin)return {error:{message:'denied'}};if(name==='site_my_rights')return {data:rights};const k=args.p_key;if(name==='save_site_draft'){const old=tables.site_drafts.find(r=>r.key===k);if((old?.version||0)!==args.p_expected)return {error:{message:'conflict'}};const version=(old?.version||0)+1;tables.site_drafts=tables.site_drafts.filter(r=>r.key!==k);tables.site_drafts.push({key:k,payload:JSON.parse(JSON.stringify(args.p_payload)),version});return {data:version};}const row=tables.site_drafts.find(r=>r.key===k),version=(tables.site_published.find(r=>r.key===k)?.version||0)+1;const live={...row,version,published_at:new Date().toISOString()};tables.site_published=tables.site_published.filter(r=>r.key!==k);tables.site_published.push(live);tables.site_revisions.push(live);return {data:version};}};
+ w.ChemAtlasCloud=async()=>cloud;w.fetch=async()=>({ok:true,json:async()=>[]});
+ for(const f of ['data/genchem.js','content-store.js','admin-design.js','admin-access.js','admin.js'])w.eval(fs.readFileSync(base+f,'utf8'));
+ await new Promise(r=>setTimeout(r,30));return {w,d,tables:()=>tables,errors};
+}
+const settle=()=>new Promise(r=>setTimeout(r,20));
+(async()=>{
+ const guest=await setup(false);assert(guest.d.body.textContent.includes('Admin access is not assigned yet'));assert(!guest.d.querySelector('#documentForm'));
+ const editor=await setup(true,['content']);assert(!editor.d.querySelector('[data-open="navigation"]'));assert(!editor.d.querySelector('#accessPanel'));assert(editor.d.querySelector('#publishDraft').hidden);
+ const a=await setup(true),{d,w}=a;
+ const click=s=>{assert(d.querySelector(s),s);d.querySelector(s).click();};
+ const fill=(name,value)=>{const e=d.querySelector(`[name="${name}"]`);assert(e,name);e.value=value;e.dispatchEvent(new w.Event('input',{bubbles:true}));};
+ click('[data-move-item="1"][data-direction="-1"]');click('#saveDraft');await settle();assert.equal(a.tables().site_drafts[0].payload.items[0].id,'learn');assert.equal(a.tables().site_published.length,0);
+ click('#publishDraft');await settle();assert.equal(a.tables().site_published[0].payload.items[0].id,'learn');
+ click('[data-open="module:measurement"]');await settle();fill('title','Edited <script>lesson</script>');click('#addSection');assert.equal(d.querySelectorAll('.section-editor').length,4);fill('section-title-3','New section');fill('section-body-3','First paragraph.\n\nSecond paragraph.');click('#previewButton');assert.equal(d.querySelectorAll('#previewArea script').length,0);assert(d.querySelector('#previewArea').textContent.includes('New section'));
+ click('#saveDraft');await settle();const draft=a.tables().site_drafts.find(r=>r.key==='module:measurement');assert.equal(draft.payload.sections.length,4);assert(!a.tables().site_published.some(r=>r.key==='module:measurement'));
+ click('#publishDraft');await settle();assert.equal(a.tables().site_published.find(r=>r.key==='module:measurement').payload.id,'measurement');
+ click('#newLesson');fill('title','New lesson');fill('slug','new-lesson');d.querySelector('#newModule').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));click('#saveDraft');await settle();assert(a.tables().site_drafts.some(r=>r.key==='module:new-lesson'));click('#publishDraft');await settle();assert(!a.tables().site_published.some(r=>r.key==='module:new-lesson'),'incomplete module blocked');
+ click('[data-open="dashboard"]');await settle();
+ click('[data-add-block="text"]');fill('item-label','Hello learners');fill('item-body','Welcome <script>bad</script>');click('#previewButton');assert.equal(d.querySelectorAll('#previewArea script').length,0);click('#publishDraft');await settle();assert(a.tables().site_published.find(r=>r.key==='dashboard').payload.blocks.some(b=>b.label==='Hello learners'));
+ click('[data-open="navigation"]');await settle();click('[data-add-route="/organic"]');fill('item-label','Organic Studio');click('#publishDraft');await settle();assert(a.tables().site_published.find(r=>r.key==='navigation').payload.items.some(b=>b.route==='/organic'));
+ assert.equal(a.errors.length,0,a.errors.map(String).join('\n'));assert.equal(guest.errors.length,0);
+ console.log('PASS: dashboard block authoring, shortcut publication, delegated UI rights; ordinary account blocked; navigation reorder; private draft save; publish; edit/add sections; safe preview; stable module ID; incomplete module cannot publish.');process.exit(0);
+})().catch(e=>{console.error(e);process.exit(1)});
