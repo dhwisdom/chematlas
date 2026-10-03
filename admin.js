@@ -15,9 +15,15 @@
   const field=(name,label,value,wide=false)=>`<label class="${wide?'wide':''}">${esc(label)}<input name="${name}" value="${esc(value)}"></label>`;
   const area=(name,label,value,rows=3)=>`<label>${esc(label)}<textarea name="${name}" rows="${rows}">${esc(value)}</textarea></label>`;
   function unsaved(){return !dirty||window.confirm('Leave this editor and discard unsaved changes? Saved drafts are kept.');}
+  function closeNavigation(){document.body.classList.remove('admin-nav-open');document.getElementById('adminMenuToggle')?.setAttribute('aria-expanded','false');}
+  document.getElementById('adminMenuToggle')?.addEventListener('click',()=>{const open=document.body.classList.toggle('admin-nav-open');document.getElementById('adminMenuToggle').setAttribute('aria-expanded',String(open));if(open)document.querySelector('.editor-rail button')?.focus();});
+  document.getElementById('adminNavBackdrop')?.addEventListener('click',closeNavigation);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('admin-nav-open')){closeNavigation();document.getElementById('adminMenuToggle')?.focus();}});
   window.addEventListener('beforeunload',event=>{if(dirty){event.preventDefault();event.returnValue='';}});
 
   function authScreen(message=''){
+    document.body.classList.remove('admin-workspace','admin-nav-open');
+    document.getElementById('adminMenuToggle')?.setAttribute('aria-expanded','false');
     window.ChemAtlasViews?.setAccount(user?{user}:null,[]);
     authorizedId=null;doc=null;dirty=false;document.getElementById('signOut').hidden=!user;
     if(user){
@@ -53,7 +59,7 @@
       if(epoch!==authEpoch)return;
       if(role.error)throw role.error;
       rights=role.data||[];if(!rights.some(r=>r!=='publish')){authScreen();return;}
-      authorizedId=user.id;window.ChemAtlasViews?.setAccount(data.session,rights);document.getElementById('signOut').hidden=false;
+      authorizedId=user.id;document.body.classList.add('admin-workspace');window.ChemAtlasViews?.setAccount(data.session,rights);document.getElementById('signOut').hidden=false;
       await loadDocuments();
       if(epoch!==authEpoch)return;
       if(can('menus'))await selectDocument('navigation',false);else if(can('dashboards'))await selectDocument('dashboard',false);else if(can('content'))await selectDocument('module:'+base.keys().next().value,false);else showAccess();
@@ -85,7 +91,7 @@
     if(result.error){status('Editor loaded, but version history could not be retrieved.','error');return;}
     historyRows=result.data||[];renderHistory();
   }
-  function rail(){return `<aside class="editor-rail"><h1>Administration</h1><p class="account-email">${esc(user.email)}</p><button id="taskViewsPanel" class="${key==='views'?'selected':''}">Task views</button><p class="rail-label">SITE CONFIGURATION</p>${can('menus')?`<button data-open="navigation" class="${key==='navigation'?'selected':''}">Menus</button>`:''}${can('dashboards')?`<button data-open="dashboard" class="${key==='dashboard'?'selected':''}">Dashboards</button>`:''}${can('access')?`<button id="accessPanel" class="${key==='access'?'selected':''}">Users & groups</button>`:''}${can('content')?`<p class="rail-label">LEARNING CONTENT</p><button id="newLesson">＋ Add Learn module</button><nav class="lesson-list" aria-label="Learn content">${lessonItems().map(([k,m])=>`<button data-open="${esc(k)}" class="${key===k?'selected':''}"><span>${String(m.number).padStart(2,'0')} · ${esc(m.title)}</span><small>Gen Chem ${m.semester===2?'II':'I'} · ${drafts.has(k)?'Draft saved':published.has(k)?'Published':'Original content'}</small></button>`).join('')}</nav>`:''}<p class="hint">Draft → Preview → Publish</p></aside>`;}
+  function rail(){return `<aside class="editor-rail" id="adminNavigation" aria-label="Admin navigation"><a href="/admin" class="brand"><span>⚛</span><strong>ChemAtlas</strong></a><div class="admin-workspace-card"><span aria-hidden="true">⚙</span><div><small>YOUR WORKSPACE</small><h1>Administration</h1></div></div><div class="admin-rail-scroll"><button id="taskViewsPanel" class="${key==='views'?'selected':''}">Task views</button><p class="rail-label">SITE CONFIGURATION</p>${can('menus')?`<button data-open="navigation" class="${key==='navigation'?'selected':''}">Menus</button>`:''}${can('dashboards')?`<button data-open="dashboard" class="${key==='dashboard'?'selected':''}">Dashboards</button>`:''}${can('access')?`<button id="accessPanel" class="${key==='access'?'selected':''}">Users & groups</button>`:''}${can('content')?`<p class="rail-label">LEARNING CONTENT</p><button id="newLesson">＋ Add Learn module</button><nav class="lesson-list" aria-label="Learn content">${lessonItems().map(([k,m])=>`<button data-open="${esc(k)}" class="${key===k?'selected':''}"><span>${String(m.number).padStart(2,'0')} · ${esc(m.title)}</span><small>Gen Chem ${m.semester===2?'II':'I'} · ${drafts.has(k)?'Draft saved':published.has(k)?'Published':'Original content'}</small></button>`).join('')}</nav>`:''}</div><div class="admin-rail-footer"><div data-task-view-slot></div><p class="account-email"><span aria-hidden="true">●</span> ${esc(user.email)}</p></div></aside>`;}
   function showAccess(){if(busy||!unsaved())return;key='access';dirty=false;root.innerHTML=`<div class="workspace">${rail()}<section id="accessRoot" class="editor-main"></section></div>`;bindRail();window.ChemAtlasAccess.mount(document.getElementById('accessRoot'),cloud);}
   function render(){
     root.innerHTML=`<div class="workspace">${rail()}<section class="editor-main"><div class="editor-head"><div><h2>${isModule()?'Edit Learn module':key==='dashboard'?'Dashboard Builder':'Menu Builder'}</h2><p>${isModule()?'Keep the lesson ID unchanged so saved learner progress stays connected.':'Choose from the gallery, arrange the canvas, and edit properties. Preview your draft before publishing.'}</p></div><button id="reloadEditor">Reload saved version</button></div><form id="documentForm">${isModule()?moduleFields():window.ChemAtlasDesign.fields(key,doc)}</form><div id="previewArea" hidden></div><div class="editor-actions"><p class="status" id="editorStatus" role="status">${drafts.has(key)?'Saved draft · Not automatically published':'Editing original or published content'}</p><button id="previewButton">Preview</button><button id="saveDraft">Save draft</button><button id="publishDraft" class="primary">Publish changes</button></div><details class="history editor-card"><summary>Published version history</summary><div id="historyList"></div></details></section></div>`;
@@ -97,6 +103,10 @@
     document.getElementById('previewButton').onclick=preview;
   }
   function bindRail(){
+    window.ChemAtlasViews?.render();
+    const label=document.getElementById('adminPageLabel');if(label)label.textContent=key==='views'?'Task views':key==='access'?'Users & groups':isModule()?'Learning content':key==='dashboard'?'Dashboards':'Menus';
+    root.querySelectorAll('.editor-rail button.selected').forEach(b=>b.setAttribute('aria-current','page'));
+    root.querySelector('.editor-rail')?.addEventListener('click',e=>{if(e.target.closest('button'))closeNavigation();});
     document.getElementById('taskViewsPanel')?.addEventListener('click',()=>{if(busy||!unsaved())return;key='views';dirty=false;root.innerHTML=`<div class="workspace">${rail()}<section class="editor-main">${window.ChemAtlasViews?.describe()||''}</section></div>`;bindRail();});
     const access=document.getElementById('accessPanel');if(access)access.onclick=showAccess;
     root.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>selectDocument(b.dataset.open));

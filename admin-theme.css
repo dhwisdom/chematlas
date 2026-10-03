@@ -1,0 +1,87 @@
+/* Admin uses the same shell proportions, palette and controls as Learner. */
+:root{font-family:var(--ca-font);color:var(--text);background:var(--bg)}
+body{background:var(--bg);color:var(--text);font-size:14px}
+::selection{background:#d8efea;color:#123c42}
+button{border-color:var(--border);border-radius:var(--ca-control-radius);color:var(--ca-ink-soft);font-size:13px;font-weight:650}
+button:hover:not(:disabled){background:var(--panel2);border-color:#bed8cf}
+button.primary{background:var(--accent);border-color:var(--accent)}
+button.primary:hover:not(:disabled){background:var(--ca-teal-dark)}
+a{color:var(--accent)}
+input,textarea,select{border-color:var(--border);border-radius:var(--ca-control-radius);color:var(--text);font-size:14px;line-height:1.6}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+label{color:var(--ca-ink-soft);font-size:12px}
+small,.hint,.required-note{color:var(--muted);font-size:12px}
+h1,h2,h3{color:var(--text);letter-spacing:-.025em}
+.admin-top{position:sticky;top:0;z-index:25;min-height:var(--ca-header-height);padding:10px 32px;gap:16px;background:rgba(255,255,255,.96);border-color:var(--border)}
+.admin-top .brand{font-size:18px;letter-spacing:-.6px;color:var(--text)}
+.brand span{display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;padding:0;border-radius:10px;background:var(--accent);color:white;font-size:17px}
+.admin-top>a:last-of-type{font-size:12px;font-weight:650}
+.admin-badge{padding:5px 9px;border-radius:6px;background:var(--ca-teal-pale);color:var(--accent);font-size:11px}
+.admin-breadcrumb{display:none;align-items:center;gap:12px;color:var(--muted);font-size:12px}
+.admin-breadcrumb>span{color:#bac5c8}.admin-breadcrumb strong{color:var(--ca-ink-soft)}
+#adminMenuToggle,#adminNavBackdrop{display:none}
+.admin-workspace .admin-top{margin-left:var(--ca-sidebar-width)}
+.admin-workspace .admin-top>.brand,.admin-workspace .admin-top>.admin-badge{display:none}
+.admin-workspace .admin-breadcrumb{display:flex}
+.workspace{display:block;max-width:none;margin-left:var(--ca-sidebar-width);padding:28px 32px 40px}
+.editor-main{max-width:1400px;margin:auto}
+.editor-rail{position:fixed;inset:0 auto 0 0;z-index:35;width:var(--ca-sidebar-width);height:100dvh;background:var(--sidebar);border-right:1px solid var(--border);padding:22px 14px 15px;display:flex;flex-direction:column;gap:0}
+.editor-rail>.brand{padding:0 9px 20px;font-size:18px;letter-spacing:-.6px;color:var(--text);flex-shrink:0}
+.admin-workspace-card{display:flex;align-items:center;gap:9px;min-height:59px;margin:0 1px 22px;padding:9px 10px;border:1px solid #e9ece8;border-radius:9px;background:#fcfdfa}
+.admin-workspace-card>span{display:grid;place-items:center;width:32px;height:32px;border-radius:8px;background:var(--ca-teal-pale);color:var(--accent);font-size:16px}
+.admin-workspace-card small{display:block;font-size:8px;font-weight:750;letter-spacing:1px;color:#89959c}
+.admin-workspace-card h1{margin:4px 0 0;font-size:12px;letter-spacing:0}
+.admin-rail-scroll{min-height:0;flex:1;overflow:auto;scrollbar-width:thin;padding:0 1px 8px}
+.admin-rail-scroll>button{position:relative;width:100%;min-height:41px;text-align:left;margin:0 0 4px;padding:10px 11px;border:0;background:transparent;border-radius:7px;font-size:13px;color:#657684}
+.admin-rail-scroll>button:hover{background:var(--panel2);color:var(--accent)}
+.editor-rail button.selected{background:var(--ca-teal-pale);color:var(--accent);font-weight:700}
+.rail-label{padding:0 11px;margin:22px 0 8px;font-size:9px;font-weight:750;letter-spacing:1.1px;color:#89959c}
+.lesson-list{max-height:none;overflow:visible;gap:4px;margin-top:8px}
+.lesson-list button{border:1px solid transparent;border-radius:7px;padding:10px 11px;background:transparent;color:#657684;line-height:1.5;font-size:11px;min-height:44px}
+.lesson-list button:hover{background:var(--panel2)}
+.lesson-list small{font-size:9px;font-weight:400;color:var(--muted)}
+.admin-rail-footer{flex-shrink:0;padding-top:8px;border-top:1px solid var(--border)}
+.admin-rail-footer .ca-task-view{margin:0 1px 12px;padding:12px 10px;border-radius:9px}
+.admin-rail-footer .ca-task-view small{font-size:10px}
+.admin-rail-footer .account-email{margin:0;padding:5px 9px;font-size:10px;line-height:1.5;color:var(--muted)}
+.account-email>span{color:var(--accent);margin-right:6px}
+.editor-head{margin:0 0 24px;gap:20px;align-items:center}
+.editor-head h2{font-size:25px;margin:0 0 6px;letter-spacing:-.8px}
+.editor-head p{font-size:13px;line-height:1.7;color:var(--muted);max-width:660px}
+.editor-head>button{flex-shrink:0}
+.editor-card,.auth-card{border-color:var(--border);border-radius:var(--ca-panel-radius);box-shadow:none;background:var(--panel)}
+.editor-card{padding:24px}.editor-card h3{font-size:16px;margin-bottom:16px}
+.builder-layout{grid-template-columns:170px minmax(240px,1fr) 250px;gap:18px}
+.builder-layout .editor-card{padding:18px}
+.builder-gallery button{background:var(--panel2);font-size:12px;font-weight:550;border-color:var(--border)}
+.builder-properties{top:calc(var(--ca-header-height) + 24px)}
+.canvas-item{border-color:var(--border);border-radius:8px}
+.canvas-item.selected{border:1px solid var(--accent);background:var(--ca-teal-pale);box-shadow:0 0 0 1px var(--accent)}
+.canvas-select{font-weight:500}.canvas-select strong{font-size:13px}.canvas-select small{color:var(--muted);font-size:11px}
+.canvas-arrows button{background:var(--panel);min-height:36px}
+.editor-actions{border-color:var(--border);border-radius:var(--ca-panel-radius);padding:12px 18px;box-shadow:0 -6px 24px rgba(29,58,63,.04);z-index:10}
+.editor-actions .status{color:var(--muted);font-size:12px}.editor-actions .status.error{color:var(--danger)}.editor-actions .status.success{color:var(--accent)}
+.section-editor,.check-editor,.history-row,.permission-row{border-color:var(--border)}
+.preview{background:var(--panel2);border-color:#bed8cf;border-radius:var(--ca-panel-radius)}
+.preview-label,.eyebrow{font-size:9px;letter-spacing:.12em;color:var(--accent);font-weight:800}
+.auth-card{max-width:480px;margin:64px auto;padding:32px}.auth-card h1{font-size:25px;line-height:1.3}.auth-card p{font-size:14px;color:var(--muted)}
+.ca-view-categories article{background:var(--panel2);border-color:var(--border);border-radius:var(--ca-panel-radius)}
+@media(max-width:1250px){.builder-layout{grid-template-columns:minmax(220px,1fr) 240px}.builder-gallery{grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:1050px){.builder-layout,.access-layout{grid-template-columns:minmax(0,1fr)}.builder-properties{position:static}.builder-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.field-grid{grid-template-columns:1fr}.wide{grid-column:auto}.ca-view-categories{grid-template-columns:1fr}}
+@media(max-width:850px){
+ .admin-top,.admin-workspace .admin-top{margin-left:0;padding:10px 18px;flex-wrap:wrap;gap:12px;min-height:var(--ca-header-height)}
+ .admin-workspace #adminMenuToggle{display:block;font-size:18px;padding:6px 10px;min-height:40px}
+ .admin-workspace .admin-top>a:last-of-type{margin-left:auto;font-size:11px}
+ .admin-workspace .admin-breadcrumb{font-size:11px;gap:7px}
+ .workspace{margin-left:0;padding:24px 18px 36px}
+ input,textarea,select{font-size:16px}
+ .editor-rail{transform:translateX(-100%);visibility:hidden;transition:transform .2s ease,visibility .2s;box-shadow:none}
+ .admin-nav-open .editor-rail{transform:translateX(0);visibility:visible;box-shadow:8px 0 30px #17324a20}
+ .admin-nav-open #adminNavBackdrop{display:block;position:fixed;inset:0;z-index:30;border:0;border-radius:0;background:#17324a55;width:100%;height:100dvh}
+ .lesson-list{display:grid;grid-template-columns:1fr;max-height:none}
+ .editor-head{align-items:flex-start;flex-direction:column}.editor-head h2{font-size:24px}
+ .editor-card{padding:18px}.editor-actions{position:static}.auth-card{margin:36px 18px}
+ .admin-top .ca-task-view{margin-left:auto}.admin-top .ca-task-view label{display:none}
+}
+@media(max-width:500px){.builder-gallery{grid-template-columns:1fr}.admin-breadcrumb>span,.admin-breadcrumb>strong{display:none}.admin-top #signOut{font-size:11px;min-height:36px;padding:8px}.editor-actions button{flex:1}.editor-actions .status{flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){.editor-rail{transition:none}}
