@@ -155,7 +155,7 @@
       </article>
 
       <article class="gc-check panel">
-        <div class="gc-check-head"><div><p class="eyebrow">QUICK CHECK</p><h3>${esc(m.check.question)}</h3></div><span>1 question</span></div>
+        <div class="gc-check-head"><div><p class="eyebrow">QUICK CHECK</p><h3>${esc(m.check.question)}</h3><button type="button" class="pt-open-inline" data-periodic-open>▦ Periodic table & ions</button></div><span>1 question</span></div>
         <div class="gc-check-options">${m.check.choices.map((c,i) => `<button type="button" class="gc-check-choice" data-choice="${i}" aria-pressed="false"><span aria-hidden="true">${String.fromCharCode(65+i)}</span>${esc(c)}</button>`).join('')}</div>
         <div class="gc-check-actions"><button id="gcCheckAnswer" class="primary-button" disabled>Check answer</button><div id="gcFeedback" class="gc-feedback" aria-live="polite"></div></div>
       </article>
