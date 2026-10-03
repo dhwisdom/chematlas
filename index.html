@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-ca-starting>
 <head>
   <meta charset="utf-8" />
   <base href="/" />
@@ -8,8 +8,29 @@
   <title>ChemAtlas — Interactive Chemistry Curriculum</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="organic.css" />
+  <link rel="stylesheet" href="genchem.css" />
+  <link rel="stylesheet" href="platform.css" />
+  <link rel="stylesheet" href="tutor-enhancements.css" />
+  <link rel="stylesheet" href="tutor-actions.css" />
+  <link rel="stylesheet" href="chematlas-tutoring.css" />
+  <link rel="preload" href="chematlas-tutoring.js" as="script" />
+  <script src="startup.js" defer></script>
+  <style>
+    html[data-ca-starting]{background:#f6f8f5}
+    html[data-ca-starting] body{margin:0;overflow:hidden;background:#f6f8f5}
+    html[data-ca-starting] .app-shell{visibility:hidden}
+    #caStartup{position:fixed;inset:0;z-index:10000;display:grid;place-content:center;gap:14px;text-align:center;padding:24px;background:#f6f8f5;color:#17324a;font:16px system-ui,sans-serif}
+    #caStartup strong{font-size:26px}#caStartup p{margin:0;color:#526c76}
+    #caStartup a{color:#087b76}#caStartup [hidden]{display:none}
+  </style>
 </head>
 <body>
+  <div id="caStartup" role="status" aria-live="polite">
+    <strong>⚛ ChemAtlas</strong>
+    <p id="caStartupMessage">Preparing your learning space…</p>
+    <a id="caStartupRetry" href="" hidden>Reload ChemAtlas</a>
+    <noscript><p>Enable JavaScript to use the interactive lessons.</p></noscript>
+  </div>
   <div class="app-shell">
     <aside class="sidebar" aria-label="Primary navigation">
       <div class="brand">

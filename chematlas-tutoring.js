@@ -688,6 +688,7 @@
       enhanceGenchem();
       setActiveNav();
       updateBreadcrumb();
+      window.ChemAtlasBoot?.ready();
     });
   }
 

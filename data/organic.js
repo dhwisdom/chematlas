@@ -177,7 +177,7 @@ window.CHEM_ORGANIC = {
     document.body.appendChild(dataScript);
   }
 
-  window.addEventListener('load', installGenChemShell, { once: true });
+  document.addEventListener('DOMContentLoaded', installGenChemShell, { once: true });
 })();
 
 // Learner-first product layer: landing page, clean routes, adaptive progress,
@@ -215,5 +215,5 @@ window.CHEM_ORGANIC = {
     }
   }
 
-  window.addEventListener('load', installPlatform, { once: true });
+  document.addEventListener('DOMContentLoaded', installPlatform, { once: true });
 })();
