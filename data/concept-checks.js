@@ -156,6 +156,7 @@
       ['Multiplying an entire balanced cell reaction by 2 changes E°cell how?',['It doubles','It halves','It is unchanged','Its sign reverses'],2,'Both ΔG° and transferred electron amount n double, so E° = −ΔG°/(nF) is unchanged.']
     ]
   };
+  const sections = {measurement:[0,1,1,2,2,2],'atoms-moles':[0,0,2,1,2,0],formulas:[0,1,0,1,2,1],stoichiometry:[0,0,1,2,1,2],aqueous:[0,1,2,1,2,2],thermochemistry:[1,0,2,1,1,0],electronic:[1,1,1,0,2,0],periodic:[0,0,1,0,0,2],bonding:[0,2,1,2,1,1],geometry:[0,0,1,0,1,0],gases:[0,0,0,2,1,0],imf:[0,1,2,2,0,2],solutions:[1,2,1,2,1,1],kinetics:[0,2,1,1,0,2],equilibrium:[0,2,1,2,0,1],acidbase:[0,2,1,2,2,2],solubility:[0,0,1,0,1,0],thermodynamics:[1,2,1,1,2,2],electrochem:[0,0,1,0,1,1]};
   const levels = ['Recognize','Explain','Apply','Reason','Connect','Reinforce'];
   window.ChemAtlasChecks = {
     questions(module) {
@@ -165,7 +166,7 @@
       return bank.map((row,i) => ({
         ...(row ? {question:row[0],choices:row[1],answer:row[2],explanation:row[3],
           callback:row[4] ? {moduleId:row[4],section:row[5]||0} : undefined} : module.check),
-        id:module.id+'-'+(i+1),level:levels[i]
+        id:module.id+'-'+(i+1),level:levels[i],section:sections[module.id][i]
       }));
     }
   };

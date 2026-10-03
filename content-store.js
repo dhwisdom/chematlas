@@ -40,6 +40,7 @@
       if(new Set(m.checks.map(q=>q?.id)).size!==m.checks.length)return 'Each question needs a unique ID.';
       for(const q of m.checks) {
         if(!q||!text(q.id,120)||!/^[a-z0-9-]+$/.test(q.id)||!text(q.level,40)||!text(q.question)||!texts(q.choices,2,6)||!Number.isInteger(q.answer)||q.answer<0||q.answer>=q.choices.length||!text(q.explanation))return 'Each check needs an ID, stage, question, choices, correct answer, and explanation.';
+        if(q.section!=null&&(!Number.isInteger(q.section)||q.section<0||q.section>=m.sections.length))return 'Choose an existing lesson section for the explanation.';
         if(q.callback&&(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(q.callback.moduleId||'')||!Number.isInteger(q.callback.section)||q.callback.section<0||q.callback.section>29))return 'Choose a valid earlier module ID and section number.';
       }
     }
