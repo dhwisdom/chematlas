@@ -18,7 +18,7 @@
   document.body.appendChild(dialog);
   dialog.querySelector('#ptClose').onclick=()=>dialog.close();
   // Keep Escape confined to this reference, including when opened over Practice Lab.
-  dialog.addEventListener('keydown',e=>{if(e.key==='Escape')e.stopPropagation();});
+  dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();dialog.close();}});
   dialog.addEventListener('click',e=>{const button=e.target.closest('[data-element]');if(button)detail(button.dataset.element);if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
   dialog.addEventListener('close',()=>{if(opener?.isConnected)opener.focus({preventScroll:true});});
   function filter(){
