@@ -1,0 +1,34 @@
+/* Shared visual foundation for Learner and Admin. */
+:root{
+  --ca-font:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --ca-sidebar-width:232px;
+  --ca-header-height:64px;
+  --ca-panel-radius:10px;
+  --ca-control-radius:7px;
+  --bg:#f6f8f5;
+  --panel:#ffffff;
+  --panel2:#fbfcfa;
+  --border:#e3e9e5;
+  --text:#17324a;
+  --muted:#778992;
+  --accent:#0b7b79;
+  --accent2:#397f91;
+  --gold:#d79c3e;
+  --danger:#c85c5c;
+  --sidebar:#ffffff;
+  --shadow:0 10px 34px rgba(29,58,63,.06);
+  --ca-ink:#17324a;
+  --ca-ink-soft:#455b6d;
+  --ca-muted:#7b8a94;
+  --ca-line:#e6e9e5;
+  --ca-paper:#f7f8f5;
+  --ca-white:#fff;
+  --ca-teal:#0b7b79;
+  --ca-teal-dark:#075f61;
+  --ca-teal-pale:#e7f4f1;
+  --ca-blue-pale:#edf3f8;
+  --ca-amber:#d79c3e;
+  --ca-amber-pale:#fbf3e5;
+  --ca-green:#347c62;
+  --ca-green-pale:#e9f3ed;
+}
