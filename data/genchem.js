@@ -1,4 +1,5 @@
-window.CHEM_GENCHEM = {
+((root) => {
+const course = {
   "meta": {
     "title": "General Chemistry Foundations",
     "subtitle": "A two-semester, majors-level foundation for the rest of chemistry.",
@@ -1590,3 +1591,7 @@ window.CHEM_GENCHEM = {
     }
   ]
 };
+
+root.CHEM_GENCHEM = course;
+if (typeof module !== "undefined" && module.exports) module.exports = course;
+})(typeof window === "undefined" ? globalThis : window);
