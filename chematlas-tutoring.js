@@ -422,11 +422,7 @@
     const view = document.getElementById('genchemView');
     const workspace = view?.querySelector('.gc-workspace');
     const reader = workspace?.querySelector('.gc-reader');
-    if (!view || !workspace || !reader || workspace.dataset.tutoringEnhanced === '1') return;
-    workspace.dataset.tutoringEnhanced = '1';
-
-    workspace.querySelector('.gc-v2-context')?.remove();
-    reader.querySelector('.ca-learning-sequence')?.remove();
+    if (!view || !workspace || !reader) return;
 
     const allModules = modules();
     const completed = safeJson(LS.modules, []);
@@ -436,9 +432,15 @@
     const semesterModules = allModules.filter(m => m.semester === semester);
     const semesterDone = semesterModules.filter(m => completed.includes(m.id)).length;
 
-    if (!view.querySelector('.ca-learn-summary')) {
-      const summary = document.createElement('section');
+    let summary = view.querySelector('.ca-learn-summary');
+    if (!summary) {
+      summary = document.createElement('section');
       summary.className = 'ca-learn-summary';
+      (view.querySelector('.gc-semester-tabs') || workspace).before(summary);
+    }
+    const summarySignature = `${semester}:${semesterDone}:${semesterModules.length}`;
+    if (summary.dataset.signature !== summarySignature) {
+      summary.dataset.signature = summarySignature;
       summary.innerHTML = `
         <div>
           <p class="ca-learn-overline">GENERAL CHEMISTRY ${semester === 2 ? 'II' : 'I'}</p>
@@ -450,8 +452,12 @@
           <div><i style="width:${semesterModules.length ? Math.round(semesterDone / semesterModules.length * 100) : 0}%"></i></div>
         </div>
       `;
-      view.insertBefore(summary, view.querySelector('.gc-semester-tabs') || workspace);
     }
+
+    if (workspace.dataset.tutoringEnhanced === '1') return;
+    workspace.dataset.tutoringEnhanced = '1';
+    workspace.querySelector('.gc-v2-context')?.remove();
+    reader.querySelector('.ca-learning-sequence')?.remove();
 
     const header = reader.querySelector('.gc-module-header');
     if (header) {
@@ -471,7 +477,13 @@
         const tutor = document.createElement('button');
         tutor.className = 'ca-inline-tutor';
         tutor.innerHTML = '✦ Ask Tutor about this lesson';
-        tutor.addEventListener('click', () => navigate('/tutor'));
+        tutor.addEventListener('click', () => {
+          const topic = reader.querySelector('.ca-focus-title')?.textContent || current.title;
+          navigate('/tutor');
+          window.dispatchEvent(new CustomEvent('chematlas:lesson-help', { detail: {
+            prompt: `I'm learning ${current.title}, specifically ${topic}. Help me reason through it one step at a time, then ask me a question to check my understanding.`
+          }}));
+        });
         header.appendChild(tutor);
       }
     }
@@ -507,7 +519,7 @@
         <div class="ca-focus-meter" aria-label="Lesson progress"><span></span></div>
       </header>
       <nav class="ca-focus-dots" aria-label="Lesson steps">
-        ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span></span></button>`).join('')}
+        ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span>${index + 1}</span>${esc(step.kind)}</button>`).join('')}
       </nav>
     `;
 
@@ -545,9 +557,28 @@
     if (readerNav) readerNav.classList.add('ca-module-navigation');
 
     let activeIndex = 0;
+    // A reading position is browser-local navigation, separate from assessed mastery.
+    const positionKey = `chematlas-lesson-step-v1:${current.id}`;
+    let savedIndex = 0;
+    try { savedIndex = Number(localStorage.getItem(positionKey) || 0); } catch (_) {}
+    if (!Number.isInteger(savedIndex)) savedIndex = 0;
+
+    function updateCheckNext() {
+      if (activeIndex !== steps.length - 1) return;
+      const mastered = safeJson(LS.modules, []).includes(current.id);
+      const nextModule = allModules[allModules.findIndex(m => m.id === current.id) + 1];
+      const next = footer.querySelector('.ca-focus-next');
+      next.hidden = !mastered;
+      next.textContent = nextModule ? 'Next lesson' : 'View my progress';
+      footer.querySelector('.ca-focus-helper').textContent = mastered
+        ? 'Module mastered. Revisit any step or keep learning.'
+        : 'Complete the check above when you are ready.';
+    }
+    check?.querySelector('#gcCheckAnswer')?.addEventListener('click', updateCheckNext);
 
     function showStep(index, moveFocus = false) {
       activeIndex = Math.max(0, Math.min(index, steps.length - 1));
+      try { localStorage.setItem(positionKey, String(activeIndex)); } catch (_) {}
       steps.forEach((step, i) => {
         step.el.hidden = i !== activeIndex;
         step.el.setAttribute('aria-hidden', i === activeIndex ? 'false' : 'true');
@@ -569,11 +600,10 @@
       back.disabled = activeIndex === 0;
 
       if (activeIndex === steps.length - 1) {
-        next.hidden = true;
-        footer.querySelector('.ca-focus-helper').textContent = 'Complete the check above when you are ready.';
+        updateCheckNext();
       } else {
         next.hidden = false;
-        next.textContent = activeIndex === steps.length - 2 ? 'Continue to quick check →' : 'Continue →';
+        next.textContent = activeIndex === steps.length - 2 ? 'Continue to quick check' : 'Continue';
         footer.querySelector('.ca-focus-helper').textContent = 'Take your time. You can revisit any step.';
       }
 
@@ -589,9 +619,13 @@
       button.addEventListener('click', () => showStep(Number(button.dataset.focusIndex), true));
     });
     footer.querySelector('.ca-focus-back')?.addEventListener('click', () => showStep(activeIndex - 1, true));
-    footer.querySelector('.ca-focus-next')?.addEventListener('click', () => showStep(activeIndex + 1, true));
+    footer.querySelector('.ca-focus-next')?.addEventListener('click', () => {
+      if (activeIndex < steps.length - 1) return showStep(activeIndex + 1, true);
+      const nextModule = allModules[allModules.findIndex(m => m.id === current.id) + 1];
+      navigate(nextModule ? '/genchem/' + nextModule.id : '/progress');
+    });
 
-    showStep(0, false);
+    showStep(savedIndex, false);
   }
 
   function setActiveNav() {
