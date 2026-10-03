@@ -163,3 +163,12 @@ Reference: [Esko WebCenter 25.03 Administration Guide](https://docs.esko.com/doc
 - Three starter groups have no members: Content editors, Site designers, Publishers.
 
 Apply `supabase/migrations/20261003180310_webcenter_admin_workspace.sql` before deploying these UI files. Run `tests/group-permissions.sql` against a trusted SQL connection (transactional fixtures roll back). `tests/admin-ui.cjs` exercises the editor with a mocked client; install `jsdom@26.1.0` in an external test workspace and supply its `node_modules` via `NODE_PATH`.
+
+
+### Periodic table reference
+
+The sidebar, Learn checks, and Practice Lab open a native modal reference without navigating or modifying progress/answers. Includes 118 elements, search and family filtering, introductory ion names/charges, and common polyatomic ions. Native dialog behavior traps focus; Escape closes only the reference and focus returns to its trigger. Small screens use horizontal table scrolling with searchable results as an alternative.
+
+Element facts in `data/periodic-table.js` come from NIH PubChem's `https://pubchem.ncbi.nlm.nih.gov/rest/pug/periodictable/JSON` (2026-10-03); masses are retained as provided. Display layout uses detached La–Lu and Ac–Lr rows. Naming guidance follows OpenStax Chemistry 2e §2.7. Oxidation states are explicitly distinguished from simple-ion charges. Both sources are linked in the reference.
+
+Validation: `node tests/periodic-table.test.cjs`; `tests/periodic-ui.cjs` with jsdom 26.1.0 supplied through NODE_PATH.
