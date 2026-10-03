@@ -207,7 +207,7 @@
     rail.innerHTML = `
       <section><span>You are here</span><h4>${esc(module?.title || 'General Chemistry')}</h4><div class="gc-v2-mini-path">${path.map((x,i)=>`<i>${i ? '→' : ''}</i><b>${esc(x)}</b>`).join('')}</div></section>
       <section><span>Atlas connection</span><h4>See what this concept changes.</h4><p>Return to the connected map when you need to understand why this module matters outside its chapter.</p><button data-v2-back-atlas>Open Atlas →</button></section>
-      <section><span>Need a second explanation?</span><h4>Ask ChemAtlas.</h4><p>The Tutor can use this module, your progress, and the rest of the curriculum as context.</p><button data-v2-open-tutor>Ask Tutor ✦</button></section>
+      <section><span>Need a second explanation?</span><h4>Ask ChemWaypoint.</h4><p>The Tutor can use this module, your progress, and the rest of the curriculum as context.</p><button data-v2-open-tutor>Ask Tutor ✦</button></section>
     `;
     workspace.appendChild(rail);
     rail.querySelector('[data-v2-back-atlas]')?.addEventListener('click', () => navigate('/dashboard'));

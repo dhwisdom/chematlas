@@ -79,7 +79,7 @@
     landing.dataset.tutoringLanding = '1';
     landing.innerHTML = `
       <header class="ca-marketing-nav">
-        <button class="ca-marketing-brand" data-route="/"><span>⚛</span><strong>ChemAtlas</strong></button>
+        <button class="ca-marketing-brand" data-route="/"><span>⚛</span><strong>ChemWaypoint</strong></button>
         <nav>
           <button data-route="/courses">Courses</button>
           <button data-route="/model-lab">Labs</button>
@@ -92,10 +92,10 @@
         <div class="ca-marketing-copy">
           <p class="ca-marketing-kicker">COLLEGE CHEMISTRY · BUILT TO TEACH</p>
           <h1>A chemistry tutor that always knows <em>what comes next.</em></h1>
-          <p class="ca-marketing-lede">Learn a concept, manipulate it, practice the reasoning, and get help the moment something stops making sense. ChemAtlas keeps the path through General Chemistry clear without flattening the science.</p>
+          <p class="ca-marketing-lede">Learn a concept, manipulate it, practice the reasoning, and get help the moment something stops making sense. ChemWaypoint keeps the path through General Chemistry clear without flattening the science.</p>
           <div class="ca-marketing-actions">
             <button class="primary-button" data-start-learning>Start learning</button>
-            <button class="secondary-button" data-route="/dashboard">Explore ChemAtlas</button>
+            <button class="secondary-button" data-route="/dashboard">Explore ChemWaypoint</button>
           </div>
           <div class="ca-marketing-proof">
             <span><strong>19</strong><small>Gen Chem modules</small></span>
@@ -150,7 +150,7 @@
       </section>
 
       <section class="ca-marketing-bottom">
-        <div><p>READY WHEN YOU ARE</p><h2 id="caLandingNext">Start with the foundation.</h2><span id="caLandingNextCopy">Tell ChemAtlas what you are working toward and it will suggest a path.</span></div>
+        <div><p>READY WHEN YOU ARE</p><h2 id="caLandingNext">Start with the foundation.</h2><span id="caLandingNextCopy">Tell ChemWaypoint what you are working toward and it will suggest a path.</span></div>
         <button class="primary-button" data-start-learning>Choose my learning goal →</button>
       </section>
     `;
@@ -291,7 +291,7 @@
     const wrap = document.createElement('div');
     wrap.className = 'ca-top-search';
     wrap.innerHTML = `
-      <label><span>⌕</span><input type="search" placeholder="Search concepts..." aria-label="Search ChemAtlas"><kbd>⌘ K</kbd></label>
+      <label><span>⌕</span><input type="search" placeholder="Search concepts..." aria-label="Search ChemWaypoint"><kbd>⌘ K</kbd></label>
       <div class="ca-search-results" hidden></div>`;
     topbar.insertBefore(wrap, actions);
 
@@ -304,7 +304,7 @@
       const matches = modules().filter(m => [m.title,m.subtitle,...(m.vocabulary||[])].join(' ').toLowerCase().includes(q)).slice(0,6);
       results.innerHTML = matches.length
         ? matches.map(m => `<button class="ca-search-result" data-search-module="${esc(m.id)}"><span>⌕</span><span><strong>${esc(m.title)}</strong><small>General Chemistry · Module ${String(m.number).padStart(2,'0')}</small></span></button>`).join('')
-        : '<button class="ca-search-result" data-search-tutor><span>✦</span><span><strong>Ask ChemAtlas instead</strong><small>Open the AI Tutor</small></span></button>';
+        : '<button class="ca-search-result" data-search-tutor><span>✦</span><span><strong>Ask ChemWaypoint instead</strong><small>Open the AI Tutor</small></span></button>';
       results.hidden = false;
       results.querySelectorAll('[data-search-module]').forEach(btn => btn.addEventListener('click', () => {
         input.value = ''; results.hidden = true; navigate('/genchem/' + btn.dataset.searchModule);
@@ -418,7 +418,7 @@
             }).join('')}
           </section>
           <section class="ca-recent"><div class="ca-section-head"><h3>Recent activity</h3><button data-home-progress>Progress →</button></div><div class="ca-recent-list">${recentHtml(history)}</div></section>
-          <section class="ca-ask-strip"><span class="spark">✦</span><div><strong>Stuck on something?</strong><small>Ask ChemAtlas using your current course context.</small></div><button data-home-tutor>Ask Tutor →</button></section>
+          <section class="ca-ask-strip"><span class="spark">✦</span><div><strong>Stuck on something?</strong><small>Ask ChemWaypoint using your current course context.</small></div><button data-home-tutor>Ask Tutor →</button></section>
         </div>
       </div>
     `;

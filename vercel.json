@@ -1,6 +1,14 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "chematlas-red.vercel.app" }],
+      "destination": "https://www.chemwaypoint.com/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/dashboard", "destination": "/" },
     { "source": "/curriculum", "destination": "/" },

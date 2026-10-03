@@ -121,7 +121,7 @@
     if (!actions.length) return;
     const panel = document.createElement('div');
     panel.className = 'ca-copilot-actions';
-    panel.innerHTML = `<div class="ca-copilot-label"><span>✦</span><b>DO NEXT</b><small>Launch a ChemAtlas learning activity</small></div><div class="ca-copilot-buttons">${actions.map(actionHtml).join('')}</div>`;
+    panel.innerHTML = `<div class="ca-copilot-label"><span>✦</span><b>DO NEXT</b><small>Launch a ChemWaypoint learning activity</small></div><div class="ca-copilot-buttons">${actions.map(actionHtml).join('')}</div>`;
     body.appendChild(panel);
   }
 

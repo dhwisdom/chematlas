@@ -1,10 +1,10 @@
-# ChemAtlas Product Architecture
+# ChemWaypoint Product Architecture
 
 ## North Star
 
 Help a chemistry learner build durable conceptual mastery, see how ideas connect across courses, and know what to practice next.
 
-ChemAtlas is not designed as a collection of chemistry widgets. Every feature should support at least one learner capability and produce a measurable learning outcome.
+ChemWaypoint is not designed as a collection of chemistry widgets. Every feature should support at least one learner capability and produce a measurable learning outcome.
 
 ## Learner problem
 
@@ -17,7 +17,7 @@ College chemistry is commonly experienced as disconnected chapters and courses. 
 3. **Practice** — reasoning-first problems, virtual labs, and immediate feedback.
 4. **Measure** — mastery records and practice history rather than simple page completion.
 5. **Adapt** — recommend the next lesson or review target from learner state and goals.
-6. **Tutor** — course-grounded AI assistance that teaches from ChemAtlas content first and can optionally use current web context.
+6. **Tutor** — course-grounded AI assistance that teaches from ChemWaypoint content first and can optionally use current web context.
 7. **Transfer** — explicitly connect General Chemistry concepts forward into Organic, Analytical, Physical Chemistry, and Biochemistry.
 
 ## Experience principles
@@ -46,10 +46,10 @@ Guest users store this state locally. Authenticated users synchronize the same s
 
 ## AI architecture
 
-The ChemAtlas Tutor follows a retrieval-first pattern:
+The ChemWaypoint Tutor follows a retrieval-first pattern:
 
 1. Receive the learner's question and current learning context.
-2. Retrieve the most relevant ChemAtlas lesson excerpts in the browser.
+2. Retrieve the most relevant ChemWaypoint lesson excerpts in the browser.
 3. Send only the relevant context to the server-side tutor endpoint.
 4. Ask the model to teach from course context first.
 5. Optionally enable web search for current/external context.
@@ -63,7 +63,7 @@ The OpenAI API key is server-side only and must never be committed to the reposi
 - Publishable browser keys are allowed; service-role and OpenAI secrets are not.
 - AI responses are assistive, not authoritative laboratory-safety instructions.
 - Chemistry calculations and claims should be checkable against equations, units, and source material.
-- The tutor should distinguish ChemAtlas course context from web-derived information.
+- The tutor should distinguish ChemWaypoint course context from web-derived information.
 - Learning analytics should collect only what is useful for the learner experience.
 
 ## Outcomes to measure

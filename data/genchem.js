@@ -2,7 +2,7 @@ window.CHEM_GENCHEM = {
   "meta": {
     "title": "General Chemistry Foundations",
     "subtitle": "A two-semester, majors-level foundation for the rest of chemistry.",
-    "scope": "ChemAtlas instructional sequence aligned to the University of Arkansas chemistry/biochemistry degree spine, UArk CHEM 12073/12071 context, ACS introductory-chemistry expectations, and the common two-semester general-chemistry scope reflected by OpenStax Chemistry 2e. This is not an official University of Arkansas syllabus.",
+    "scope": "ChemWaypoint instructional sequence aligned to the University of Arkansas chemistry/biochemistry degree spine, UArk CHEM 12073/12071 context, ACS introductory-chemistry expectations, and the common two-semester general-chemistry scope reflected by OpenStax Chemistry 2e. This is not an official University of Arkansas syllabus.",
     "sources": [
       {
         "label": "University of Arkansas Chemistry & Biochemistry catalog",
@@ -835,7 +835,7 @@ window.CHEM_GENCHEM = {
         "course": "Organic chemistry & biochemistry",
         "text": "Shape controls stereochemistry, orbital overlap, receptor binding, protein folding and whether a reactive group can physically approach another."
       },
-      "lab": "Directly paired with ChemAtlas’s interactive VSEPR Model Lab.",
+      "lab": "Directly paired with ChemWaypoint’s interactive VSEPR Model Lab.",
       "tool": {
         "label": "Open 3D VSEPR Model Lab",
         "action": "lab"

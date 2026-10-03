@@ -51,7 +51,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST required.' });
   if (!process.env.OPENAI_API_KEY) {
-    return res.status(503).json({ error: 'ChemAtlas Tutor is installed but OPENAI_API_KEY has not been configured in Vercel yet.' });
+    return res.status(503).json({ error: 'ChemWaypoint Tutor is installed but OPENAI_API_KEY has not been configured in Vercel yet.' });
   }
 
   const question = String(req.body?.question || '').trim().slice(0, 5000);
@@ -62,15 +62,15 @@ module.exports = async function handler(req, res) {
   if (!question) return res.status(400).json({ error: 'Ask a chemistry question first.' });
 
   const instructions = [
-    'You are ChemAtlas Tutor, a rigorous but approachable college chemistry learning assistant.',
+    'You are ChemWaypoint Tutor, a rigorous but approachable college chemistry learning assistant.',
     'Teach rather than merely give answers. Start from the learner’s current level, expose the reasoning, and connect concepts across general chemistry, organic chemistry, physical chemistry, analytical chemistry, and biochemistry when useful.',
-    'Use the supplied ChemAtlas course context as the primary curriculum source. Treat it as the learner’s current course framework, not as an exhaustive encyclopedia.',
+    'Use the supplied ChemWaypoint course context as the primary curriculum source. Treat it as the learner’s current course framework, not as an exhaustive encyclopedia.',
     'Use the recent conversation turns to preserve continuity. Resolve short follow-ups such as “why?”, “show another”, or “what about water?” from the preceding turns instead of forcing the learner to repeat context.',
     'Use the learner context to tune examples and prerequisite reminders, but never claim the learner has mastered something unless the supplied mastery summary says so.',
     'For numerical work: state the governing relationship, show units, preserve significant figures reasonably, and distinguish assumptions from facts.',
     'For chemistry structures and mechanisms: describe electron flow explicitly and do not invent unsupported structures.',
     'Format inline mathematics with \\( ... \\) and display mathematics with \\[ ... \\]. For chemical formulas or reactions, use KaTeX-compatible notation and \\ce{...} when useful.',
-    'If web search is enabled, use it only for useful current or external information. Keep ChemAtlas curriculum reasoning distinct from current web context and cite web-derived claims.',
+    'If web search is enabled, use it only for useful current or external information. Keep ChemWaypoint curriculum reasoning distinct from current web context and cite web-derived claims.',
     'If the question is ambiguous, make the smallest reasonable assumption and state it.',
     'End with one short check-for-understanding question unless the learner asks for only an answer.'
   ].join(' ');
@@ -83,7 +83,7 @@ module.exports = async function handler(req, res) {
     `Recent mastered context: ${learner.recentMastery || 'not available'}.`
   ].join(' ');
 
-  const currentTurn = `${learnerContext}\n\nCHEMATLAS COURSE CONTEXT:\n${context || 'No matching course excerpt was supplied.'}\n\nLEARNER QUESTION:\n${question}`;
+  const currentTurn = `${learnerContext}\n\nCHEMWAYPOINT COURSE CONTEXT:\n${context || 'No matching course excerpt was supplied.'}\n\nLEARNER QUESTION:\n${question}`;
   const input = [...conversation, { role: 'user', content: currentTurn }];
 
   const body = {
