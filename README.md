@@ -140,7 +140,7 @@ Open `/admin` and sign in with a verified ChemAtlas account. Admin membership is
 
 The editor supports sidebar tab labels/order, adding and editing General Chemistry modules and reading sections, worked examples, quick checks, private drafts, previews, publishing, and loading earlier published versions as drafts. Existing module IDs are immutable in the editor so progress stays connected. Publishing overlays the bundled course without replacing its source files. If published content is unavailable or invalid, the bundled curriculum remains usable.
 
-`site_drafts` and `site_revisions` are admin-only. `site_published` exposes published content to learners. Save/publish RPCs use invoker permissions, RLS, and optimistic version checks. No service-role key is used by the editor. Admin does not grant access to other learners' progress or Tutor history.
+`site_drafts` and `site_revisions` require the corresponding component right. `site_published` exposes published content to learners. Save/publish RPCs use invoker permissions, RLS, and optimistic version checks. No service-role key is used by the editor. Admin does not grant access to other learners' progress or Tutor history.
 
 `shared-client.js` provides one Supabase client for account, Tutor, and editor sessions. The additive migration also ensures the existing learner-state and Tutor tables are available, retaining their owner-based policies.
 
@@ -149,3 +149,17 @@ Validation:
 - `tests/admin-permissions.sql` through a trusted SQL connection: tests RLS, draft privacy, write denial, self-promotion denial, publication, version conflicts, and history inside a rolled-back transaction.
 
 To assign an administrator, resolve the exact confirmed email in `auth.users` and insert that user's UUID into `public.site_admins` through a trusted database operation. Never infer the account from the first signup, and never expose role assignment in public signup metadata.
+
+
+### WebCenter 25.03-style workspace
+
+Reference: [Esko WebCenter 25.03 Administration Guide](https://docs.esko.com/docs/en-us/webcenter/25.03/quickstartguide/pdf/WebCenter_AdministrationGuide.pdf), Menu Builder pp.39–40, Dashboard Builder p.85, Groups/Rights pp.274–275. ChemAtlas adapts the gallery/canvas/properties interaction and group component rights; it is not an Esko integration.
+
+- **Menus:** reorder/rename the six core tabs, add/remove shortcuts to supported ChemAtlas routes, preview and publish. Core tools remain accessible.
+- **Dashboards:** reorder learning widgets, set one/two columns and full/half width, hide optional widgets, add announcements and shortcuts. Continue learning is retained. The original home layout remains active until a dashboard is published.
+- **Users & groups:** verified-account picker, group names, component rights, add/remove memberships. Changes apply immediately; account creation and email confirmation remain in Supabase Auth.
+- **Rights:** menus, dashboards, content, publish, access. Publishing requires both the component right and publish. Access managers can grant any delegated right. Existing `site_admins` membership is protected owner access and remains assignable only through trusted database operations.
+- **Privacy:** group administration exposes only verified account email/ID and owner status, never learner progress or Tutor conversations. Private authorization helpers avoid recursive membership RLS and bind checks to `auth.uid()`.
+- Three starter groups have no members: Content editors, Site designers, Publishers.
+
+Apply `supabase/migrations/20261003180310_webcenter_admin_workspace.sql` before deploying these UI files. Run `tests/group-permissions.sql` against a trusted SQL connection (transactional fixtures roll back). `tests/admin-ui.cjs` exercises the editor with a mocked client; install `jsdom@26.1.0` in an external test workspace and supply its `node_modules` via `NODE_PATH`.

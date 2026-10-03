@@ -6,9 +6,11 @@
   const clone=v=>JSON.parse(JSON.stringify(v));
   const lines=v=>String(v||'').split('\n').map(x=>x.trim()).filter(Boolean);
   const base=new Map(window.CHEM_GENCHEM.modules.map(m=>[m.id,clone(m)]));
-  let cloud,user=null,authorizedId=null,authEpoch=0,drafts=new Map(),published=new Map();
-  let key='navigation',doc=null,dirty=false,busy=false,historyRows=[],dragIndex=null;
+  let rights=[],cloud,user=null,authorizedId=null,authEpoch=0,drafts=new Map(),published=new Map();
+  let key='navigation',doc=null,dirty=false,busy=false,historyRows=[];
   const status=(message,type='')=>{const el=document.getElementById('editorStatus')||document.getElementById('authStatus');if(el){el.textContent=message;el.className='status '+type;}};
+  const can=r=>rights.includes(r);
+  const areaRight=()=>key==='navigation'?'menus':key==='dashboard'?'dashboards':'content';
   const isModule=()=>key.startsWith('module:');
   const field=(name,label,value,wide=false)=>`<label class="${wide?'wide':''}">${esc(label)}<input name="${name}" value="${esc(value)}"></label>`;
   const area=(name,label,value,rows=3)=>`<label>${esc(label)}<textarea name="${name}" rows="${rows}">${esc(value)}</textarea></label>`;
@@ -46,14 +48,14 @@
       user=data.session?.user||null;
       if(!user){authScreen();return;}
       if(!force&&authorizedId===user.id)return;
-      const role=await cloud.from('site_admins').select('user_id').eq('user_id',user.id).maybeSingle();
+      const role=await cloud.rpc('site_my_rights');
       if(epoch!==authEpoch)return;
       if(role.error)throw role.error;
-      if(!role.data){authScreen();return;}
+      rights=role.data||[];if(!rights.some(r=>r!=='publish')){authScreen();return;}
       authorizedId=user.id;document.getElementById('signOut').hidden=false;
       await loadDocuments();
       if(epoch!==authEpoch)return;
-      await selectDocument('navigation',false);
+      if(can('menus'))await selectDocument('navigation',false);else if(can('dashboards'))await selectDocument('dashboard',false);else if(can('content'))await selectDocument('module:'+base.keys().next().value,false);else showAccess();
     }catch(error){if(epoch===authEpoch)authScreen('Could not check admin access. '+(error.message||'Please retry.'));}
     finally{root.setAttribute('aria-busy','false');}
   }
@@ -70,29 +72,33 @@
   }
   async function selectDocument(next,ask=true){
     if(busy||ask&&!unsaved())return;
+    if(!can(next==='navigation'?'menus':next==='dashboard'?'dashboards':'content'))return;
     key=next;dirty=false;
-    doc=clone(drafts.get(key)?.payload||published.get(key)?.payload||(key==='navigation'?{items:content.defaults}:base.get(key.slice(7))));
+    doc=clone(drafts.get(key)?.payload||published.get(key)?.payload||(key==='navigation'?{items:content.defaults}:key==='dashboard'?content.dashboardDefaults:base.get(key.slice(7))));
     if(key==='navigation')doc={items:content.normalizeNavigation(doc)};
+    if(key==='dashboard')doc=content.normalizeDashboard(doc);
     historyRows=[];render();
     const result=await cloud.from('site_revisions').select('key,version,payload,published_at').eq('key',key).order('version',{ascending:false}).limit(20);
     if(key!==next)return;
     if(result.error){status('Editor loaded, but version history could not be retrieved.','error');return;}
     historyRows=result.data||[];renderHistory();
   }
-  function rail(){return `<aside class="editor-rail"><h1>Manage site</h1><p class="account-email">${esc(user.email)}<br>Drafts are private until you publish.</p><button data-open="navigation" class="${key==='navigation'?'selected':''}">Navigation tabs</button><button id="newLesson">＋ Add Learn module</button><nav class="lesson-list" aria-label="Learn content">${lessonItems().map(([k,m])=>`<button data-open="${esc(k)}" class="${key===k?'selected':''}"><span>${String(m.number).padStart(2,'0')} · ${esc(m.title)}</span><small>Gen Chem ${m.semester===2?'II':'I'} · ${drafts.has(k)?'Draft saved':published.has(k)?'Published':'Original content'}</small></button>`).join('')}</nav></aside>`;}
+  function rail(){return `<aside class="editor-rail"><h1>Administration</h1><p class="account-email">${esc(user.email)}</p><p class="rail-label">SITE CONFIGURATION</p>${can('menus')?`<button data-open="navigation" class="${key==='navigation'?'selected':''}">Menus</button>`:''}${can('dashboards')?`<button data-open="dashboard" class="${key==='dashboard'?'selected':''}">Dashboards</button>`:''}${can('access')?`<button id="accessPanel" class="${key==='access'?'selected':''}">Users & groups</button>`:''}${can('content')?`<p class="rail-label">LEARNING CONTENT</p><button id="newLesson">＋ Add Learn module</button><nav class="lesson-list" aria-label="Learn content">${lessonItems().map(([k,m])=>`<button data-open="${esc(k)}" class="${key===k?'selected':''}"><span>${String(m.number).padStart(2,'0')} · ${esc(m.title)}</span><small>Gen Chem ${m.semester===2?'II':'I'} · ${drafts.has(k)?'Draft saved':published.has(k)?'Published':'Original content'}</small></button>`).join('')}</nav>`:''}<p class="hint">Draft → Preview → Publish</p></aside>`;}
+  function showAccess(){if(busy||!unsaved())return;key='access';dirty=false;root.innerHTML=`<div class="workspace">${rail()}<section id="accessRoot" class="editor-main"></section></div>`;bindRail();window.ChemAtlasAccess.mount(document.getElementById('accessRoot'),cloud);}
   function render(){
-    root.innerHTML=`<div class="workspace">${rail()}<section class="editor-main"><div class="editor-head"><div><h2>${isModule()?'Edit Learn module':'Arrange navigation'}</h2><p>${isModule()?'Keep the lesson ID unchanged so saved learner progress stays connected.':'Drag tabs into order, or use Move up and Move down. All existing learning tools remain available.'}</p></div><button id="reloadEditor">Reload saved version</button></div><form id="documentForm">${isModule()?moduleFields():navigationFields()}</form><div id="previewArea" hidden></div><div class="editor-actions"><p class="status" id="editorStatus" role="status">${drafts.has(key)?'Saved draft · Not automatically published':'Editing original or published content'}</p><button id="previewButton">Preview</button><button id="saveDraft">Save draft</button><button id="publishDraft" class="primary">Publish changes</button></div><details class="history editor-card"><summary>Published version history</summary><div id="historyList"></div></details></section></div>`;
+    root.innerHTML=`<div class="workspace">${rail()}<section class="editor-main"><div class="editor-head"><div><h2>${isModule()?'Edit Learn module':key==='dashboard'?'Dashboard Builder':'Menu Builder'}</h2><p>${isModule()?'Keep the lesson ID unchanged so saved learner progress stays connected.':'Choose from the gallery, arrange the canvas, and edit properties. Preview your draft before publishing.'}</p></div><button id="reloadEditor">Reload saved version</button></div><form id="documentForm">${isModule()?moduleFields():window.ChemAtlasDesign.fields(key,doc)}</form><div id="previewArea" hidden></div><div class="editor-actions"><p class="status" id="editorStatus" role="status">${drafts.has(key)?'Saved draft · Not automatically published':'Editing original or published content'}</p><button id="previewButton">Preview</button><button id="saveDraft">Save draft</button><button id="publishDraft" class="primary">Publish changes</button></div><details class="history editor-card"><summary>Published version history</summary><div id="historyList"></div></details></section></div>`;
     bindRail();renderHistory();bindForm();
+    document.getElementById('publishDraft').hidden=!can('publish');
     document.getElementById('reloadEditor').onclick=async()=>{if(!unsaved())return;try{await loadDocuments();await selectDocument(key,false);}catch(e){status(e.message,'error');}};
     document.getElementById('saveDraft').onclick=()=>persist(false);
     document.getElementById('publishDraft').onclick=()=>persist(true);
     document.getElementById('previewButton').onclick=preview;
   }
   function bindRail(){
+    const access=document.getElementById('accessPanel');if(access)access.onclick=showAccess;
     root.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>selectDocument(b.dataset.open));
-    document.getElementById('newLesson').onclick=()=>{if(!busy&&unsaved())newLesson();};
+    const addLesson=document.getElementById('newLesson');if(addLesson)addLesson.onclick=()=>{if(!busy&&unsaved())newLesson();};
   }
-  function navigationFields(){return `<section class="editor-card"><h3>Sidebar tabs</h3><div id="navItems">${doc.items.map((item,i)=>`<div class="nav-row" draggable="true" data-nav-index="${i}"><span class="drag-handle" aria-hidden="true">⠿</span><label>${esc(content.defaults.find(d=>d.id===item.id).label)}<input name="nav-${i}" aria-label="Label for ${esc(item.id)} tab" maxlength="40" value="${esc(item.label)}" required></label><button type="button" data-nav-move="${i}" data-direction="-1" aria-label="Move ${esc(item.label)} up" ${i===0?'disabled':''}>Move up</button><button type="button" data-nav-move="${i}" data-direction="1" aria-label="Move ${esc(item.label)} down" ${i===doc.items.length-1?'disabled':''}>Move down</button></div>`).join('')}</div><p class="hint">Publishing changes the tab order for everyone. It does not change any lesson, tool, or learner progress.</p></section>`;}
   function moduleFields(){const m=doc;return `
     <section class="editor-card"><h3>Lesson overview</h3><div class="field-grid">
     <label>Lesson ID<input name="id" value="${esc(m.id)}" readonly></label>
@@ -107,7 +113,7 @@
   function collect(){
     const f=document.getElementById('documentForm');if(!f)return doc;
     const v=name=>f.elements.namedItem(name)?.value.trim()||'';
-    if(!isModule()){doc.items.forEach((x,i)=>x.label=v('nav-'+i));return doc;}
+    if(!isModule()){window.ChemAtlasDesign.collect(key,doc);return doc;}
     doc={...doc,title:v('title'),subtitle:v('subtitle'),semester:Number(v('semester')),number:Number(v('number')),prerequisite:v('prerequisite'),outcomes:lines(v('outcomes')),
       sections:doc.sections.map((_,i)=>({title:v('section-title-'+i),body:v('section-body-'+i).split(/\n\s*\n/).map(x=>x.trim()).filter(Boolean)})),
       equations:lines(v('equations')).map(line=>{const split=line.indexOf('|');return {label:split<0?'':line.slice(0,split).trim(),expression:split<0?line:line.slice(split+1).trim()};}),
@@ -120,25 +126,22 @@
   function rerenderChanged(){render();changed();}
   function move(list,from,to){if(to<0||to>=list.length)return;const [item]=list.splice(from,1);list.splice(to,0,item);}
   function bindForm(){
+    document.getElementById('documentForm').onsubmit=e=>e.preventDefault();
     document.getElementById('documentForm').addEventListener('input',changed);
-    root.querySelectorAll('[data-nav-move]').forEach(b=>b.onclick=()=>{collect();const i=Number(b.dataset.navMove);move(doc.items,i,i+Number(b.dataset.direction));rerenderChanged();});
-    root.querySelectorAll('[data-nav-index]').forEach(row=>{
-      row.ondragstart=e=>{dragIndex=Number(row.dataset.navIndex);e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(dragIndex));row.classList.add('dragging');};
-      row.ondragover=e=>e.preventDefault();row.ondragend=()=>{dragIndex=null;row.classList.remove('dragging');};
-      row.ondrop=e=>{e.preventDefault();if(dragIndex===null)return;collect();move(doc.items,dragIndex,Number(row.dataset.navIndex));dragIndex=null;rerenderChanged();};
-    });
+    if(!isModule())window.ChemAtlasDesign.bind(key,doc,(edited=true)=>{const wasDirty=dirty;render();if(edited||wasDirty)changed();});
     root.querySelectorAll('[data-section-move]').forEach(b=>b.onclick=()=>{collect();const i=Number(b.dataset.sectionMove);move(doc.sections,i,i+Number(b.dataset.direction));rerenderChanged();});
     root.querySelectorAll('[data-section-remove]').forEach(b=>b.onclick=()=>{collect();if(doc.sections.length<=1)return;doc.sections.splice(Number(b.dataset.sectionRemove),1);rerenderChanged();});
     const add=document.getElementById('addSection');if(add)add.onclick=()=>{collect();doc.sections.push({title:'',body:['']});rerenderChanged();document.querySelector('[name="section-title-'+(doc.sections.length-1)+'"]').focus();};
   }
   function validation(){
     if(isModule())return content.validateModule(doc);
-    if(doc.items.length!==content.defaults.length || new Set(doc.items.map(x=>x.id)).size!==content.defaults.length)return 'Keep all six existing tabs.';
+    if(key==='dashboard'){if(!doc.blocks.length||doc.blocks.some(x=>!x.label.trim()))return 'Every block needs a label.';return '';}
+    if(!content.defaults.every(d=>doc.items.some(x=>x.id===d.id)) || new Set(doc.items.map(x=>x.id)).size!==doc.items.length)return 'Keep all six existing tabs.';
     if(doc.items.some(x=>!x.label.trim()||x.label.length>40))return 'Every tab needs a label of 1–40 characters.';
     return '';
   }
   async function persist(publish){
-    if(busy)return;collect();
+    if(busy||!can(areaRight())||publish&&!can('publish'))return;collect();
     // Incomplete lessons may be saved privately; only complete lessons may go live.
     if(publish){const error=validation();if(error){status(error,'error');return;}}
     if(JSON.stringify(doc).length>240000){status('This lesson is too large. Split it into smaller modules.','error');return;}
@@ -164,6 +167,8 @@
   function restoreBoundaryButtons(){
     root.querySelectorAll('[data-nav-move],[data-section-move]').forEach(b=>{const nav=b.hasAttribute('data-nav-move'),i=Number(nav?b.dataset.navMove:b.dataset.sectionMove),to=i+Number(b.dataset.direction);b.disabled=to<0||to>=(nav?doc.items.length:doc.sections.length);});
     root.querySelectorAll('[data-section-remove]').forEach(b=>b.disabled=doc.sections.length===1);
+    root.querySelectorAll('[data-move-item]').forEach(b=>{const i=Number(b.dataset.moveItem),to=i+Number(b.dataset.direction);b.disabled=to<0||to>=(key==='navigation'?doc.items:doc.blocks).length;});
+    const required=root.querySelector('[name="item-visible"]');if(key==='dashboard'&&required&&root.querySelector('.builder-properties small')?.textContent==='Continue learning remains available.')required.disabled=true;
   }
   function renderHistory(){
     const el=document.getElementById('historyList');if(!el)return;
@@ -173,7 +178,7 @@
   function preview(){
     collect();const error=validation();if(error){status(error,'error');return;}
     const el=document.getElementById('previewArea');el.hidden=false;
-    if(!isModule()){el.innerHTML=`<section class="preview"><p class="preview-label">Navigation preview · not published</p><ol>${doc.items.map(x=>`<li>${esc(x.label)}</li>`).join('')}</ol></section>`;return;}
+    if(!isModule()){el.innerHTML=window.ChemAtlasDesign.preview(key,doc);return;}
     const m=doc;
     el.innerHTML=`<article class="preview"><p class="preview-label">Lesson preview · not published</p><h2>${esc(m.title)}</h2><p>${esc(m.subtitle)}</p><p><strong>Builds on:</strong> ${esc(m.prerequisite)}</p><ul>${m.outcomes.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${m.sections.map(s=>`<h3>${esc(s.title)}</h3>${s.body.map(p=>`<p>${esc(p)}</p>`).join('')}`).join('')}<h3>Key relationships</h3>${m.equations.map(e=>`<p>${esc(e.label)}: <strong>${esc(e.expression)}</strong></p>`).join('')}<h3>Worked example</h3><p>${esc(m.example.prompt)}</p><ol>${m.example.steps.map(x=>`<li>${esc(x)}</li>`).join('')}</ol><p><strong>${esc(m.example.answer)}</strong></p><h3>Quick check</h3><p>${esc(m.check.question)}</p><ol type="A">${m.check.choices.map(x=>`<li>${esc(x)}</li>`).join('')}</ol><details><summary>Answer and feedback</summary><p>${esc(m.check.choices[m.check.answer])}</p><p>${esc(m.check.explanation)}</p></details><h3>Connections</h3><p>${esc(m.lab)}</p><p><strong>${esc(m.bridge.course)}</strong> — ${esc(m.bridge.text)}</p><p>${m.vocabulary.map(esc).join(' · ')}</p></article>`;
     el.scrollIntoView({behavior:'smooth',block:'start'});

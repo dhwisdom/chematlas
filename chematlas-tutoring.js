@@ -268,8 +268,14 @@
       const signature=JSON.stringify(items);
       if(group.dataset.contentSignature!==signature){
         group.dataset.contentSignature=signature;
+        group.querySelectorAll('[data-custom-nav]').forEach(b=>{if(!items.some(i=>i.id===b.dataset.customNav))b.remove();});
         items.forEach(item=>{
-          const button=item.id==='practice'?group.querySelector('[data-ca-tutor-practice]'):group.querySelector(`[data-ca-tutor-route="${item.route}"]`);
+          let button=item.id==='practice'?group.querySelector('[data-ca-tutor-practice]'):group.querySelector(`[data-ca-tutor-route="${item.route}"]`);
+          if(item.id.startsWith('custom-')){
+            button=group.querySelector(`[data-custom-nav="${item.id}"]`);
+            if(!button){button=document.createElement('button');button.className='ca-tutor-nav';button.dataset.customNav=item.id;button.innerHTML='<span class="icon">↗</span><span></span>';button.addEventListener('click',()=>navigate(button.dataset.target));}
+            button.dataset.target=item.route;
+          }
           if(button){button.querySelector('span:not(.icon)').textContent=item.label;group.appendChild(button);}
         });
       }
@@ -368,7 +374,7 @@
     const current = learning.current;
     const next = learning.next;
     const history = safeJson(LS.history, []);
-    const renderSignature = [current?.id || '', learning.completed.join(','), history.length, history[0]?.id || history[0]?.at || ''].join('|');
+    const renderSignature = [current?.id || '', learning.completed.join(','), history.length, history[0]?.id || history[0]?.at || '',JSON.stringify(window.ChemAtlasContent?.dashboard())].join('|');
     if (root.dataset.renderSignature === renderSignature) return;
     root.dataset.renderSignature = renderSignature;
     const featured = ['electronic','bonding','stoichiometry','geometry']
@@ -421,6 +427,17 @@
       </div>
     `;
 
+    if(window.ChemAtlasContent?.hasDashboard()){
+      const layout=window.ChemAtlasContent.dashboard();
+      const nodes={continue:root.querySelector('.ca-continue'),recommendations:root.querySelector('.ca-home-grid>section'),mastery:root.querySelector('.ca-mastery'),recent:root.querySelector('.ca-recent'),tutor:root.querySelector('.ca-ask-strip')};
+      const grid=document.createElement('div');grid.className='ca-configured-dashboard';grid.dataset.columns=layout.columns;
+      for(const block of layout.blocks){
+        let node=nodes[block.id];
+        if(!node){node=document.createElement('section');node.className='ca-custom-block';node.innerHTML=`<h3>${esc(block.label)}</h3><p>${esc(block.body).replace(/\n/g,'<br>')}</p>${block.type==='shortcut'?'<button class="primary-button">Open →</button>':''}`;node.querySelector('button')?.addEventListener('click',()=>navigate(block.route));}
+        node.hidden=block.hidden;node.dataset.width=block.width;grid.appendChild(node);
+      }
+      root.querySelector('.ca-home-grid')?.remove();root.querySelector('.ca-continue')?.remove();root.appendChild(grid);
+    }
     root.querySelector('[data-home-continue]')?.addEventListener('click', () => navigate('/genchem/' + (current?.id || 'geometry')));
     root.querySelector('[data-home-current]')?.addEventListener('click', () => navigate('/genchem/' + (current?.id || 'geometry')));
     root.querySelector('[data-home-next]')?.addEventListener('click', () => navigate('/genchem/' + (next?.id || 'imf')));

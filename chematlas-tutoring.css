@@ -1498,3 +1498,6 @@ body.ca-landing-mode .main{background:#f7f8f5!important}
 #genchemView .ca-focus-footer [hidden] { display:none!important; }
 
 .ca-admin-entry{display:block;margin:12px 16px;padding:12px;border:1px solid #c7dfd8;border-radius:8px;color:#076b68;text-align:center;font-size:14px;text-decoration:none;font-weight:700}
+
+/* Published dashboard configuration preserves each existing learning widget. */
+.ca-configured-dashboard{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.ca-configured-dashboard>[data-width="full"]{grid-column:1/-1}.ca-configured-dashboard[data-columns="1"]{grid-template-columns:minmax(0,1fr)}.ca-configured-dashboard>[hidden]{display:none!important}.ca-custom-block{padding:24px;background:white;border:1px solid #dce6e1;border-radius:16px;overflow-wrap:anywhere}.ca-custom-block p{line-height:1.7}.ca-configured-dashboard .ca-continue{margin:0}@media(max-width:760px){.ca-configured-dashboard{grid-template-columns:minmax(0,1fr)}}

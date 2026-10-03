@@ -270,8 +270,8 @@
     const request=++adminAccessRequest;
     document.querySelectorAll('[data-site-admin-link]').forEach(el=>el.remove());
     if(!cloud||!session)return;
-    const {data,error}=await cloud.from('site_admins').select('user_id').eq('user_id',session.user.id).maybeSingle();
-    if(request!==adminAccessRequest||error||!data)return;
+    const {data,error}=await cloud.rpc('site_my_rights');
+    if(request!==adminAccessRequest||error||!data?.some(r=>r!=='publish'))return;
     const link=document.createElement('a');link.href='/admin';link.dataset.siteAdminLink='';link.className='ca-admin-entry';link.textContent='Manage site';
     document.querySelector('.sidebar')?.appendChild(link);
   }

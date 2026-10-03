@@ -8,6 +8,21 @@
     {id:'tutor',label:'AI Tutor',route:'/tutor',icon:'✦'},
     {id:'progress',label:'Progress',route:'/progress',icon:'▥'}
   ];
+  const destinations=[...defaults.filter(x=>x.route),{id:'organic',label:'Organic Studio',route:'/organic',icon:'↻'},{id:'courses',label:'Course library',route:'/courses',icon:'▤'},{id:'curriculum',label:'Degree map',route:'/curriculum',icon:'⌘'}];
+  const dashboardDefaults={columns:2,blocks:[{id:'continue',label:'Continue learning',width:'full'},{id:'recommendations',label:'A good next move',width:'full'},{id:'mastery',label:'Course mastery',width:'half'},{id:'recent',label:'Recent activity',width:'half'},{id:'tutor',label:'Ask your tutor',width:'full'}]};
+  function normalizeDashboard(value){
+    if(!value||!Array.isArray(value.blocks))return clone(dashboardDefaults);
+    const seen=new Set(),blocks=[];
+    for(const b of value.blocks.slice(0,20)){
+      if(!b||seen.has(b.id))continue;
+      const original=dashboardDefaults.blocks.find(x=>x.id===b.id);
+      if(!original && !(/^custom-[a-z0-9-]+$/.test(b.id||'') && ['text','shortcut'].includes(b.type)))continue;
+      seen.add(b.id);blocks.push({...b,label:text(b.label,100)?b.label.trim():(original?.label||'New block'),body:typeof b.body==='string'?b.body.slice(0,4000):'',width:b.width==='half'?'half':'full',hidden:b.hidden===true,route:destinations.some(x=>x.route===b.route)?b.route:'/genchem'});
+    }
+    if(!blocks.some(b=>b.id==='continue'))blocks.unshift(clone(dashboardDefaults.blocks[0]));
+    blocks.find(b=>b.id==='continue').hidden=false;
+    return {columns:value.columns===1?1:2,blocks};
+  }
   const clone = value => JSON.parse(JSON.stringify(value));
   const text = (v,max=12000) => typeof v==='string' && v.trim().length>0 && v.length<=max;
   const texts = (v,min=1,max=50) => Array.isArray(v) && v.length>=min && v.length<=max && v.every(x=>text(x));
@@ -30,7 +45,11 @@
     const items=[],seen=new Set();
     for(const item of input) {
       const original=defaults.find(d=>d.id===item?.id);
-      if(!original || seen.has(original.id)) continue;
+      if(!original){
+        if(/^custom-[a-z0-9-]+$/.test(item?.id||'') && !seen.has(item.id) && destinations.some(d=>d.route===item.route) && items.length<20){seen.add(item.id);items.push({id:item.id,label:text(item.label,40)?item.label.trim():'Shortcut',route:item.route,icon:'↗'});}
+        continue;
+      }
+      if(seen.has(original.id)) continue;
       seen.add(original.id);
       items.push({...original,label:text(item.label,40)?item.label.trim():original.label});
     }
@@ -68,8 +87,10 @@
       return false;
     } finally {clearTimeout(timeout);}
   }
-  const api={defaults,validateModule,normalizeNavigation,applyCourse,refresh,
+  const api={defaults,destinations,dashboardDefaults,normalizeDashboard,validateModule,normalizeNavigation,applyCourse,refresh,
     navigation:()=>normalizeNavigation(published.find(r=>r.key==='navigation')?.payload),
+    dashboard:()=>normalizeDashboard(published.find(r=>r.key==='dashboard')?.payload),
+    hasDashboard:()=>published.some(r=>r.key==='dashboard'),
     getPublished:()=>clone(published),getBaseModules:()=>clone(baseModules || root.CHEM_GENCHEM?.modules || [])};
   root.ChemAtlasContent=api;
   if(typeof module!=='undefined' && module.exports) module.exports=api;
