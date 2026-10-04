@@ -258,10 +258,45 @@
   function openAccount(){document.getElementById('caAccountOverlay')?.classList.add('open');renderAccount();}
   function renderAccount(){
     const body=document.getElementById('caAccountBody');if(!body)return;
-    if(session){body.innerHTML=`<div class="ca-account-signed"><span>✓</span><strong>${esc(session.user?.email||'Signed in')}</strong><small>Cloud sync enabled</small></div><button id="caSyncNow" class="primary-button">Sync now</button><button id="caSignOut" class="secondary-button">Sign out</button>`;document.getElementById('caSyncNow')?.addEventListener('click',syncAll);document.getElementById('caSignOut')?.addEventListener('click',async()=>{await cloud?.auth.signOut();session=null;updateSyncBadge();renderAccount()});return;}
+    if(session){
+      body.innerHTML=`<div class="ca-account-signed"><span>✓</span><strong>${esc(session.user?.email||'Signed in')}</strong><small>Cloud sync enabled</small></div>
+        <section class="ca-reminder-settings" aria-labelledby="caReminderHeading"><h3 id="caReminderHeading">Email reminders</h3>
+          <label for="caReviewReminders"><input id="caReviewReminders" type="checkbox" disabled> Remind me when reviews are due</label>
+          <p>At most once a week, sent to your verified account email. Each message links to your reviews and lets you unsubscribe.</p>
+          <p id="caReminderFeedback" role="status" aria-live="polite">Loading your preference…</p>
+        </section><button id="caSyncNow" class="primary-button">Sync now</button><button id="caSignOut" class="secondary-button">Sign out</button>`;
+      loadReminderPreference();
+      document.getElementById('caSyncNow')?.addEventListener('click',syncAll);
+      document.getElementById('caSignOut')?.addEventListener('click',async()=>{await cloud?.auth.signOut();session=null;updateSyncBadge();renderAccount()});return;
+    }
     if(!cfg.supabaseUrl||!cfg.supabasePublishableKey){body.innerHTML=`<div class="ca-setup-note"><strong>Guest mode is active.</strong><p>The profile UI and sync model are installed, but ChemWaypoint needs its own Supabase project URL and publishable key before account creation can go live. No secret keys belong in this browser configuration.</p></div>`;return;}
     body.innerHTML=`<form id="caAuthForm"><label>Email<input id="caEmail" type="email" autocomplete="email" required></label><label>Password<input id="caPassword" type="password" minlength="6" autocomplete="current-password" required></label><div class="ca-auth-actions"><button class="primary-button" type="submit">Sign in</button><button class="secondary-button" type="button" id="caSignUp">Create account</button></div><p id="caAuthFeedback" class="muted"></p></form>`;
     document.getElementById('caAuthForm')?.addEventListener('submit',e=>authSubmit(e,false));document.getElementById('caSignUp')?.addEventListener('click',e=>authSubmit(e,true));
+  }
+  async function loadReminderPreference(){
+    const userId=session?.user?.id, checkbox=document.getElementById('caReviewReminders'),feedback=document.getElementById('caReminderFeedback');
+    if(!userId||!cloud||!checkbox)return;
+    const current=()=>session?.user?.id===userId&&document.getElementById('caReviewReminders')===checkbox;
+    try{
+      const {data,error}=await cloud.from('notification_preferences').select('review_reminders').eq('user_id',userId).maybeSingle();
+      if(error)throw error;if(!current())return;
+      let exists=Boolean(data),saved=Boolean(data?.review_reminders);checkbox.checked=saved;checkbox.disabled=false;
+      feedback.textContent=saved?'Review reminders are on.':'Review reminders are off.';
+      checkbox.addEventListener('change',async()=>{
+        const enabled=checkbox.checked;checkbox.disabled=true;feedback.textContent='Saving…';
+        try{
+          let result=exists
+            ? await cloud.from('notification_preferences').update({review_reminders:enabled}).eq('user_id',userId).select('review_reminders').single()
+            : await cloud.from('notification_preferences').insert({user_id:userId,review_reminders:enabled}).select('review_reminders').single();
+          // Another device may have created the row after the initial read.
+          if(result.error?.code==='23505')result=await cloud.from('notification_preferences').update({review_reminders:enabled}).eq('user_id',userId).select('review_reminders').single();
+          if(result.error)throw result.error;if(!current())return;
+          exists=true;saved=result.data.review_reminders;checkbox.checked=saved;
+          feedback.textContent=saved?'Saved. Review reminders are on.':'Saved. Review reminders are off.';
+        }catch(_){if(current()){checkbox.checked=saved;feedback.textContent='Could not save. Please try again.';}}
+        finally{if(current())checkbox.disabled=false;}
+      });
+    }catch(_){if(current())feedback.textContent='Could not load email preferences. Close and reopen Account & sync to retry.';}
   }
   async function authSubmit(e,signup){e.preventDefault();const email=document.getElementById('caEmail')?.value.trim(),password=document.getElementById('caPassword')?.value;const f=document.getElementById('caAuthFeedback');if(!cloud){if(f)f.textContent='Cloud client is still loading.';return;}const {data,error}=signup?await cloud.auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/dashboard'}}):await cloud.auth.signInWithPassword({email,password});if(error){if(f)f.textContent=error.message;return;}session=data.session||session;if(f)f.textContent=signup&&!data.session?'Check your email to confirm the account.':'Signed in. Syncing your progress…';updateSyncBadge();if(session){await mergeCloudState();await refreshAdminAccess();}renderAccount();}
 

@@ -1,0 +1,204 @@
+{
+  "name": "ChemWaypoint - Review reminders",
+  "nodes": [
+    {
+      "id": "ada810bc-bd0c-4fd3-a796-8a9cbaae7e27",
+      "name": "Manual test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "bc7337f6-f956-4bd6-87d4-946c7e5ffb93",
+      "name": "Daily check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7ddc8819-fd04-45d3-a2ad-c818b6e3ddd2",
+      "name": "Prepare reminders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        100
+      ],
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "method": "POST",
+        "url": "https://www.chemwaypoint.com/api/review-reminders",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}"
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "ae0e806e-e9df-44b7-aa41-d94764116bbb",
+      "name": "Split reminders",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        480,
+        100
+      ],
+      "parameters": {
+        "fieldToSplitOut": "reminders",
+        "include": "noOtherFields",
+        "options": {}
+      },
+      "alwaysOutputData": false
+    },
+    {
+      "id": "15e8a9d6-4fe2-4b55-aea1-5629514c3222",
+      "name": "Send reminder",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        100
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.email.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.email.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "ChemWaypoint"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "4067158a-a382-42c8-92f3-d0061134f500",
+      "name": "Record delivery",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        100
+      ],
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "method": "POST",
+        "url": "https://www.chemwaypoint.com/api/review-reminders",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { action: \"acknowledge\", deliveryId: $(\"Split reminders\").item.json.deliveryId, status: \"sent\" } }}"
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000
+    },
+    {
+      "id": "4aa774f0-c9dd-49f0-89c0-ad2d5d853861",
+      "name": "Preview reminders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        -180
+      ],
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "method": "GET",
+        "url": "https://www.chemwaypoint.com/api/review-reminders"
+      },
+      "notes": "Read-only preview. Select Header Auth, then execute this node alone before running Manual test. Not connected to Gmail.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Manual test": {
+      "main": [
+        [
+          {
+            "node": "Prepare reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily check": {
+      "main": [
+        [
+          {
+            "node": "Prepare reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare reminders": {
+      "main": [
+        [
+          {
+            "node": "Split reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split reminders": {
+      "main": [
+        [
+          {
+            "node": "Send reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send reminder": {
+      "main": [
+        [
+          {
+            "node": "Record delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Chicago"
+  },
+  "pinData": {},
+  "tags": []
+}

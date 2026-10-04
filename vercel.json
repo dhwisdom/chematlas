@@ -1,6 +1,9 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/review-reminders.js": { "maxDuration": 60 }
+  },
   "redirects": [
     {
       "source": "/:path*",
