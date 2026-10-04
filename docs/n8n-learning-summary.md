@@ -32,7 +32,9 @@ Keep the Manual Trigger. Replace the earlier homepage connectivity test with:
 
 Save the credential under a recognizable name, such as **ChemWaypoint summary**. Do not add query parameters. Keep redirects off if your HTTP Request options expose that setting; use the exact `www` URL above.
 
-Execute the workflow. Output should contain `counts`, `completedInPeriod`, `mastered`, `reviewsDue`, `nextStep`, `lastSyncedAt`, and `email`. Compare counts with your signed-in Progress page after letting cloud sync finish. `email.subject` and `email.text` are strings ready for an eventual email node; this endpoint sends nothing.
+Execute the workflow. Output should contain `counts`, `completedInPeriod`, `mastered`, `reviewsDue`, `nextStep`, `lastSyncedAt`, and `email`. Compare counts with your signed-in Progress page after letting cloud sync finish. `email.subject`, `email.text`, and `email.html` are ready for an email node; this endpoint sends nothing.
+
+For the formatted Gmail version, set **Email Type** to **HTML**, **Subject** in Expression mode to `{{ $json.email.subject }}`, and **Message** in Expression mode to `{{ $json.email.html }}`. Re-execute the HTTP Request node to refresh its output before testing Gmail. Keep `{{ $json.email.text }}` with Email Type **Text** if you prefer plain text. Republish the n8n workflow after changing a scheduled email node.
 
 Old completion records have no trustworthy completion date. They count toward total completion but not “completed in the last 7 days.” Browser activity that has not synced cannot appear here. Missing or stale cloud progress produces an explicit warning. Mastery and due reviews use the same `assessment.summarize` function as the site, and published Admin lessons overlay bundled lessons using the same validation rules.
 
