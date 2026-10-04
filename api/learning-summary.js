@@ -32,26 +32,42 @@ module.exports = async function handler(req, res) {
   if (!/^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/i.test(userId) || !secret.startsWith('sb_secret_')) {
     return res.status(503).json({ error: 'Learning-summary automation is not configured.' });
   }
-  const read = async (table, parameters) => {
+  const read = async (table, parameters, apiKey) => {
     const url = new URL('/rest/v1/' + table, config.supabaseUrl);
     url.search = new URLSearchParams(parameters).toString();
-    const response = await fetch(url, {
-      headers: { apikey: secret, Accept: 'application/json' },
-      signal: AbortSignal.timeout(8000), redirect: 'error'
-    });
-    if (!response.ok) throw new Error('Progress service unavailable');
-    const rows = await response.json();
-    if (!Array.isArray(rows)) throw new Error('Unexpected progress response');
-    return rows;
+    try {
+      const response = await fetch(url, {
+        headers: { apikey: apiKey, Accept: 'application/json' },
+        signal: AbortSignal.timeout(8000), redirect: 'error'
+      });
+      if (!response.ok) {
+        const error = new Error('Progress service unavailable');
+        error.status = response.status;
+        throw error;
+      }
+      const rows = await response.json();
+      if (!Array.isArray(rows)) throw new Error('Unexpected progress response');
+      return rows;
+    } catch (cause) {
+      const error = new Error('Summary read failed');
+      error.table = table;
+      error.status = Number.isInteger(cause?.status) ? cause.status : null;
+      throw error;
+    }
   };
   try {
     const [rows, published] = await Promise.all([
-      read('learner_state', { select: 'state_key,state_value,updated_at', user_id: 'eq.' + userId, state_key: 'in.(' + stateKeys.join(',') + ')' }),
-      read('site_published', { select: 'key,payload', key: 'like.module:*' })
+      read('learner_state', { select: 'state_key,state_value,updated_at', user_id: 'eq.' + userId, state_key: 'in.(' + stateKeys.join(',') + ')' }, secret),
+      // Published lessons use the same public read path as the learner interface.
+      read('site_published', { select: 'key,payload', key: 'like.module:*' }, config.supabasePublishableKey)
     ]);
     return res.status(200).json(buildSummary(rows, published));
-  } catch (_) {
-    // Never forward database errors, learner records, or credentials to the caller/logs.
+  } catch (error) {
+    // Only safe operation metadata is logged, never payloads, URLs, or credentials.
+    console.error('[learning-summary] failed', {
+      stage: ['learner_state', 'site_published'].includes(error?.table) ? error.table : 'summary',
+      upstreamStatus: Number.isInteger(error?.status) ? error.status : null
+    });
     return res.status(502).json({ error: 'Could not load saved progress. Retry shortly.' });
   }
 };

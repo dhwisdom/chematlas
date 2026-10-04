@@ -47,7 +47,7 @@ Old completion records have no trustworthy completion date. They count toward to
 | 503 | Server configuration is missing or invalid. Check all three production variables and redeploy. |
 | 502 | Supabase could not be read. Check the secret belongs to the configured project, then retry. No partial report is returned. |
 
-All responses disable caching. To revoke access, rotate or remove `CHEMWAYPOINT_AUTOMATION_TOKEN` in Vercel and redeploy, then update the n8n credential. No learner records, schema, permission policies, or Tutor conversations are changed by this integration.
+All responses disable caching. The server secret is used only for account-scoped learner progress. Published lessons are read using the same publishable key as the frontend; unpublished drafts are not fetched. Failures log only the operation name and upstream HTTP status for diagnosis, without secrets or learner records. To revoke access, rotate or remove `CHEMWAYPOINT_AUTOMATION_TOKEN` in Vercel and redeploy, then update the n8n credential. No learner records, schema, permission policies, or Tutor conversations are changed by this integration.
 
 ## Next phase
 
