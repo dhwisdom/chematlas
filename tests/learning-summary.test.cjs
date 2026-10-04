@@ -5,6 +5,7 @@ const assessment = require('../assessment.js');
 const course = require('../data/genchem.js');
 const { buildSummary, stateKeys } = require('../lib/learning-summary.cjs');
 const handler = require('../api/learning-summary.js');
+const config = require('../data/platform-config.js');
 const now = Date.parse('2026-10-03T21:00:00Z'), DAY = assessment.DAY;
 const row = (key, value, at = now) => ({state_key:key, state_value:value, updated_at:new Date(at).toISOString()});
 function run(id, at, mode = 'lesson', wrong = false) {
@@ -56,11 +57,12 @@ async function request(t, {method='GET', authorization='Bearer '+token, query={}
     const previous=process.env[k]; process.env[k]=v;
     t.after(()=>previous===undefined?delete process.env[k]:process.env[k]=previous);
   }
-  const calls=[];
+  const calls=[], logs=[];
+  t.mock.method(console,'error',(...args)=>logs.push(args));
   t.mock.method(globalThis,'fetch',async (...args)=>{calls.push(args);return fetcher?fetcher(...args):{ok:true,json:async()=>[]};});
   const res={headers:{},code:200,setHeader(k,v){this.headers[k]=v;},status(code){this.code=code;return this;},json(body){this.body=body;return this;}};
   await handler({method,headers:{authorization},query},res);
-  return {res,calls};
+  return {res,calls,logs};
 }
 test('missing or wrong tokens are rejected before any database access',async t=>{
   for(const authorization of [undefined,'Bearer wrong','Basic '+token]) await t.test(String(authorization),async t=>{
@@ -86,8 +88,23 @@ test('successful request reads only the configured account and two progress keys
   assert.equal(url.searchParams.get('user_id'),'eq.'+userId);
   assert.equal(url.searchParams.get('state_key'),'in.('+stateKeys.join(',')+')');
   assert.equal(options.headers.apikey,'sb_secret_test'); assert.equal(options.redirect,'error');
+  const [contentUrl,contentOptions]=calls.find(([url])=>url.pathname.endsWith('site_published'));
+  assert.equal(contentUrl.searchParams.get('key'),'like.module:*');
+  assert.equal(contentOptions.headers.apikey,config.supabasePublishableKey);
   const serialized=JSON.stringify(res.body); assert(!serialized.includes(userId));assert(!serialized.includes('sb_secret'));
   assert.equal(res.headers['CDN-Cache-Control'],'no-store');
+});
+test('public published-content reads do not use the secret credential rejected upstream',async t=>{
+  const {res}=await request(t,{fetcher:async (url,options)=>({
+    ok:!url.pathname.endsWith('site_published')||options.headers.apikey===config.supabasePublishableKey,
+    status:401,json:async()=>[]
+  })});
+  assert.equal(res.code,200);
+});
+test('failure logs identify the upstream operation without leaking errors or credentials',async t=>{
+  const {res,logs}=await request(t,{fetcher:async url=>({ok:!url.pathname.endsWith('site_published'),status:401,json:async()=>[]})});
+  assert.equal(res.code,502);
+  assert.deepEqual(logs,[['[learning-summary] failed',{stage:'site_published',upstreamStatus:401}]]);
 });
 test('upstream errors and malformed data are not reported as zero progress or leaked',async t=>{
   for(const fetcher of [async()=>({ok:false}),async()=>({ok:true,json:async()=>({private:'data'})}),async()=>{throw new Error('sensitive error');}]) await t.test('failure',async t=>{
