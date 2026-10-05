@@ -82,7 +82,7 @@
       const avatar=topActions.querySelector('.avatar'); if (avatar) avatar.replaceWith(sync); else topActions.appendChild(sync);
     }
 
-    const account=document.createElement('div'); account.id='caAccountOverlay'; account.className='ca-overlay'; account.innerHTML=`<div class="ca-modal"><button class="ca-modal-x" data-account-close>×</button><p class="eyebrow">CHEMATLAS PROFILE</p><h2 id="caAccountTitle">Keep your chemistry progress with you.</h2><p id="caAccountCopy">Guest mode stores progress on this browser. An account opens the full Learn sequence and syncs completion, reviews, and history across devices.</p><div id="caAccountBody"></div></div>`; document.body.appendChild(account);
+    const account=document.createElement('div'); account.id='caAccountOverlay'; account.className='ca-overlay'; account.innerHTML=`<div class="ca-modal"><button class="ca-modal-x" data-account-close>×</button><p class="eyebrow">CHEMWAYPOINT ACCOUNT</p><h2 id="caAccountTitle">Keep your chemistry progress with you.</h2><p id="caAccountCopy">Guest mode stores progress on this browser. An account opens the full Learn sequence and syncs completion, reviews, and history across devices.</p><div id="caAccountBody"></div></div>`; document.body.appendChild(account);
     const onboarding=document.createElement('div'); onboarding.id='caOnboardingOverlay'; onboarding.className='ca-overlay'; onboarding.innerHTML=`<div class="ca-modal ca-goal-modal"><button class="ca-modal-x" data-onboarding-close>×</button><p class="eyebrow">PERSONALIZE THE PATH</p><h2>What are you trying to do?</h2><p>This only changes what ChemWaypoint recommends first. You can explore everything at any time.</p><div class="ca-goal-grid"><button data-goal="foundations"><span>Σ</span><strong>Build my foundations</strong><small>Start at Gen Chem and build the sequence correctly.</small></button><button data-goal="organic"><span>⌬</span><strong>Prepare for Organic</strong><small>Prioritize bonding, geometry, polarity, acid–base, and stereochemistry.</small></button><button data-goal="genchem2"><span>K</span><strong>Review Gen Chem II</strong><small>Equilibrium, acids/bases, thermodynamics, and electrochemistry.</small></button><button data-goal="biochem"><span>ATP</span><strong>Prepare for Biochemistry</strong><small>Strengthen energy, equilibria, acids/bases, and molecular structure.</small></button></div></div>`; document.body.appendChild(onboarding);
 
     bindShell(); renderLandingRecommendation(); renderProgress(); renderTutor();
@@ -258,10 +258,13 @@
   function openAccount(){document.getElementById('caAccountOverlay')?.classList.add('open');renderAccount();}
   function renderAccount(){
     const body=document.getElementById('caAccountBody');if(!body)return;
+    const title=document.getElementById('caAccountTitle'),copy=document.getElementById('caAccountCopy');
+    if(title)title.textContent=session?'Account & sync':'Keep your chemistry progress with you.';
+    if(copy)copy.textContent=session?'Manage your saved progress and email reminders.':'Guest mode stores progress on this browser. An account opens the full Learn sequence and syncs completion, reviews, and history across devices.';
     if(session){
       body.innerHTML=`<div class="ca-account-signed"><span>✓</span><strong>${esc(session.user?.email||'Signed in')}</strong><small>Cloud sync enabled</small></div>
         <section class="ca-reminder-settings" aria-labelledby="caReminderHeading"><h3 id="caReminderHeading">Email reminders</h3>
-          <label for="caReviewReminders"><input id="caReviewReminders" type="checkbox" disabled> Remind me when reviews are due</label>
+          <label for="caReviewReminders"><input id="caReviewReminders" type="checkbox" disabled><span>Remind me when reviews are due</span></label>
           <p>At most once a week, sent to your verified account email. Each message links to your reviews and lets you unsubscribe.</p>
           <p id="caReminderFeedback" role="status" aria-live="polite">Loading your preference…</p>
         </section><button id="caSyncNow" class="primary-button">Sync now</button><button id="caSignOut" class="secondary-button">Sign out</button>`;
