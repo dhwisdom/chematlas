@@ -16,7 +16,7 @@
     else if(path==='/')selector='#caLandingView.active-view .ca-marketing-hero';
     else if(path==='/dashboard')selector='#homeView.active-view .ca-home';
     else if(path.startsWith('/organic'))selector='#organicView.active-view';
-    else selector=({'/courses':'#coursesView','/curriculum':'#curriculumView','/model-lab':'#labView','/tutor':'#caTutorView','/progress':'#caProgressView'}[path]||'#caLandingView')+'.active-view';
+    else selector=({'/courses':'#coursesView','/curriculum':'#curriculumView','/model-lab':'#labView','/tutor':'#caTutorView','/companion':'#caCompanionView','/progress':'#caProgressView'}[path]||'#caLandingView')+'.active-view';
     if(!document.querySelector(selector))return;
     finished=true;clearTimeout(timeout);
     document.documentElement.removeAttribute('data-ca-starting');

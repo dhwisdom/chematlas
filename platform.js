@@ -73,7 +73,8 @@
     if (nav && !nav.querySelector('[data-ca-nav="progress"]')) {
       const progressBtn=document.createElement('button'); progressBtn.className='ca-side-nav'; progressBtn.dataset.caNav='progress'; progressBtn.innerHTML='<span>◫</span> My Progress';
       const tutorBtn=document.createElement('button'); tutorBtn.className='ca-side-nav'; tutorBtn.dataset.caNav='tutor'; tutorBtn.innerHTML='<span>✦</span> AI Tutor';
-      nav.append(progressBtn,tutorBtn);
+      const companionBtn=document.createElement('button');companionBtn.className='ca-side-nav';companionBtn.dataset.caNav='companion';companionBtn.innerHTML='<span>✧</span> Companion';
+      nav.append(progressBtn,tutorBtn,companionBtn);
     }
 
     const topActions=document.querySelector('.top-actions');
@@ -97,7 +98,7 @@
       if(e.target.closest('[data-account-close]')){ closeOverlay('caAccountOverlay'); return; }
       if(e.target.closest('[data-onboarding-close]')){ closeOverlay('caOnboardingOverlay'); return; }
       const g=e.target.closest('[data-goal]'); if(g){ setGoal(g.dataset.goal); return; }
-      const ca=e.target.closest('[data-ca-nav]'); if(ca){ navigate(ca.dataset.caNav==='tutor'?'/tutor':'/progress'); return; }
+      const ca=e.target.closest('[data-ca-nav]'); if(ca){ navigate(({tutor:'/tutor',progress:'/progress',companion:'/companion'})[ca.dataset.caNav]||'/dashboard'); return; }
     });
     document.querySelectorAll('.nav-item').forEach(btn => btn.addEventListener('click', () => {
       const p=routeForView[btn.dataset.view]; if(p) setUrl(p);
@@ -131,9 +132,11 @@
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));
     document.getElementById(id)?.classList.add('active-view');
     document.querySelectorAll('.nav-item,.genchem-nav,.ca-side-nav').forEach(n=>n.classList.remove('active'));
-    const key=id==='caTutorView'?'tutor':'progress'; document.querySelector(`[data-ca-nav="${key}"]`)?.classList.add('active');
+    const key=id==='caCompanionView'?'companion':id==='caTutorView'?'tutor':'progress'; document.querySelector(`[data-ca-nav="${key}"]`)?.classList.add('active');
     const h=document.getElementById('pageTitle'); if(h) h.textContent=title;
     renderProgress(); renderTutor();
+    if(id==='caCompanionView')window.ChemWaypointCompanion?.open();
+    document.querySelector('.sidebar')?.classList.remove('open');
   }
   function showLanding(){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active-view'));
@@ -162,6 +165,7 @@
     if(p==='/organic'||p.startsWith('/organic/')){clickCore('organic');return;}
     if(p==='/progress'){showCustom('caProgressView','Your chemistry progress');return;}
     if(p==='/tutor'){showCustom('caTutorView','ChemWaypoint AI Tutor');return;}
+    if(p==='/companion'){window.ChemWaypointCompanion?.mount();showCustom('caCompanionView','Your chemistry companion');return;}
     if(p==='/genchem'){openGenchem();return;}
     if(p.startsWith('/genchem/')){openGenchem(p.split('/')[2]);return;}
     navigate('/',true);

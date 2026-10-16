@@ -18,6 +18,7 @@
     { "source": "/courses", "destination": "/" },
     { "source": "/progress", "destination": "/" },
     { "source": "/tutor", "destination": "/" },
+    { "source": "/companion", "destination": "/" },
     { "source": "/model-lab", "destination": "/" },
     { "source": "/organic", "destination": "/" },
     { "source": "/organic/:path*", "destination": "/" },

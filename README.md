@@ -202,3 +202,13 @@ Verification: `node --test tests/assessment.test.cjs tests/content-store.test.cj
 `GET /api/learning-summary` provides a read-only report for one server-configured account. It reuses the site's assessment rules, respects published lesson edits, and separates dated completions from undated legacy progress. Requests require a dedicated Bearer credential; the Supabase secret stays server-side. Missing configuration fails closed with HTTP 503.
 
 See [setup and n8n node settings](docs/n8n-learning-summary.md). Configure the three production environment variables in `.env.example` and redeploy before using the endpoint. This feature does not send email, schedule a workflow, or change progress.
+
+## On-site Companion
+
+Open `/companion` or choose **Companion** in the learning sidebar. The page reuses the existing `/api/tutor` for course-grounded chat and provides lesson search, saved concept checks, personal progress, and PubChem compound references. It uses the existing ChemWaypoint account; no ChatGPT account is required. Guest users can ask questions and explore the same two lesson previews available elsewhere on the site. Saved progress, tracked practice, and compound lookup require a confirmed account.
+
+The `chemwaypoint-site-companion` Supabase Edge Function verifies the current learner JWT with Supabase Auth, derives the account ID server-side, and uses the companion’s existing service-only practice tables and grading RPC. It never accepts a caller-supplied learner identity. Submitted practice merges into the same assessment event stream used by the website and ChatGPT companion. The browser reconciles those events after saving so existing Progress and Learn screens update too. Chat stays in the current tab and clears on an account switch.
+
+Run `node scripts/build-companion-bridge.cjs` after bundled curriculum or handler changes, then deploy `supabase/functions/chemwaypoint-site-companion/index.js` to the existing ChemAtlas Supabase project. Existing `companion_practice_sessions` and `companion_submit_practice` are prerequisites; no additional database migration is required for this page. The function uses platform-supplied Supabase credentials only. Deploy it with JWT verification enabled. Allowed browser origins are `https://www.chemwaypoint.com` and `https://chemwaypoint.com`.
+
+Validation: `node --test tests/companion-server.test.cjs tests/assessment.test.cjs tests/content-store.test.cjs tests/startup.test.cjs`; run `tests/companion-ui.cjs` with `jsdom@26.1.0` available. The UI test covers account switching, stale-response isolation, safe chat rendering, first-answer capture, result synchronization, and guest gating.

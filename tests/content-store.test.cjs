@@ -15,7 +15,7 @@ test('malformed lesson data cannot replace bundled content',()=>{
 });
 test('navigation retains every route and never accepts arbitrary targets',()=>{
  const nav=store.normalizeNavigation({items:[{id:'tutor',label:'Get help',route:'https://bad.test'},{id:'tutor',label:'duplicate'},{id:'unknown',label:'bad'}]});
- assert.equal(nav.length,6);assert.equal(new Set(nav.map(x=>x.id)).size,6);
+ assert.equal(nav.length,7);assert.equal(new Set(nav.map(x=>x.id)).size,7);
  assert.equal(nav[0].label,'Get help');assert.equal(nav[0].route,'/tutor');
 });
 test('published edits preserve module IDs and fall back on malformed payloads',async()=>{
@@ -30,7 +30,7 @@ test('published edits preserve module IDs and fall back on malformed payloads',a
 
 test('custom navigation only accepts known ChemAtlas destinations',()=>{
  const nav=store.normalizeNavigation({items:[{id:'custom-organic',label:'Organic',route:'/organic'},{id:'custom-unsafe',label:'Unsafe',route:'javascript:alert(1)'}]});
- assert.equal(nav.length,7);assert.equal(nav[0].route,'/organic');assert(!nav.some(x=>x.id==='custom-unsafe'));
+ assert.equal(nav.length,8);assert.equal(nav[0].route,'/organic');assert(!nav.some(x=>x.id==='custom-unsafe'));
 });
 test('dashboard keeps continue learning and rejects unsupported blocks and destinations',()=>{
  const layout=store.normalizeDashboard({columns:99,blocks:[{id:'continue',hidden:true},{id:'custom-hello',type:'shortcut',label:'Hello',route:'https://bad.test',width:'bogus'},{id:'custom-bad',type:'script'}]});

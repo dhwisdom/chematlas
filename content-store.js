@@ -6,6 +6,7 @@
     {id:'practice',label:'Practice',icon:'◎'},
     {id:'labs',label:'Labs',route:'/model-lab',icon:'⚗'},
     {id:'tutor',label:'AI Tutor',route:'/tutor',icon:'✦'},
+    {id:'companion',label:'Companion',route:'/companion',icon:'✧'},
     {id:'progress',label:'Progress',route:'/progress',icon:'▥'}
   ];
   const destinations=[...defaults.filter(x=>x.route),{id:'organic',label:'Organic Studio',route:'/organic',icon:'↻'},{id:'courses',label:'Course library',route:'/courses',icon:'▤'},{id:'curriculum',label:'Degree map',route:'/curriculum',icon:'⌘'}];

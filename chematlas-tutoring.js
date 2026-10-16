@@ -197,6 +197,7 @@
     if (p.startsWith('/genchem')) return 'Learn';
     if (p === '/model-lab') return 'Labs';
     if (p === '/tutor') return 'AI Tutor';
+    if (p === '/companion') return 'Companion';
     if (p === '/progress') return 'Progress';
     if (p.startsWith('/organic')) return 'Organic Studio';
     if (p === '/courses') return 'Courses';
@@ -242,6 +243,7 @@
         <button class="ca-tutor-nav" data-ca-tutor-practice><span class="icon">◎</span><span>Practice</span><i class="ca-practice-dot"></i></button>
         <button class="ca-tutor-nav" data-ca-tutor-route="/model-lab"><span class="icon">⚗</span><span>Labs</span></button>
         <button class="ca-tutor-nav" data-ca-tutor-route="/tutor"><span class="icon">✦</span><span>AI Tutor</span></button>
+        <button class="ca-tutor-nav" data-ca-tutor-route="/companion"><span class="icon">✧</span><span>Companion</span></button>
         <button class="ca-tutor-nav" data-ca-tutor-route="/progress"><span class="icon">▥</span><span>Progress</span></button>`;
       nav.prepend(group);
       group.querySelectorAll('[data-ca-tutor-route]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.caTutorRoute)));
@@ -665,6 +667,7 @@
     if (path.startsWith('/genchem')) selector = '[data-ca-tutor-route="/genchem"]';
     else if (path === '/model-lab') selector = '[data-ca-tutor-route="/model-lab"]';
     else if (path === '/tutor') selector = '[data-ca-tutor-route="/tutor"]';
+    else if (path === '/companion') selector = '[data-ca-tutor-route="/companion"]';
     else if (path === '/progress') selector = '[data-ca-tutor-route="/progress"]';
     document.querySelector('.ca-tutor-nav' + selector)?.classList.add('active');
   }
