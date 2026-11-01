@@ -78,14 +78,14 @@
         </aside>
       </section>
 
-      <div class="gc-semester-tabs" role="tablist" aria-label="General chemistry semester">
-        ${course.semesters.map(s => `<button class="gc-semester-tab ${semester===s.number?'active':''}" data-semester="${s.number}">
+      <div class="gc-semester-tabs" role="group" aria-label="General chemistry semester">
+        ${course.semesters.map(s => `<button type="button" class="gc-semester-tab ${semester===s.number?'active':''}" data-semester="${s.number}" aria-pressed="${semester===s.number}">
           <span>SEMESTER ${s.number}</span><strong>${esc(s.title)}</strong><small>${esc(s.focus)}</small>
         </button>`).join('')}
       </div>
 
       <section class="gc-workspace">
-        <aside class="gc-syllabus panel">
+        <div class="gc-syllabus panel">
           <div class="gc-syllabus-head">
             <div><p class="eyebrow">COURSE MAP</p><h3>${semester === 1 ? 'General Chemistry I' : 'General Chemistry II'}</h3></div>
             <span class="gc-count">${modulesForSemester(semester).length} modules</span>
@@ -94,11 +94,11 @@
           <nav class="gc-module-nav" aria-label="General chemistry modules">
             ${moduleNavHtml()}
           </nav>
-        </aside>
+        </div>
 
-        <main class="gc-reader" id="gcReader">
+        <section class="gc-reader" id="gcReader" aria-label="Current lesson">
           ${moduleHtml(active)}
-        </main>
+        </section>
       </section>
     `;
 
@@ -110,7 +110,7 @@
     const mods = modulesForSemester(semester).filter(m => !q || [m.title,m.subtitle,...m.outcomes,...m.vocabulary].join(' ').toLowerCase().includes(q));
     if (!mods.length) return '<p class="gc-empty">No modules match that search.</p>';
     return mods.map(m => `
-      <button class="gc-module-link ${m.id===currentId?'active':''} ${completed.has(m.id)?'complete':''}" data-module="${m.id}">
+      <button type="button" class="gc-module-link ${m.id===currentId?'active':''} ${completed.has(m.id)?'complete':''}" data-module="${m.id}" ${m.id===currentId?'aria-current="page"':''}>
         <span class="gc-module-number">${completed.has(m.id)?'✓':String(m.number).padStart(2,'0')}</span>
         <span><strong>${esc(m.title)}</strong><small>${esc(m.subtitle)}</small></span>
       </button>`).join('');
@@ -188,6 +188,7 @@
       query = '';
       saveProgress();
       render();
+      root.querySelector(`[data-semester="${semester}"]`)?.focus();
     }));
 
     root.querySelectorAll('[data-module]').forEach(btn => btn.addEventListener('click', () => selectModule(btn.dataset.module)));
@@ -214,7 +215,12 @@
     query = '';
     saveProgress();
     render();
-    requestAnimationFrame(() => byId('gcReader')?.scrollIntoView({ behavior:'smooth', block:'start' }));
+    requestAnimationFrame(() => {
+      const heading = byId('gcReader')?.querySelector('h2');
+      heading?.setAttribute('tabindex', '-1');
+      heading?.focus({preventScroll:true});
+      byId('gcReader')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
   }
 
   function bindModuleInteractions() {
