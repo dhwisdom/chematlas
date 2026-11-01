@@ -17,7 +17,11 @@
     if(!box){box=document.createElement('div');box.dataset.taskViewSwitch='';box.className='ca-task-view';}
     const target=document.querySelector('[data-task-view-slot]')||document.querySelector('.sidebar')||document.querySelector('.admin-top');
     if(target&&box.parentElement!==target)target.appendChild(box);
-    box.innerHTML=`<label for="caTaskView">TASK VIEW</label><select id="caTaskView" aria-label="Task view" ${!ready?'disabled':''}>${isAdmin()?'<option value="admin">Admin</option>':''}<option value="learner">${user?'Learner':'Guest preview'}</option></select><small>${!ready?'Checking your account…':isAdmin()?'One site, views for different tasks.':user?'Full course · personal progress':'2 lesson previews · create an account for the full course'}</small>${!user&&ready&&location.pathname!=='/admin'?'<button type="button" data-account-open>Create account / sign in</button>':''}`;
+    box.innerHTML=`<details class="ca-account-options"><summary>Account & task view</summary><label for="caTaskView">TASK VIEW</label><select id="caTaskView" aria-label="Task view" ${!ready?'disabled':''}>${isAdmin()?'<option value="admin">Admin</option>':''}<option value="learner">${user?'Learner':'Guest preview'}</option></select><small>${!ready?'Checking your account…':isAdmin()?'One site, views for different tasks.':user?'Full course · personal progress':'2 lesson previews · create an account for the full course'}</small>${!user&&ready&&location.pathname!=='/admin'?'<button type="button" data-account-open>Create account / sign in</button>':''}</details>`;
+    if(location.pathname.startsWith('/admin')){
+      const details=box.querySelector('.ca-account-options');
+      details.replaceWith(...details.childNodes);
+    }
     const select=box.querySelector('select');select.value=location.pathname==='/admin'&&isAdmin()?'admin':'learner';select.onchange=()=>choose(select.value);
   }
   function setAccount(session, allowedRights=[], allowDefault=false) {
