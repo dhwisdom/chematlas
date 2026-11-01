@@ -112,4 +112,91 @@ test('Learn uses one main, a selected semester group and valued progress indicat
   await p.locator('[data-semester="2"]').click();
   assert.equal(await p.locator('[data-semester="2"]').getAttribute('aria-pressed'),'true');
   assert.equal(await p.locator('[data-semester="1"]').getAttribute('aria-pressed'),'false');
+  await p.waitForFunction(()=>document.querySelector('.ca-course-switcher-copy strong')?.textContent==='General Chemistry II');
+});
+
+test('model fits all scientific geometries and retains pointer, keyboard and display controls',async t=>{
+  const p=await setup(t);
+  await p.addInitScript(()=>{
+    const arc=CanvasRenderingContext2D.prototype.arc,clear=CanvasRenderingContext2D.prototype.clearRect;
+    CanvasRenderingContext2D.prototype.clearRect=function(...args){if(this.canvas.id==='moleculeCanvas')window.modelAtoms=[];return clear.apply(this,args);};
+    CanvasRenderingContext2D.prototype.arc=function(x,y,r,...args){if(this.canvas.id==='moleculeCanvas')(window.modelAtoms||=[]).push({x,y,r});return arc.call(this,x,y,r,...args);};
+  });
+  await p.goto(base+'/model-lab');await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-ca-starting'));
+  const canvas=p.locator('#moleculeCanvas');
+  for(const width of [1440,320]){
+   await p.setViewportSize({width,height:1000});
+   for(const value of ['ch4','nh3','h2o','co2','bf3','pcl5','sf6']){
+    await p.locator('#moleculeSelect').selectOption(value);
+    for(const mode of ['stick','sphere']){
+      await p.locator(`[data-style="${mode}"]`).click();
+      const bounds=await p.evaluate(()=>({atoms:window.modelAtoms,w:document.querySelector('#moleculeCanvas').clientWidth,h:document.querySelector('#moleculeCanvas').clientHeight}));
+      assert(bounds.atoms.length>=3,value);
+      for(const a of bounds.atoms)assert(a.x-a.r>=0&&a.y-a.r>=0&&a.x+a.r<=bounds.w&&a.y+a.r<=bounds.h,value+' fully visible');
+      const extent=Math.max(Math.max(...bounds.atoms.map(a=>a.x+a.r))-Math.min(...bounds.atoms.map(a=>a.x-a.r)),Math.max(...bounds.atoms.map(a=>a.y+a.r))-Math.min(...bounds.atoms.map(a=>a.y-a.r)));
+      assert(extent>Math.min(bounds.w,bounds.h)*.45,value+' readable scale');
+    }
+   }
+  }
+  await p.setViewportSize({width:1440,height:1000});await canvas.scrollIntoViewIfNeeded();
+  const image=()=>canvas.evaluate(e=>e.toDataURL());
+  const original=await image();await p.locator('[data-model-control="right"]').focus();await p.keyboard.press('Enter');assert.notEqual(await image(),original);
+  const box=await canvas.boundingBox();await p.mouse.move(box.x+box.width/2,box.y+box.height/2);await p.mouse.down();await p.mouse.move(box.x+box.width/2+40,box.y+box.height/2+25);await p.mouse.up();
+  const rotated=await image();await p.mouse.wheel(0,-100);await p.waitForTimeout(100);assert.notEqual(await image(),rotated);
+  await p.locator('[data-model-control="reset"]').click();assert.equal(await p.locator('#modelViewStatus').innerText(),'Default view');
+});
+
+test('Tutor preserves course context, follow-up history and honest success/error status',async t=>{
+  const p=await setup(t);let calls=[],fail=false;
+  await p.route('**/api/tutor',async route=>{
+    calls.push(route.request().postDataJSON());
+    await route.fulfill({status:fail?503:200,contentType:'application/json',body:JSON.stringify(fail?{error:'Test service unavailable'}:{answer:'A test explanation with chemistry context.',model:'test-model',webSources:[]})});
+  });
+  await p.locator('.ca-lesson-goals summary').click();
+  await p.locator('.ca-inline-tutor').click();await p.locator('#caTutorV2').waitFor();
+  assert.match(await p.locator('#caTutorInput').inputValue(),/Measurement/);
+  assert.match(await p.locator('.ca-ai-status').innerText(),/checked on send/);
+  await p.locator('#caTutorForm button[type="submit"]').click();
+  await p.waitForFunction(()=>document.querySelector('.ca-ai-status')?.textContent.includes('Connected on last request'));
+  assert.match(calls[0].context,/Measurement|units|measurement/);assert(calls[0].learner);assert.equal(calls[0].conversation.length,0);
+  await p.locator('#caTutorInput').fill('Explain this with another example');
+  await p.locator('#caTutorForm button[type="submit"]').click();await p.waitForFunction(()=>document.querySelectorAll('.ca-message.assistant:not(.ca-thinking)').length===2);
+  assert.equal(calls[1].conversation.length,2);
+  await p.reload();await p.locator('#caTutorV2').waitFor();assert.match(await p.locator('#caChat').innerText(),/test explanation/);
+  await p.locator('.ca-tutor-side-v2 summary').click();assert.match(await p.locator('.ca-memory-card').innerText(),/Current module/i);
+  fail=true;await p.locator('#caTutorInput').fill('Check the disconnected state');await p.locator('#caTutorForm button[type="submit"]').click();
+  await p.waitForFunction(()=>document.querySelector('.ca-ai-status')?.textContent.includes('Connection unavailable'));
+  assert.match(await p.locator('#caChat').innerText(),/Test service unavailable/);
+  await p.locator('.ca-student-row').click();await p.locator('#caAccountOverlay.open').waitFor();
+  assert.match(await p.locator('#caAccountOverlay').innerText(),/account|connect/i);
+});
+
+test('Practice engines retain representative chemistry results and accessible result states',async t=>{
+  const p=await setup(t);
+  await p.locator('[data-ca-tutor-practice]').click();await p.locator('#gcPracticeOverlay.open').waitFor();
+  await p.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
+  async function audit(){
+    const violations=await p.evaluate(async()=>{const r=await axe.run(document.querySelector('#gcPracticeOverlay'),{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}));});
+    assert.deepEqual(violations,[]);
+  }
+  await p.locator('[data-pick="a"]').click();await audit();await p.locator('[data-pick="b"]').click();await audit();
+  await p.locator('[data-tool="lewis"]').click();await p.locator('#gcLewisCheck').click();assert.match(await p.locator('#gcLewisFeedback').innerText(),/electron count/);await audit();
+  await p.locator('[data-bond="0"]').selectOption('2');await p.locator('[data-bond="1"]').selectOption('2');await p.locator('#gcLewisCheck').click();assert.match(await p.locator('#gcLewisFeedback').innerText(),/Valid contributor/);await audit();
+  // Select the first documented randomized fixture without altering app data.
+  async function firstProblem(tool){await p.evaluate(tool=>{const random=Math.random;try{Math.random=()=>0;document.querySelector(`[data-tool="${tool}"]`).click();}finally{Math.random=random;}},tool);}
+  await firstProblem('balance');await p.locator('#gcBalanceCheck').click();assert.match(await p.locator('#gcBalanceFeedback').innerText(),/Not balanced/);await audit();
+  for(const [field,value]of [['r-0','2'],['r-1','1'],['p-0','2']])await p.locator(`[data-coeff="${field}"]`).fill(value);
+  await p.locator('#gcBalanceCheck').click();assert.match(await p.locator('#gcBalanceFeedback').innerText(),/Balanced/);await audit();
+  await firstProblem('stoich');await p.locator('#gcStoichAnswer').fill('0');await p.locator('#gcStoichCheck').click();await audit();
+  await p.locator('#gcStoichAnswer').fill('44.68');await p.locator('#gcStoichCheck').click();assert.match(await p.locator('#gcStoichFeedback').innerText(),/Correct/);await audit();
+  await p.locator('[data-tool="acid"]').click();await p.locator('#gcStrongCalc').click();assert.match(await p.locator('#gcStrongResult').innerText(),/2.000/);await p.locator('#gcBufferCalc').click();assert.match(await p.locator('#gcBufferResult').innerText(),/4.459/);await audit();
+  await p.locator('[data-tool="equilibrium"]').click();await p.locator('[data-dir="right"]').click();await p.locator('#gcEqSolve').click();assert.match(await p.locator('#gcEqFeedback').innerText(),/prediction was correct/);await audit();
+  await p.locator('[data-tool="calorimetry"]').click();await p.locator('#gcTempGuess').fill('28.85');await p.locator('#gcRunCal').click();assert.match(await p.locator('#gcCalFeedback').innerText(),/within 0.6/);await audit();
+  assert.match(await p.locator('#gcToolScore').innerText(),/7\/7/);
+  // Narrow layouts must remain inside the dialog after each tool is rendered.
+  await p.setViewportSize({width:320,height:800});
+  for(const tool of ['periodic','lewis','balance','stoich','acid','equilibrium','calorimetry']){
+    await p.locator(`[data-tool="${tool}"]`).click();
+    assert.equal(await p.locator('#gcPracticeOverlay').evaluate(e=>e.scrollWidth>innerWidth),false,tool+' dialog reflow');
+  }
 });
