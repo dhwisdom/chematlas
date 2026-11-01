@@ -60,8 +60,16 @@
 
   function install(){
     if (!document.getElementById('gcPracticeOverlay')) {
-      const overlay=document.createElement('div');overlay.id='gcPracticeOverlay';overlay.className='gc-practice-overlay';overlay.innerHTML=`<div class="gc-practice-shell" role="dialog" aria-modal="true" aria-label="General Chemistry Practice Lab"><header class="gc-practice-top"><div><p class="eyebrow">GENERAL CHEMISTRY • INTERACTIVE PRACTICE</p><h2>Foundation Practice Lab</h2></div><button type="button" class="pt-open-inline" data-periodic-open>▦ Periodic table & ions</button><button class="gc-practice-close" aria-label="Close Practice Lab">×</button></header><div class="gc-practice-body"><section class="gc-practice-summary"><article class="gc-practice-intro"><p class="eyebrow">LEARN → MANIPULATE → SOLVE</p><h3>Practice the ideas that everything else in chemistry depends on.</h3><p>These tools are intentionally reasoning-first. They do not just return answers; they expose electron accounting, atom counts, mole ratios, equilibrium direction, and experimental assumptions.</p></article><article class="gc-practice-score" id="gcToolScore"></article></section><nav class="gc-tool-tabs" aria-label="Practice tools"></nav><section class="gc-tool-stage" id="gcToolStage"></section></div></div>`;document.body.appendChild(overlay);
-      overlay.querySelector('.gc-practice-close').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&overlay.classList.contains('open'))close()});
+      const overlay=document.createElement('dialog');overlay.id='gcPracticeOverlay';overlay.className='gc-practice-overlay';overlay.setAttribute('aria-labelledby','gcPracticeTitle');overlay.innerHTML=`<div class="gc-practice-shell"><header class="gc-practice-top"><div><p class="eyebrow">GENERAL CHEMISTRY • INTERACTIVE PRACTICE</p><h2 id="gcPracticeTitle">Foundation Practice Lab</h2></div><button type="button" class="pt-open-inline" data-periodic-open>▦ Periodic table & ions</button><button class="gc-practice-close" aria-label="Close Practice Lab">×</button></header><div class="gc-practice-body"><section class="gc-practice-summary"><article class="gc-practice-intro"><p class="eyebrow">LEARN → MANIPULATE → SOLVE</p><h3>Practice the ideas that everything else in chemistry depends on.</h3><p>These tools are intentionally reasoning-first. They do not just return answers; they expose electron accounting, atom counts, mole ratios, equilibrium direction, and experimental assumptions.</p></article><article class="gc-practice-score" id="gcToolScore"></article></section><nav class="gc-tool-tabs" aria-label="Practice tools"></nav><section class="gc-tool-stage" id="gcToolStage"></section></div></div>`;document.body.appendChild(overlay);
+      overlay.querySelector('.gc-practice-close').addEventListener('click',close);overlay.addEventListener('click',e=>{if(e.target===overlay)close()});overlay.addEventListener('cancel',e=>{e.preventDefault();close()});
+      overlay.addEventListener('keydown',e=>{
+        if(e.key!=='Tab')return;
+        const controls=[...overlay.querySelectorAll('button,input,select,textarea,a[href],[tabindex]')]
+          .filter(el=>!el.disabled && el.tabIndex>=0 && el.checkVisibility());
+        const first=controls[0],last=controls.at(-1);
+        if(e.shiftKey && document.activeElement===first){e.preventDefault();last?.focus();}
+        else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first?.focus();}
+      });
       const tabs=[['periodic','P','Periodic trends','compare elements'],['lewis','L','Lewis builder','electrons + charge'],['balance','B','Balance','atom accounting'],['stoich','S','Stoichiometry','moles + mass'],['acid','pH','Acid/base','buffers + pH'],['equilibrium','K','Equilibrium','Q + ICE'],['calorimetry','q','Calorimetry','virtual lab']];
       const nav=overlay.querySelector('.gc-tool-tabs');nav.innerHTML=tabs.map(([id,icon,name,sub])=>`<button class="gc-tool-tab" data-tool="${id}"><span>${icon}</span><strong>${name}</strong><small>${sub}</small></button>`).join('');nav.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{activeTool=b.dataset.tool;renderTool()}));
     }
@@ -69,10 +77,32 @@
     const view=document.getElementById('genchemView');if(view)new MutationObserver(()=>injectLaunch()).observe(view,{childList:true,subtree:true});
   }
   function injectLaunch(){
-    const hero=document.querySelector('#genchemView .gc-hero-copy');if(hero&&!hero.querySelector('.gc-practice-launch')){const btn=document.createElement('button');btn.className='gc-practice-launch';btn.innerHTML='<span>⚗</span> Open Foundation Practice Lab';btn.addEventListener('click',open);hero.appendChild(btn);}
+    const hero=document.querySelector('#genchemView .gc-hero-copy');if(hero&&!hero.querySelector('.gc-practice-launch')){const btn=document.createElement('button');btn.className='gc-practice-launch';btn.innerHTML='<span>⚗</span> Open Foundation Practice Lab';btn.addEventListener('click',()=>open());hero.appendChild(btn);}
   }
-  function open(){document.getElementById('gcPracticeOverlay')?.classList.add('open');renderTool();document.body.style.overflow='hidden'}
-  function close(){document.getElementById('gcPracticeOverlay')?.classList.remove('open');document.body.style.overflow=''}
+  let opener, previousOverflow;
+  function open(trigger=document.activeElement){
+    const overlay=document.getElementById('gcPracticeOverlay');
+    if(!overlay || overlay.open)return;
+    opener=trigger;
+    previousOverflow=document.body.style.overflow;
+    renderTool();
+    overlay.classList.add('open');
+    overlay.showModal();
+    document.body.style.overflow='hidden';
+    overlay.querySelector('.gc-practice-close').focus({preventScroll:true});
+  }
+  function close(){
+    const overlay=document.getElementById('gcPracticeOverlay');
+    if(!overlay?.open)return;
+    overlay.classList.remove('open');
+    overlay.close();
+    document.body.style.overflow=previousOverflow;
+    // A dashboard card may have been hidden by the navigation that opened Practice.
+    const visible=el=>el?.isConnected && !el.closest('[inert]') && el.checkVisibility();
+    const target=[opener,document.querySelector('[data-ca-tutor-practice]'),document.getElementById('mobileMenu')].find(visible);
+    target?.focus({preventScroll:true});
+  }
+  window.ChemAtlasPractice={open};
   function renderTool(){renderTabs();renderScore();({periodic:renderPeriodic,lewis:renderLewis,balance:renderBalance,stoich:renderStoich,acid:renderAcid,equilibrium:renderEquilibrium,calorimetry:renderCalorimetry}[activeTool]||renderPeriodic)()}
   function stage(){return document.getElementById('gcToolStage')}
 

@@ -200,7 +200,38 @@
     document.querySelectorAll('.seg').forEach(x => x.classList.toggle('active', x === b));
     renderMolecule();
   }));
-  document.getElementById('mobileMenu').addEventListener('click', () => document.querySelector('.sidebar').classList.toggle('open'));
+  const menu = document.getElementById('mobileMenu');
+  const sidebar = document.querySelector('.sidebar');
+  const mobile = matchMedia('(max-width:820px)');
+  function syncNavigation() {
+    const open = mobile.matches && sidebar.classList.contains('open');
+    menu.setAttribute('aria-expanded', String(open));
+    // Inert also excludes controls injected into the sidebar after startup.
+    sidebar.inert = mobile.matches && !open;
+    if (sidebar.inert && sidebar.contains(document.activeElement)) menu.focus();
+  }
+  menu.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    syncNavigation();
+    if (mobile.matches && sidebar.classList.contains('open')) {
+      [...sidebar.querySelectorAll('button,a[href],select,input')]
+        .find(el => !el.disabled && el.checkVisibility())?.focus();
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !mobile.matches || !sidebar.classList.contains('open')) return;
+    event.preventDefault();
+    sidebar.classList.remove('open');
+    syncNavigation();
+    menu.focus();
+  });
+  // Existing route handlers close the drawer by removing its open class.
+  new MutationObserver(syncNavigation).observe(sidebar, {attributes:true, attributeFilter:['class']});
+  mobile.addEventListener('change', () => {
+    sidebar.classList.remove('open');
+    syncNavigation();
+  });
+  syncNavigation();
 
   renderDegreeMap();
   renderCourseCards();

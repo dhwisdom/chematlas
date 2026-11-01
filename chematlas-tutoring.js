@@ -330,16 +330,13 @@
   }
 
   function launchPractice(tool) {
+    const trigger = document.activeElement;
     navigate('/genchem');
     let attempts = 70;
     const tick = () => {
-      const launch = document.querySelector('.gc-practice-launch');
-      const overlay = document.getElementById('gcPracticeOverlay');
-      if (launch) launch.click();
-      else if (overlay) overlay.classList.add('open');
+      if (window.ChemAtlasPractice) window.ChemAtlasPractice.open(trigger);
       else if (attempts-- > 0) return setTimeout(tick, 100);
       else return;
-      document.body.style.overflow = 'hidden';
       if (tool) setTimeout(() => document.querySelector(`.gc-tool-tab[data-tool="${CSS.escape(tool)}"]`)?.click(), 100);
     };
     setTimeout(tick, 120);
@@ -476,7 +473,7 @@
           <h2>Learn one idea at a time.</h2>
           <p>Short explanations, a worked example, then progressive checks. Revisit earlier ideas as you learn new ones.</p>
         </div>
-        <div class="ca-learn-progress" aria-label="${semesterDone} of ${semesterModules.length} lessons completed">
+        <div class="ca-learn-progress" role="progressbar" aria-label="Course lessons completed" aria-valuemin="0" aria-valuemax="${semesterModules.length}" aria-valuenow="${semesterDone}" aria-valuetext="${semesterDone} of ${semesterModules.length} lessons completed">
           <span><b>${semesterDone}</b> / ${semesterModules.length} completed</span>
           <div><i style="width:${semesterModules.length ? Math.round(semesterDone / semesterModules.length * 100) : 0}%"></i></div>
         </div>
@@ -545,7 +542,7 @@
           <span class="ca-focus-kind">LEARN</span>
           <h3 class="ca-focus-title">${esc(steps[0].label)}</h3>
         </div>
-        <div class="ca-focus-meter" aria-label="Lesson progress"><span></span></div>
+        <div class="ca-focus-meter" role="progressbar" aria-label="Lesson step" aria-valuemin="1" aria-valuemax="${steps.length}" aria-valuenow="1"><span></span></div>
       </header>
       <nav class="ca-focus-dots" aria-label="Lesson steps">
         ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span>${index + 1}</span>${esc(step.kind)}</button>`).join('')}
@@ -617,6 +614,8 @@
       focus.querySelector('.ca-focus-kind').textContent = steps[activeIndex].kind.toUpperCase();
       focus.querySelector('.ca-focus-title').textContent = steps[activeIndex].label;
       focus.querySelector('.ca-focus-meter span').style.width = `${((activeIndex + 1) / steps.length) * 100}%`;
+      focus.querySelector('.ca-focus-meter').setAttribute('aria-valuenow', String(activeIndex + 1));
+      focus.querySelector('.ca-focus-meter').setAttribute('aria-valuetext', `Step ${activeIndex + 1} of ${steps.length}: ${steps[activeIndex].label}`);
 
       focus.querySelectorAll('[data-focus-index]').forEach((button, i) => {
         const active = i === activeIndex;
@@ -662,14 +661,16 @@
 
   function setActiveNav() {
     const path = location.pathname;
-    document.querySelectorAll('.ca-tutor-nav').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.ca-tutor-nav').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('aria-current'); });
     let selector = '[data-ca-tutor-route="/dashboard"]';
     if (path.startsWith('/genchem')) selector = '[data-ca-tutor-route="/genchem"]';
     else if (path === '/model-lab') selector = '[data-ca-tutor-route="/model-lab"]';
     else if (path === '/tutor') selector = '[data-ca-tutor-route="/tutor"]';
     else if (path === '/companion') selector = '[data-ca-tutor-route="/companion"]';
     else if (path === '/progress') selector = '[data-ca-tutor-route="/progress"]';
-    document.querySelector('.ca-tutor-nav' + selector)?.classList.add('active');
+    const active = document.querySelector('.ca-tutor-nav' + selector);
+    active?.classList.add('active');
+    active?.setAttribute('aria-current', 'page');
   }
 
   function cleanupV2() {

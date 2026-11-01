@@ -117,6 +117,9 @@
         el.querySelectorAll('[data-choice]').forEach(b=>{b.disabled=true;b.classList.toggle('correct',Number(b.dataset.choice)===q.answer);b.classList.toggle('wrong',Number(b.dataset.choice)===selected&&!result.correct);});
         el.querySelector('#gcCheckAnswer').disabled=true;
         const feedback=el.querySelector('#gcFeedback');feedback.className='gc-feedback '+(result.correct?'good':'bad');feedback.textContent=(result.correct?'Correct. ':'Not quite. ')+q.explanation;
+        // The submitting control is now disabled. Keep keyboard context on its result.
+        feedback.setAttribute('tabindex','-1');
+        feedback.focus({preventScroll:true});
         const reserve=bank.find(x=>!run.questionIds.includes(x.id)&&!answersFor(events(),run.id).has(x.id));
         el.querySelector('.ca-check-followup').innerHTML=`${!result.correct&&section?`<details class="ca-check-revisit"><summary>Revisit: ${esc(section.title)}</summary>${section.body.map(p=>`<p>${esc(p)}</p>`).join('')}<a href="/genchem/${esc(linked.id)}?section=${sectionIndex}">Open this explanation →</a></details>`:''}
           <div class="ca-check-buttons">${!result.correct&&reserve&&!extra?'<button class="secondary-button" data-fresh-question>Try a fresh question</button>':''}<button class="primary-button" data-check-next>${extra?'Return to checks':index===run.questionIds.length-1?'See results':'Next question'} →</button></div>`;
