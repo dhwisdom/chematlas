@@ -200,3 +200,88 @@ test('Practice engines retain representative chemistry results and accessible re
     assert.equal(await p.locator('#gcPracticeOverlay').evaluate(e=>e.scrollWidth>innerWidth),false,tool+' dialog reflow');
   }
 });
+
+test('progress activity is neutral for a fresh guest and navigation creates no completion',async t=>{
+  const p=await setup(t);
+  await p.locator('[data-module="atoms-moles"]').click();await p.locator('[data-semester="2"]').click();
+  await p.goto(base+'/progress');await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-ca-starting'));
+  const state=await p.evaluate(()=>({history:JSON.parse(localStorage.getItem('chematlas-practice-history-v1')||'[]'),events:JSON.parse(localStorage.getItem('chematlas-assessment-events-v1')||'[]'),streak:document.querySelector('.streak')?.innerText}));
+  if(process.env.NEXT_EVIDENCE){fs.mkdirSync(process.env.NEXT_EVIDENCE,{recursive:true});fs.writeFileSync(path.join(process.env.NEXT_EVIDENCE,'guest-progress.json'),JSON.stringify(state,null,2));await p.screenshot({path:path.join(process.env.NEXT_EVIDENCE,'guest-progress.png'),fullPage:true});}
+  assert.equal(state.history.length,0,'navigation must not write completion history');
+  assert.equal(state.events.length,0);assert.doesNotMatch(state.streak,/1\s*day streak/);
+});
+
+test('real assessment completion projects one activity, survives resume/reload, and never rewrites legacy history',async t=>{
+  const p=await setup(t);
+  const legacy='[{"id":"legacy","at":"2026-01-01T12:00:00Z","label":"General Chemistry lesson completed","value":"[]"}]';
+  await p.evaluate(value=>localStorage.setItem('chematlas-practice-history-v1',value),legacy);
+  await p.locator('[data-focus-index]').last().click();await p.locator('[data-check-start]').click();
+  for(let i=0;i<5;i++){
+    await p.locator('[data-choice="0"]').click();await p.locator('#gcCheckAnswer').click();await p.locator('[data-check-next]').click();
+    if(i===0){await p.locator('[data-module="atoms-moles"]').click();await p.locator('[data-module="measurement"]').click();assert.match(await p.locator('.gc-check').innerText(),/CHECK 2 OF 5/);}
+  }
+  const evidence=()=>p.evaluate(()=>({runs:window.ChemAtlasActivity.completedRuns(window.ChemAtlasAssessment.events()),events:window.ChemAtlasAssessment.events(),history:localStorage.getItem('chematlas-practice-history-v1'),streak:window.ChemAtlasActivity.streak(window.ChemAtlasAssessment.events()).count}));
+  const before=await evidence();assert.equal(before.runs.length,1);assert.equal(before.streak,1);assert.equal(before.history,legacy);
+  assert.equal(await p.locator('.streak strong').innerText(),'1');
+  await p.reload();await p.locator('.ca-focus-shell').waitFor();assert.deepEqual(await evidence(),before);
+  await p.locator('[data-check-start]').click();
+  for(let i=0;i<5;i++){await p.locator('[data-choice="0"]').click();await p.locator('#gcCheckAnswer').click();await p.locator('[data-check-next]').click();}
+  const after=await evidence();assert.equal(after.runs.filter(r=>r.kind==='lesson').length,1);assert.equal(after.runs.filter(r=>r.kind==='practice').length,1);assert.equal(after.streak,1);assert.equal(after.history,legacy);
+});
+
+async function cloudFixture(p,initial='A'){
+  await p.route('**/shared-client.js',route=>route.fulfill({contentType:'text/javascript',body:`(()=>{
+    let session=${initial?JSON.stringify({user:{id:initial,email:initial+'@example.test'}}):'null'};
+    const listeners=[],held=[],calls=[];const hold={};
+    const state=id=>id==='A'?{'chematlas-genchem-completed-v1':['measurement'],'chematlas-assessment-events-v1':[],'chematlas-practice-history-v1':[{id:'old-A',at:'2026-01-01',label:'private-A history'}]}:{};
+    const wait=(kind,id,value)=>hold[kind]===id?new Promise(resolve=>held.push({kind,id,resolve:()=>resolve(value)})):Promise.resolve(value);
+    const change=id=>{session=id?{user:{id,email:id+'@example.test'}}:null;for(const fn of listeners)fn(id?'SIGNED_IN':'SIGNED_OUT',session);};
+    const cloud={auth:{getSession:async()=>({data:{session}}),onAuthStateChange:fn=>listeners.push(fn),signInWithPassword:async()=>{change('A');return {data:{session}}},signUp:async()=>({data:{session:null}}),signOut:async()=>{change(null);return {}}},
+      from(table){let id;const query={select(){return query},eq(k,v){if(k==='user_id')id=v;return query},order(){return query},limit(){return query},in(){return query},
+        upsert(rows){const userId=Array.isArray(rows)?rows[0]?.user_id:rows.user_id;calls.push({kind:'write',table,userId,rows});return wait('write',userId,{error:null})},
+        then(resolve,reject){const rows=table==='learner_state'?Object.entries(state(id)).map(([state_key,state_value])=>({state_key,state_value})):[];return wait(table==='learner_state'?'read':'other',id,{data:rows,error:null}).then(resolve,reject)}};return query},
+      rpc(name,args){const id=session?.user.id;calls.push({kind:'rpc',name,userId:id,args});return name==='merge_assessment_events'?wait('rpc',id,{data:args.p_events,error:null}):Promise.resolve({data:[],error:null})}};
+    window.ChemAtlasCloud=async()=>cloud;
+    window.__cloudFixture={change,hold,calls,pending:kind=>held.filter(x=>x.kind===kind).length,flush(kind){for(const x of held.filter(x=>x.kind===kind))x.resolve();for(let i=held.length-1;i>=0;i--)if(held[i].kind===kind)held.splice(i,1);delete hold[kind]}};
+  })();` }));
+  await p.reload();await p.waitForFunction(id=>window.ChemAtlasLearnerState.owner===(id?'account:'+id:'guest'),initial);
+  await p.waitForTimeout(100);
+}
+
+test('account checkpoints and epoch guards isolate delayed read, write, RPC and Tutor responses',async t=>{
+  const p=await setup(t);await cloudFixture(p);
+  const owner=id=>p.waitForFunction(id=>window.ChemAtlasLearnerState.owner==='account:'+id,id);
+  const change=id=>p.evaluate(id=>window.__cloudFixture.change(id),id);
+  await p.waitForFunction(()=>JSON.parse(localStorage.getItem('chematlas-genchem-completed-v1')||'[]').includes('measurement'));
+  const runId=await p.evaluate(()=>{const module=window.CHEM_GENCHEM.modules[0],run=window.ChemAtlasAssessment.start(module);window.ChemAtlasAssessment.answer(run,window.ChemAtlasAssessment.questions(module)[0],0);return run.id;});
+  await change('B');await owner('B');
+  for(const kind of ['read','write','rpc']){
+    await p.evaluate(kind=>window.__cloudFixture.hold[kind]='A',kind);await change('A');await owner('A');
+    await p.waitForFunction(kind=>window.__cloudFixture.pending(kind)>0,kind);
+    await change('B');await owner('B');
+    await p.evaluate(kind=>window.__cloudFixture.flush(kind),kind);await p.waitForTimeout(100);
+    assert.deepEqual(await p.evaluate(()=>JSON.parse(localStorage.getItem('chematlas-genchem-completed-v1')||'[]')),[]);
+    assert.deepEqual(await p.evaluate(()=>window.ChemAtlasAssessment.events()),[]);
+    assert.equal(await p.evaluate(()=>localStorage.getItem('chematlas-practice-history-v1')?.includes('private-A')),false);
+  }
+  await change('A');await owner('A');assert(await p.evaluate(runId=>window.ChemAtlasAssessment.events().some(e=>e.id===runId),runId));await p.locator('[data-ca-tutor-route="/tutor"]').click();
+  let release;const reply=new Promise(resolve=>release=resolve);
+  await p.route('**/api/tutor',async r=>{await reply;await r.fulfill({contentType:'application/json',body:JSON.stringify({answer:'PRIVATE-A RESPONSE'})});});
+  await p.locator('#caTutorInput').fill('private-A question');await p.locator('#caTutorForm button[type="submit"]').click();
+  await change('B');await owner('B');release();await p.waitForTimeout(150);
+  assert.equal(await p.locator('#caTutorView').evaluate(e=>e.textContent.includes('PRIVATE-A RESPONSE')||e.textContent.includes('private-A question')),false);
+  const leaks=await p.evaluate(()=>window.__cloudFixture.calls.filter(c=>c.userId==='B'&&JSON.stringify(c).includes('private-A')));assert.deepEqual(leaks,[]);
+  await change('A');await owner('A');assert.match(await p.evaluate(()=>localStorage.getItem('chematlas-practice-history-v1')),/private-A/);
+});
+
+test('explicit first guest sign-in can retain guest evidence without claiming it for a second account',async t=>{
+  const p=await setup(t);await cloudFixture(p,null);
+  await p.evaluate(()=>{localStorage.setItem('chematlas-genchem-completed-v1','["atoms-moles"]');window.dispatchEvent(new Event('chematlas:progress-synced'));});
+  await p.locator('.ca-student-row').click();await p.locator('#caEmail').fill('A@example.test');await p.locator('#caPassword').fill('fixture-password');
+  await p.locator('#caAuthForm button[type="submit"]').click();await p.waitForFunction(()=>window.ChemAtlasLearnerState.owner==='account:A');
+  assert(await p.evaluate(()=>JSON.parse(localStorage.getItem('chematlas-genchem-completed-v1')).includes('atoms-moles')));
+  await p.evaluate(()=>window.__cloudFixture.change(null));await p.waitForFunction(()=>window.ChemAtlasLearnerState.owner==='guest');
+  await p.evaluate(()=>window.__cloudFixture.change('B'));await p.waitForFunction(()=>window.ChemAtlasLearnerState.owner==='account:B');
+  assert.deepEqual(await p.evaluate(()=>JSON.parse(localStorage.getItem('chematlas-genchem-completed-v1')||'[]')),[]);
+  assert.equal(await p.evaluate(()=>window.ChemAtlasActivity.streak(window.ChemAtlasAssessment.events()).count),0);
+});

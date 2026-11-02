@@ -186,6 +186,7 @@
       result.className = 'quiz-result ' + (score === quiz.length ? 'good' : 'bad');
       result.textContent = score === quiz.length ? '3/3 — Mastered. You are ready to connect geometry to polarity and reactivity.' : `${score}/3 — Review the 3D models, then try again.`;
       try { localStorage.setItem('chematlas-vsepr-score', String(score)); } catch (_) {}
+      window.dispatchEvent(new CustomEvent('chematlas:practice-completed',{detail:{kind:'vsepr',score}}));
     });
   }
 
@@ -254,5 +255,6 @@
   renderDegreeMap();
   renderCourseCards();
   renderQuiz();
+  window.addEventListener('chematlas:learner-state-changed',()=>{quizState.fill(null);renderQuiz();document.getElementById('quizResult').textContent='';});
   resizeCanvas();
 })();
