@@ -43,11 +43,18 @@
     root.innerHTML = data.courses.map(c => `
       <article class="course-card ${c.id === 'genchem1' ? 'featured' : ''}">
         <span class="course-code">${c.code}</span><h3>${c.name}</h3><p>${c.description}</p>
-        <details class="course-modules"><summary>View course modules</summary><div class="module-list">${c.modules.map(m => `<span>${m.title}</span>`).join('')}</div></details>
-        <div class="course-actions"><small>${c.modules.length} modules</small>${c.id === 'genchem1' ? '<button class="text-button open-lab">Open VSEPR lab →</button>' : c.id === 'organic1' ? '<button class="text-button open-organic">Open Organic Studio →</button>' : '<span class="pill">Scaffolded</span>'}</div>
+        <p class="course-availability">${c.id.startsWith('genchem')?'Lessons available':c.id==='organic1'?'4 interactive tools available':'Course outline only · lessons not yet available'}</p>
+        <details class="course-modules"><summary>${c.id.startsWith('genchem')?'View course modules':'View planned topics'}</summary><div class="module-list">${c.modules.map(m => `<span>${m.title}</span>`).join('')}</div></details>
+        <div class="course-actions"><small>${c.id.startsWith('genchem')?c.modules.length+' modules':'Planned course topics'}</small>${c.id === 'genchem1' ? '<button class="text-button open-lab">Open VSEPR lab →</button>' : c.id === 'organic1' ? '<button class="text-button open-organic">Open Organic Studio →</button>' : c.id.startsWith('genchem')?'':'<span class="pill">Not yet available</span>'}</div>
       </article>`).join('');
-    root.querySelector('.open-lab')?.addEventListener('click', () => showView('lab'));
-    root.querySelector('.open-organic')?.addEventListener('click', () => showView('organic'));
+    const openCourseTool=name=>{
+      // Use the existing navigation adapter so the URL and active view agree.
+      document.querySelector(`.nav-item[data-view="${name}"]`)?.click();
+      const heading=document.querySelector('.view.active-view h2');
+      heading?.setAttribute('tabindex','-1');heading?.focus({preventScroll:true});
+    };
+    root.querySelector('.open-lab')?.addEventListener('click', () => openCourseTool('lab'));
+    root.querySelector('.open-organic')?.addEventListener('click', () => openCourseTool('organic'));
   }
 
   function parseXYZ(xyz) {
@@ -184,7 +191,7 @@
       if (answered < quiz.length) { result.className='quiz-result bad'; result.textContent='Answer all three questions first.'; return; }
       const score = quiz.reduce((s, q, i) => s + (quizState[i] === q.answer ? 1 : 0), 0);
       result.className = 'quiz-result ' + (score === quiz.length ? 'good' : 'bad');
-      result.textContent = score === quiz.length ? '3/3 — Mastered. You are ready to connect geometry to polarity and reactivity.' : `${score}/3 — Review the 3D models, then try again.`;
+      result.textContent = score === quiz.length ? '3/3 — Correct. You are ready to connect geometry to polarity and reactivity.' : `${score}/3 — Review the 3D models, then try again.`;
       try { localStorage.setItem('chematlas-vsepr-score', String(score)); } catch (_) {}
       window.dispatchEvent(new CustomEvent('chematlas:practice-completed',{detail:{kind:'vsepr',score}}));
     });

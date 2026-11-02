@@ -79,7 +79,7 @@
     landing.dataset.tutoringLanding = '1';
     landing.innerHTML = `
       <header class="ca-marketing-nav">
-        <button class="ca-marketing-brand" data-route="/"><span>⚛</span><strong>ChemWaypoint</strong></button>
+        <button class="ca-marketing-brand" data-route="/"><span aria-hidden="true">⚛︎</span><strong>ChemWaypoint</strong></button>
         <nav>
           <button data-route="/courses">Courses</button>
           <button data-route="/model-lab">Labs</button>
@@ -221,7 +221,7 @@
     if (!sidebar || !nav) return;
 
     const mark = sidebar.querySelector('.brand-mark');
-    if (mark) mark.textContent = '⚛';
+    if (mark) mark.textContent = '⚛︎';
     const subtitle = sidebar.querySelector('.brand span');
     if (subtitle) subtitle.textContent = 'Chemistry tutor';
 
@@ -253,17 +253,11 @@
       group.querySelector('[data-ca-tutor-practice]')?.addEventListener('click', () => launchPractice());
     }
 
-    if (!sidebar.querySelector('.ca-sidebar-tutor')) {
-      const assist = document.createElement('button');
-      assist.className = 'ca-sidebar-tutor';
-      assist.innerHTML = '<span class="spark">✦</span><span><strong>Need a hand?</strong><small>Ask your chemistry tutor</small></span>';
-      assist.addEventListener('click', () => navigate('/tutor'));
-      nav.after(assist);
-
+    if (!sidebar.querySelector('.ca-sidebar-secondary')) {
       const secondary = document.createElement('div');
       secondary.className = 'ca-sidebar-secondary';
       secondary.innerHTML = '<button data-route-secondary="/organic">Organic Studio</button><button data-route-secondary="/curriculum">Degree map</button>';
-      assist.after(secondary);
+      nav.after(secondary);
       secondary.querySelectorAll('[data-route-secondary]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.routeSecondary)));
     }
 
@@ -537,16 +531,18 @@
     focus.className = 'ca-focus-shell';
     focus.innerHTML = `
       <header class="ca-focus-head">
-        <div>
+        <div class="ca-step-progress">
           <span class="ca-focus-count">STEP <b>1</b> OF ${steps.length}</span>
-          <span class="ca-focus-kind">LEARN</span>
           <span class="ca-focus-title" hidden aria-hidden="true">${esc(steps[0].label)}</span>
+          <div class="ca-focus-meter" role="progressbar" aria-label="Lesson step" aria-valuemin="1" aria-valuemax="${steps.length}" aria-valuenow="1"><span></span></div>
         </div>
-        <div class="ca-focus-meter" role="progressbar" aria-label="Lesson step" aria-valuemin="1" aria-valuemax="${steps.length}" aria-valuenow="1"><span></span></div>
+        <details class="ca-step-jump">
+          <summary>Jump to step</summary>
+          <nav class="ca-focus-dots" aria-label="Lesson steps">
+            ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span>${index + 1}</span><span class="ca-step-label">${esc(step.label)}</span></button>`).join('')}
+          </nav>
+        </details>
       </header>
-      <nav class="ca-focus-dots" aria-label="Lesson steps">
-        ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span>${index + 1}</span><span class="ca-step-label">${esc(step.kind)}</span></button>`).join('')}
-      </nav>
     `;
 
     steps[0].el.before(focus);
@@ -555,7 +551,7 @@
     footer.className = 'ca-focus-footer';
     footer.setAttribute('aria-label','Lesson step navigation');
     footer.innerHTML = `
-      <button type="button" class="ca-focus-back">← Back</button>
+      <button type="button" class="ca-focus-back">← Previous</button>
       <span class="ca-focus-helper">Take your time. You can revisit any step.</span>
       <button type="button" class="ca-focus-next">Continue →</button>
     `;
@@ -611,7 +607,6 @@
       });
 
       focus.querySelector('.ca-focus-count b').textContent = String(activeIndex + 1);
-      focus.querySelector('.ca-focus-kind').textContent = steps[activeIndex].kind.toUpperCase();
       focus.querySelector('.ca-focus-title').textContent = steps[activeIndex].label;
       focus.querySelector('.ca-focus-meter span').style.width = `${((activeIndex + 1) / steps.length) * 100}%`;
       focus.querySelector('.ca-focus-meter').setAttribute('aria-valuenow', String(activeIndex + 1));
@@ -644,7 +639,7 @@
     }
 
     focus.querySelectorAll('[data-focus-index]').forEach(button => {
-      button.addEventListener('click', () => showStep(Number(button.dataset.focusIndex), true));
+      button.addEventListener('click', () => { showStep(Number(button.dataset.focusIndex), true); focus.querySelector('.ca-step-jump').open=false; });
     });
     footer.querySelector('.ca-focus-back')?.addEventListener('click', () => showStep(activeIndex - 1, true));
     footer.querySelector('.ca-focus-next')?.addEventListener('click', () => {
@@ -668,9 +663,13 @@
     else if (path === '/tutor') selector = '[data-ca-tutor-route="/tutor"]';
     else if (path === '/companion') selector = '[data-ca-tutor-route="/companion"]';
     else if (path === '/progress') selector = '[data-ca-tutor-route="/progress"]';
-    const active = selector ? document.querySelector('.ca-tutor-nav' + selector) : null;
+    const active = selector ? document.querySelector('.ca-tutor-nav' + selector) : [...document.querySelectorAll('.ca-tutor-nav[data-target]')].find(btn=>btn.dataset.target===path);
     active?.classList.add('active');
     active?.setAttribute('aria-current', 'page');
+    document.querySelectorAll('[data-route-secondary]').forEach(btn=>{
+      const current=path===btn.dataset.routeSecondary||path.startsWith(btn.dataset.routeSecondary+'/');
+      btn.classList.toggle('active',current);if(current)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current');
+    });
   }
 
   function cleanupV2() {

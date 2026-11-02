@@ -2,9 +2,10 @@ const {JSDOM}=require('jsdom'),fs=require('fs'),assert=require('node:assert/stri
 const path=require('path'),base=path.resolve(__dirname,'..');
 const read=f=>fs.readFileSync(path.join(base,f),'utf8');
 const settle=()=>new Promise(r=>setTimeout(r,20));
-async function setup(signed=true){
+async function setup(signed=true,overrides={}){
  const dom=new JSDOM('<main class="main"></main><button data-account-open>Account</button>',{url:'https://www.chemwaypoint.com/companion',runScripts:'outside-only',pretendToBeVisual:true});const w=dom.window;let session=signed?{user:{id:'user-a'},access_token:'test-user-a'}:null;const callbacks=[],calls=[],errors=[];let holdChat;
  const progress={completed:3,mastered:0,total:19,dueForReview:[{id:'measurement',title:'Measurement'}],recommendedNext:{id:'stoichiometry',title:'Stoichiometry',url:'/genchem/stoichiometry'}};
+ Object.assign(progress,overrides);
  const cloud={auth:{getSession:async()=>({data:{session}}),onAuthStateChange:fn=>callbacks.push(fn)},from(){return {select(){return this},eq:async()=>({data:[{state_key:'chematlas-assessment-events-v1',state_value:[]}]})}}};
  w.CHEMATLAS_CONFIG={supabaseUrl:'https://project.test',supabasePublishableKey:'public-key',tutorEndpoint:'/api/tutor'};w.ChemAtlasCloud=async()=>cloud;
  w.addEventListener('error',e=>errors.push(e.error));
@@ -20,6 +21,8 @@ async function setup(signed=true){
 (async()=>{
  const guest=await setup(false);assert(guest.d.querySelector('#caCompanionView'));assert.equal(guest.d.querySelector('#cwStartPractice').disabled,true);assert.equal(guest.d.querySelector('#cwAccountBadge').textContent,'Guest preview');assert.equal(guest.calls.length,0);
  guest.d.querySelector('[data-cw-tab="lessons"]').click();guest.d.querySelector('#cwLessonSearch').value='polarity';guest.d.querySelector('#cwLessonSearch').dispatchEvent(new guest.w.Event('input'));assert(guest.d.querySelector('#cwLessons').textContent.includes('Molecular Geometry'));assert(!guest.d.querySelector('[data-cw-read="geometry"]'),'guest cannot open gated lesson');
+ const incomplete=await setup(true,{recommendedNext:null});assert(!incomplete.d.querySelector('#cwProgress').textContent.includes('every lesson'));assert(incomplete.d.querySelector('#cwProgress').textContent.includes('course map'));incomplete.w.close();
+ const complete=await setup(true,{completed:19,recommendedNext:null});assert(complete.d.querySelector('#cwProgress').textContent.includes('every lesson'));complete.w.close();
  const a=await setup();assert(a.d.querySelector('#cwProgress').textContent.includes('3/19'));assert(a.calls[0].headers.Authorization==='Bearer test-user-a');
  a.d.querySelector('#cwChatInput').value='Explain precision';a.d.querySelector('#cwChatForm').dispatchEvent(new a.w.Event('submit',{cancelable:true,bubbles:true}));await settle();assert(a.d.querySelector('#cwChat').textContent.includes('A safe explanation'));assert(!a.d.querySelector('#cwChat img'),'model output is text');assert(a.calls.find(c=>c.url==='/api/tutor').body.context.includes('Measurement'));
  a.d.querySelector('[data-cw-tab="practice"]').click();a.d.querySelector('#cwStartPractice').click();await settle();

@@ -1,0 +1,12 @@
+{
+  "nodeCases": 83,
+  "nodeFailures": 0,
+  "standalonePeriodicAssertions": "passed",
+  "uiScripts": 5,
+  "companionAdditionalChecks": "passed",
+  "browserCases": 13,
+  "browserFailures": 0,
+  "responsiveStates": 42,
+  "extraStates": 8,
+  "scanFailures": []
+}
