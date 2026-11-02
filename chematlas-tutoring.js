@@ -290,7 +290,7 @@
     const wrap = document.createElement('div');
     wrap.className = 'ca-top-search';
     wrap.innerHTML = `
-      <label><span>⌕</span><input type="search" placeholder="Search concepts..." aria-label="Search ChemWaypoint"><kbd>⌘ K</kbd></label>
+      <label><span>⌕</span><input type="search" placeholder="Search concepts..." aria-label="Search ChemWaypoint"></label>
       <div class="ca-search-results" hidden></div>`;
     topbar.insertBefore(wrap, actions);
 
@@ -319,9 +319,6 @@
       if (!wrap.contains(event.target)) results.hidden = true;
     });
     window.addEventListener('keydown', event => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault(); input.focus();
-      }
       if (event.key === 'Escape') { results.hidden = true; input.blur(); }
     });
   }

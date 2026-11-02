@@ -68,7 +68,9 @@
   function renderStreak(){
     const box=document.querySelector('.streak');if(!box)return;
     const count=window.ChemAtlasActivity?.streak(safeJson(LS.assessments,[])).count||0;
-    const number=count?String(count):'—',label=count?'day streak':'Start a learning streak';
+    const number=count?String(count):'',label=count?'day streak':'Start your streak';
+    box.dataset.empty=String(!count);box.querySelector('strong').hidden=!count;
+    box.title=count?"Consecutive local calendar days with a completed assessment. Yesterday's streak remains active until today ends.":'Complete an assessment to start your streak.';
     if(box.querySelector('strong').textContent!==number)box.querySelector('strong').textContent=number;
     if(box.querySelector('small').textContent!==label)box.querySelector('small').textContent=label;
   }
@@ -313,7 +315,7 @@
       document.getElementById('caSignOut')?.addEventListener('click',async()=>{await cloud?.auth.signOut();session=null;updateSyncBadge();renderAccount()});return;
     }
     if(!cfg.supabaseUrl||!cfg.supabasePublishableKey){body.innerHTML=`<div class="ca-setup-note"><strong>Guest mode is active.</strong><p>Account sync is unavailable right now. You can keep learning as a guest; your work stays in this browser.</p></div>`;return;}
-    body.innerHTML=`<form id="caAuthForm"><label>Email<input id="caEmail" type="email" autocomplete="email" required></label><label>Password<input id="caPassword" type="password" minlength="6" autocomplete="current-password" required></label><div class="ca-auth-actions"><button class="primary-button" type="submit">Sign in</button><button class="secondary-button" type="button" id="caSignUp">Create account</button></div><p id="caAuthFeedback" class="muted"></p></form>`;
+    body.innerHTML=`<form id="caAuthForm"><label>Email<input id="caEmail" type="email" autocomplete="email" required></label><label>Password<input id="caPassword" type="password" minlength="6" autocomplete="current-password" required></label><div class="ca-auth-actions"><button class="primary-button" type="submit">Sign in</button><button class="secondary-button" type="button" id="caSignUp">Create account</button></div><p id="caAuthFeedback" class="muted" role="status"></p></form>`;
     document.getElementById('caAuthForm')?.addEventListener('submit',e=>authSubmit(e,false));document.getElementById('caSignUp')?.addEventListener('click',e=>authSubmit(e,true));
   }
   async function loadReminderPreference(){
@@ -352,8 +354,10 @@
       if(error)throw error;
       if(epoch!==sessionEpoch&&data.session?.user?.id!==session?.user?.id)return;
       if(data.session)adoptSession(data.session,pendingGuestClaim);
-      if(feedback)feedback.textContent=signup&&!data.session?'Check your email to confirm the account.':'Signed in. Syncing your progress…';
+      const message=signup&&!data.session?'Check your email to confirm the account.':'Signed in. Syncing your progress…';
+      if(feedback)feedback.textContent=message;
       updateSyncBadge();if(session){await mergeCloudState();await refreshAdminAccess();}renderAccount();
+      const currentFeedback=document.getElementById('caAuthFeedback');if(currentFeedback)currentFeedback.textContent=message;
     }catch(error){if(feedback)feedback.textContent=error.message||'Could not sign in. Your browser progress is preserved.';}
     finally{pendingGuestClaim=false;}
   }

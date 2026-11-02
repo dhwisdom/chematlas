@@ -9,7 +9,9 @@ samples.organic=['.organic-hero p:not(.eyebrow)','.organic-tab strong','.organic
 samples.companion=['.cw-subtitle','.cw-hint','.cw-tabs button'];
 samples.account=['#caAccountCopy','#caAccountBody label'];
 samples.menu=['.ca-tutor-nav','.ca-course-switcher'];
-const routes={menu:'/genchem/measurement',organic:'/organic',companion:'/companion',account:'/genchem/measurement',landing:'/',courses:'/courses',learn:'/genchem/measurement',practice:'/genchem/measurement',model:'/model-lab',tutor:'/tutor'};
+samples.resources=['.gc-connection.bridge','.gc-connection p:last-child','.gc-vocab span','.gc-scope>p','.gc-scope a'];
+samples.account.push('#caEmail','#caPassword');
+const routes={resources:'/genchem/measurement',menu:'/genchem/measurement',organic:'/organic',companion:'/companion',account:'/genchem/measurement',landing:'/',courses:'/courses',learn:'/genchem/measurement',practice:'/genchem/measurement',model:'/model-lab',tutor:'/tutor'};
 (async()=>{
 fs.mkdirSync(out,{recursive:true});
 const server=http.createServer((req,res)=>{
@@ -33,8 +35,10 @@ try{
    if(width<=820)await p.locator('#mobileMenu').click();
    await p.locator('[data-ca-tutor-practice]').click();await p.locator('#gcPracticeOverlay.open').waitFor();
   }
+  if(name==='resources'){await p.locator('.ca-lesson-more > summary').click();await p.locator('.gc-scope summary').click();}
   if(name==='menu'&&width<=820)await p.locator('#mobileMenu').click();
   if(name==='account'){if(width<=820)await p.locator('#mobileMenu').click();await p.locator('.ca-student-row').click();await p.locator('#caAccountOverlay.open').waitFor();}
+  await p.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
   await p.waitForTimeout(150);
   const data=await p.evaluate(selectors=>{
    function bg(el){for(let e=el;e;e=e.parentElement){const c=getComputedStyle(e).backgroundColor;if(c!=='rgba(0, 0, 0, 0)')return c;}return 'rgb(255, 255, 255)'}
@@ -46,11 +50,11 @@ try{
     rules:[...document.styleSheets].flatMap(sheet=>{try{return [...sheet.cssRules].filter(r=>r.selectorText&&selectors.some(s=>document.querySelector(s)?.matches(r.selectorText))).map(r=>({source:sheet.href,selector:r.selectorText,css:r.style.cssText})).slice(-10)}catch{return []}})};
   },samples[name]);
   let violations=[];
-  if([1440,390].includes(width)){
+  if(process.env.VISUAL_AXE_ALL==='1'||[1440,390].includes(width)){
    await p.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
    violations=await p.evaluate(async()=>{const r=await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,html:n.html,summary:n.failureSummary}))}))});
   }
-  if([2048,1440,390].includes(width))await p.screenshot({path:path.join(out,`${name}-${width}.png`),fullPage:true});
+  if(process.env.VISUAL_SHOTS==='all'||[2048,1440,390].includes(width)){await p.screenshot({path:path.join(out,`${name}-${width}.png`),fullPage:true});if(name==='resources')await p.locator('.ca-lesson-more').screenshot({path:path.join(out,`${name}-${width}-cards.png`)});}
   results.push({name,width,zoomEquivalent:width===720?200:width===360?400:100,...data,violations,errors});
   if(!baseline){
    if(data.overflow||data.dialogOverflow)failures.push(`${name} ${width}: horizontal overflow`);

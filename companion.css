@@ -7,3 +7,7 @@
 #caCompanionView .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
 .cw-compose-foot input[type="checkbox"]{width:24px;height:24px;flex:0 0 24px}.cw-compose-foot label{display:flex;align-items:center;gap:8px;min-height:44px}
+
+/* Recoverable Practice failures stay with the task and its retained answers. */
+.cw-recovery{padding:18px;border:1px solid #a32c35;border-radius:var(--ca-panel-radius);background:#fff4f1;color:#8e2530;overflow-wrap:anywhere}
+.cw-recovery p{margin:0 0 12px;line-height:1.6}.cw-recovery button{margin:4px 8px 4px 0;min-height:44px}

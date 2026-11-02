@@ -1,0 +1,18 @@
+{
+  "baseCommit": "78f9686bcb4724902b15a4ceba6f6414d8a24d79",
+  "nodeCases": 85,
+  "nodeFailures": 0,
+  "standalonePeriodicAssertions": "passed",
+  "uiSuites": 5,
+  "browserCases": 21,
+  "browserFailures": 0,
+  "existingResponsiveChecks": 42,
+  "focusedResponsiveChecks": 21,
+  "note": "Learn states overlap between matrices; counts are executions, not unique screens. Focused scans run axe at all widths.",
+  "resourceAndExampleModules": 19,
+  "nativeBrowserZoom": "not tested;720/360px reflow checks only",
+  "liveBackend": "deferred by user until approved staging and test account",
+  "productionConfigChanges": false,
+  "backendDeployment": false,
+  "merge": false
+}

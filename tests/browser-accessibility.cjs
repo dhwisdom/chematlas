@@ -223,7 +223,7 @@ test('real assessment completion projects one activity, survives resume/reload, 
   const evidence=()=>p.evaluate(()=>({runs:window.ChemAtlasActivity.completedRuns(window.ChemAtlasAssessment.events()),events:window.ChemAtlasAssessment.events(),history:localStorage.getItem('chematlas-practice-history-v1'),streak:window.ChemAtlasActivity.streak(window.ChemAtlasAssessment.events()).count}));
   const before=await evidence();assert.equal(before.runs.length,1);assert.equal(before.streak,1);assert.equal(before.history,legacy);
   assert.equal(await p.locator('.streak strong').innerText(),'1');
-  await p.reload();await p.locator('.ca-focus-shell').waitFor();assert.deepEqual(await evidence(),before);
+  await p.reload();await p.locator('.ca-focus-shell').waitFor();await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-ca-starting'));assert.deepEqual(await evidence(),before);
   await p.locator('[data-check-start]').click();
   for(let i=0;i<5;i++){await p.locator('[data-choice="0"]').click();await p.locator('#gcCheckAnswer').click();await p.locator('[data-check-next]').click();}
   const after=await evidence();assert.equal(after.runs.filter(r=>r.kind==='lesson').length,1);assert.equal(after.runs.filter(r=>r.kind==='practice').length,1);assert.equal(after.streak,1);assert.equal(after.history,legacy);
@@ -236,7 +236,7 @@ async function cloudFixture(p,initial='A'){
     const state=id=>id==='A'?{'chematlas-genchem-completed-v1':['measurement'],'chematlas-assessment-events-v1':[],'chematlas-practice-history-v1':[{id:'old-A',at:'2026-01-01',label:'private-A history'}]}:{};
     const wait=(kind,id,value)=>hold[kind]===id?new Promise(resolve=>held.push({kind,id,resolve:()=>resolve(value)})):Promise.resolve(value);
     const change=id=>{session=id?{user:{id,email:id+'@example.test'}}:null;for(const fn of listeners)fn(id?'SIGNED_IN':'SIGNED_OUT',session);};
-    const cloud={auth:{getSession:async()=>({data:{session}}),onAuthStateChange:fn=>listeners.push(fn),signInWithPassword:async()=>{change('A');return {data:{session}}},signUp:async()=>({data:{session:null}}),signOut:async()=>{change(null);return {}}},
+    const cloud={auth:{getSession:async()=>({data:{session}}),refreshSession:async()=>{calls.push({kind:'refreshSession'});return {data:{session}}},onAuthStateChange:fn=>listeners.push(fn),signInWithPassword:async()=>{change('A');return {data:{session}}},signUp:async()=>({data:{session:null}}),signOut:async()=>{change(null);return {}}},
       from(table){let id;const query={select(){return query},eq(k,v){if(k==='user_id')id=v;return query},order(){return query},limit(){return query},in(){return query},
         upsert(rows){const userId=Array.isArray(rows)?rows[0]?.user_id:rows.user_id;calls.push({kind:'write',table,userId,rows});return wait('write',userId,{error:null})},
         then(resolve,reject){const rows=table==='learner_state'?Object.entries(state(id)).map(([state_key,state_value])=>({state_key,state_value})):[];return wait(table==='learner_state'?'read':'other',id,{data:rows,error:null}).then(resolve,reject)}};return query},
@@ -341,4 +341,180 @@ test('Courses and Organic state truthful availability, route context and accessi
   await p.locator('[data-stereo-answer="R"]').click();await p.locator('#checkStereo').click();assert.match(await p.locator('#stereoFeedback').innerText(),/Correct/);
   await p.locator('[data-stereo-answer="S"]').click();await p.locator('#checkStereo').click();assert.match(await p.locator('#stereoFeedback').innerText(),/Not quite/);
   assert.equal(await p.locator('[data-stereo-answer="S"]').getAttribute('aria-pressed'),'true');
+});
+
+async function fiveEvidence(p,name,data){
+  if(!process.env.FIVE_EVIDENCE)return;
+  fs.mkdirSync(process.env.FIVE_EVIDENCE,{recursive:true});
+  fs.writeFileSync(path.join(process.env.FIVE_EVIDENCE,name+'.json'),JSON.stringify(data,null,2));
+  await p.screenshot({path:path.join(process.env.FIVE_EVIDENCE,name+'.png'),fullPage:true});
+}
+const fiveBaseline=process.env.FIVE_BASELINE==='1';
+test('five fixes: account fields, keyboard, masking and auth controls stay readable',async t=>{
+ const p=await setup(t);await cloudFixture(p,null);
+ for(const width of [320,390,768,1440]){
+  await p.setViewportSize({width,height:1000});
+  if(width<=820&&await p.locator('#mobileMenu').getAttribute('aria-expanded')==='false')await p.locator('#mobileMenu').click();
+  await p.locator('.ca-student-row').click();await p.locator('#caEmail').fill('learner@example.test');await p.locator('#caPassword').fill('fixture-only-password');
+  const state=await p.locator('#caEmail').evaluate(e=>{const s=getComputedStyle(e);return {background:s.backgroundColor,color:s.color,border:s.borderColor,width:innerWidth,overflow:document.documentElement.scrollWidth>innerWidth};});
+  await fiveEvidence(p,'account-'+width,state);
+  if(!fiveBaseline){assert.equal(state.background,'rgb(251, 252, 250)');assert.equal(state.color,'rgb(23, 50, 74)');assert.equal(state.border,'rgb(113, 137, 146)');assert.equal(state.overflow,false);assert.equal(await p.locator('#caPassword').getAttribute('type'),'password');
+   await p.locator('#caEmail').focus();await p.keyboard.press('Tab');assert.equal(await p.locator('#caPassword').evaluate(e=>e===document.activeElement),true);
+  }
+  await p.locator('#caAccountOverlay [data-account-close]').click();
+ }
+ if(fiveBaseline)return;
+ await p.locator('.ca-student-row').click();await p.locator('#caSignUp').click();await p.waitForFunction(()=>document.querySelector('#caAuthFeedback').textContent.includes('email'));
+ await p.locator('#caEmail').fill('learner@example.test');await p.locator('#caPassword').fill('fixture-only-password');
+ await p.locator('#caAuthForm button[type=submit]').click();await p.waitForFunction(()=>window.ChemAtlasLearnerState.owner==='account:A');
+});
+
+test('five fixes: expanded lesson resources use readable prose surfaces across all lessons',async t=>{
+ const p=await setup(t);await cloudFixture(p);
+ const ids=await p.evaluate(()=>window.CHEM_GENCHEM.modules.map(m=>m.id));
+ for(const id of fiveBaseline?ids.slice(0,1):ids){
+  await p.goto(base+'/genchem/'+id);await p.waitForFunction(id=>window.ChemAtlasLearnerState?.owner==='account:A'&&document.querySelector('.gc-module-link.active')?.dataset.module===id,id);
+  await p.locator('.ca-lesson-more > summary').click();await p.locator('.gc-scope summary').click();
+  const data=await p.locator('.gc-connection.bridge').evaluate(e=>({background:getComputedStyle(e).backgroundImage,color:getComputedStyle(e.querySelector('p:last-child')).color}));
+  if(id===ids[0])await fiveEvidence(p,'resources-1440',data);
+  if(!fiveBaseline){
+   assert.equal(data.background,'none');assert.equal(data.color,'rgb(82, 104, 115)');
+   await p.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
+   const audit=()=>p.evaluate(async()=>{const r=await axe.run(document.querySelector('.gc-reader'),{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}));});
+   assert.deepEqual(await audit(),[],id+' resources');
+   await p.locator('.ca-step-jump summary').click();await p.getByRole('button',{name:/Step \d+: Worked example/}).click();
+   assert.deepEqual(await audit(),[],id+' worked example');
+  }
+ }
+ if(fiveBaseline)return;
+ await p.locator('.ca-step-jump summary').click();await p.locator('[data-focus-index]').first().click();
+ for(const width of [320,390,768,1440,2048]){await p.setViewportSize({width,height:1000});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);const violations=await p.evaluate(async()=>{const r=await axe.run(document.querySelector('.gc-reader'),{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}));});assert.deepEqual(violations,[]);}
+});
+
+test('five fixes: header empty state and ordinary search without global shortcuts',async t=>{
+ const p=await setup(t);
+ for(const width of [390,768,1440,2048]){
+  await p.setViewportSize({width,height:1000});
+  const state=await p.evaluate(()=>({streak:document.querySelector('.streak').innerText,badges:document.querySelectorAll('.ca-top-search kbd').length,overflow:document.documentElement.scrollWidth>innerWidth}));
+  await fiveEvidence(p,'header-'+width,state);
+  if(fiveBaseline)continue;
+  assert.equal(state.badges,0);assert.doesNotMatch(state.streak,/—/);assert.equal(state.overflow,false);
+  for(const modifier of ['ctrlKey','metaKey']){const result=await p.evaluate(modifier=>{document.querySelector('#mobileMenu').focus();const original=document.activeElement;const e=new KeyboardEvent('keydown',{key:'k',[modifier]:true,bubbles:true,cancelable:true});window.dispatchEvent(e);return {canceled:e.defaultPrevented,same:document.activeElement===original};},modifier);assert.deepEqual(result,{canceled:false,same:true});}
+ }
+ if(fiveBaseline)return;
+ await p.setViewportSize({width:1440,height:1000});const search=p.locator('.ca-top-search input');await p.locator('.ca-help-button').focus();await p.keyboard.press('Shift+Tab');assert.equal(await search.evaluate(e=>e===document.activeElement),true);await search.click();await search.fill('polarity');await p.locator('.ca-search-results').waitFor({state:'visible'});await p.keyboard.press('Escape');assert.equal(await p.locator('.ca-search-results').isVisible(),false);
+ await search.click();await search.fill('polarity');await p.locator('[data-search-module="geometry"]').click();await p.waitForFunction(()=>location.pathname==='/genchem/geometry');
+});
+
+test('five fixes: Companion network failure is actionable and retryable',async t=>{
+ const p=await setup(t);await cloudFixture(p);
+ await p.route('**/functions/v1/chemwaypoint-site-companion',r=>r.abort('failed'));
+ await p.goto(base+'/companion');await p.locator('#cwTab-practice').click();await p.locator('#cwStartPractice').click();await p.waitForFunction(()=>document.querySelector('#cwPracticeStatus').classList.contains('error'));
+ const data=await p.locator('#cwPracticeStatus').innerText();await fiveEvidence(p,'companion-failed',{message:data,cause:'simulated network/CORS-style fetch rejection; not live backend evidence'});
+ if(fiveBaseline)return;
+ assert.doesNotMatch(data,/Failed to fetch/i);assert.match(data,/connect|connection/i);assert.equal(await p.locator('[data-cw-action="retry-practice"]').count(),1);
+ await p.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
+ for(const width of [320,390,768,1440,2048]){await p.setViewportSize({width,height:1000});assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);const violations=await p.evaluate(async()=>{const r=await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}));});assert.deepEqual(violations,[]);await fiveEvidence(p,'companion-failed-'+width,{width,message:data});}
+});
+
+test('five fixes: Companion distinguishes failures and retries the retained lesson and locked answers',async t=>{
+ const p=await setup(t);await cloudFixture(p);let mode='ok',submitMode='ok';const submissions=[],requests=[];
+ const questions=[0,1,2].map(i=>({id:'q'+i,question:'Fixture concept '+i,choices:['First','Second'],level:'Apply'}));
+ await p.route('**/functions/v1/chemwaypoint-site-companion',async r=>{
+  const body=r.request().postDataJSON();requests.push({action:body.action,module:body.args?.module_id});
+  let status=200,result;
+  if(body.action==='get_learning_progress')result={completed:0,total:19,mastered:0,dueForReview:[],recommendedNext:null};
+  else if(body.action==='create_practice_set'){
+   if(mode==='network'||mode==='offline'){await r.abort(mode==='offline'?'internetdisconnected':'failed');return;}
+   if(mode==='timeout')return;
+   if(mode==='malformed'){await r.fulfill({status:200,body:'not json',contentType:'text/plain'});return;}
+   status=typeof mode==='number'?mode:200;
+   result=status===200?{sessionId:'fixture-session',moduleId:body.args.module_id,questions,eligibleSpacedReview:false}:{error:'PRIVATE SERVER DIAGNOSTIC MUST NOT LEAK'};
+  }else if(body.action==='submit_practice_set'){
+   submissions.push(body.args);status=submitMode==='ok'?200:503;
+   result=status===200?{moduleId:'atoms-moles',correct:2,total:3,mastery:{label:'Building mastery',reviewWins:0},details:[]}:{error:'PRIVATE SERVER DIAGNOSTIC MUST NOT LEAK'};
+  }
+  await r.fulfill({status,contentType:'application/json',body:JSON.stringify(result)});
+ });
+ await p.goto(base+'/companion');await p.locator('#cwTab-practice').click();await p.locator('#cwPracticeModule').selectOption('atoms-moles');
+ const evidenceBefore=await p.evaluate(()=>localStorage.getItem('chematlas-assessment-events-v1'));
+ await p.clock.install();
+ for(const failure of ['network','offline',401,403,404,503,'malformed','timeout']){
+  mode=failure;
+  if(failure==='offline')await p.context().setOffline(true);
+  await p.locator('#cwStartPractice').click();
+  if(failure==='timeout'){await p.waitForFunction(()=>document.querySelector('#cwStartPractice').disabled);await p.clock.runFor(30100);}
+  await p.waitForFunction(()=>document.querySelector('#cwPracticeStatus').classList.contains('error'));
+  const text=await p.locator('#cwPracticeStatus').innerText();assert.doesNotMatch(text,/Failed to fetch|PRIVATE SERVER/);
+  const expected={network:/connect/i,offline:/connect/i,401:/session|sign in/i,403:/confirm|account/i,404:/unavailable/i,503:/service/i,malformed:/unexpected response/i,timeout:/too long/i};assert.match(text,expected[failure]);
+  assert.equal(await p.locator('#cwPracticeModule').inputValue(),'atoms-moles');
+  assert.equal(await p.evaluate(()=>localStorage.getItem('chematlas-assessment-events-v1')),evidenceBefore);
+  if(failure===401){await p.locator('#cwPracticeStatus [data-account-open]').click();await p.locator('#caAccountOverlay.open').waitFor();await p.locator('#caAccountOverlay [data-account-close]').click();}
+  if(failure==='offline')await p.context().setOffline(false);
+  mode='ok';await p.locator(failure===401?'[data-cw-action="reconnect-practice"]':'[data-cw-action="retry-practice"]').click();await p.locator('#cwQuestionHeading').waitFor();
+  assert.match(await p.locator('#cwQuestionHeading').innerText(),/Fixture concept 0/);assert.equal(requests.at(-1).module,'atoms-moles');
+ }
+ submitMode='fail';
+ for(let i=0;i<3;i++){await p.locator('[data-cw-choice="'+(i%2)+'"]').click();await p.locator('#cwNextQuestion').click();}
+ await p.locator('[data-cw-action="retry-practice"]').waitFor();
+ assert.equal(await p.locator('[data-cw-choice]:disabled').count(),2);
+ assert.deepEqual(submissions[0].choices,[0,1,0]);
+ assert.equal(await p.evaluate(()=>localStorage.getItem('chematlas-assessment-events-v1')),evidenceBefore);
+ await fiveEvidence(p,'companion-save-retry',{choices:submissions[0].choices,status:await p.locator('#cwPracticeStatus').innerText()});
+ submitMode='ok';await p.locator('[data-cw-action="retry-practice"]').focus();await p.keyboard.press('Enter');await p.waitForFunction(()=>document.querySelector('#cwPractice').textContent.includes('PRACTICE SAVED'));
+ assert.deepEqual(submissions[1],submissions[0]);assert.match(await p.locator('#cwPractice').innerText(),/2 of 3/);
+});
+
+test('five fixes: verified streak display uses the unchanged projection',async t=>{
+ const p=await setup(t);
+ await p.evaluate(()=>{
+  const today=new Date();today.setHours(12,0,0,0);if(today>Date.now())today.setDate(today.getDate()-1);
+  const run=(id,at)=>[{id,type:'start',moduleId:'measurement',at,mode:'lesson',eligible:false,questionIds:['q1']},{id:id+'a',type:'answer',run:id,moduleId:'measurement',at:at+1,questionId:'q1',choice:0,correct:false},{id:id+'f',type:'finish',run:id,moduleId:'measurement',at:at+2}];
+  const at=Math.min(+today,Date.now()-1000);localStorage.setItem('chematlas-assessment-events-v1',JSON.stringify(run('today',at)));window.dispatchEvent(new Event('chematlas:assessment-updated'));
+  window.__priorStreakRun=()=>{const yesterday=new Date(at);yesterday.setDate(yesterday.getDate()-1);return run('yesterday',+yesterday);};
+ });
+ assert.equal(await p.locator('.streak strong').innerText(),'1');assert.equal(await p.locator('.streak strong').getAttribute('hidden'),null);
+ await p.evaluate(()=>{const key='chematlas-assessment-events-v1';localStorage.setItem(key,JSON.stringify([...JSON.parse(localStorage.getItem(key)),...window.__priorStreakRun()]));window.dispatchEvent(new Event('chematlas:assessment-updated'));});
+ assert.equal(await p.locator('.streak strong').innerText(),'2');
+ await fiveEvidence(p,'header-active',{count:await p.locator('.streak strong').innerText()});
+});
+
+test('five fixes: account autofill, invalid and disabled states preserve legibility',async t=>{
+ const p=await setup(t);await cloudFixture(p,null);await p.locator('.ca-student-row').click();
+ const cdp=await p.context().newCDPSession(p);await cdp.send('DOM.enable');await cdp.send('CSS.enable');
+ const {root}=await cdp.send('DOM.getDocument');const {nodeId}=await cdp.send('DOM.querySelector',{nodeId:root.nodeId,selector:'#caEmail'});
+ await cdp.send('CSS.forcePseudoState',{nodeId,forcedPseudoClasses:['autofill']});
+ const autofill=await p.locator('#caEmail').evaluate(e=>{const s=getComputedStyle(e);return {fill:s.webkitTextFillColor,shadow:s.boxShadow,foreground:s.color};});
+ assert.equal(autofill.fill,'rgb(23, 50, 74)');assert.match(autofill.shadow,/rgb\(251, 252, 250\)/);
+ await fiveEvidence(p,'account-autofill',autofill);await cdp.send('CSS.forcePseudoState',{nodeId,forcedPseudoClasses:[]});
+ await p.locator('#caEmail').evaluate(e=>{e.placeholder='you@example.test';e.setAttribute('aria-invalid','true');});
+ assert.equal(await p.locator('#caEmail').evaluate(e=>getComputedStyle(e).borderColor),'rgb(163, 44, 53)');
+ await p.locator('#caEmail').focus();assert.equal(await p.locator('#caEmail').evaluate(e=>getComputedStyle(e).outlineStyle),'solid');
+ await p.locator('#caPassword').evaluate(e=>e.disabled=true);
+ assert.equal(await p.locator('#caPassword').evaluate(e=>getComputedStyle(e).borderStyle),'dashed');
+ await p.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
+ const violations=await p.evaluate(async()=>{const r=await axe.run(document.querySelector('#caAccountOverlay'),{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>n.target)}));});assert.deepEqual(violations,[]);
+});
+
+test('five fixes: real browser preflight rejection is distinguishable from a service auth response',async t=>{
+ const vm=require('node:vm');let handler;const trace=[];
+ vm.runInNewContext(fs.readFileSync(path.join(root,'supabase/functions/chemwaypoint-site-companion/index.js'),'utf8'),{Request,Response,Headers,AbortSignal,structuredClone,TextEncoder,Date,JSON,crypto:require('node:crypto').webcrypto,fetch:()=>{throw Error('Unapproved downstream request');},Deno:{env:{get:()=>''},serve:fn=>handler=fn}});
+ const edge=http.createServer(async(req,res)=>{
+  const response=await handler(new Request('http://fixture.test'+req.url,{method:req.method,headers:req.headers}));
+  trace.push({method:req.method,origin:req.headers.origin,status:response.status,allowOrigin:response.headers.get('Access-Control-Allow-Origin')});
+  res.writeHead(response.status,Object.fromEntries(response.headers));res.end(await response.text());
+ });
+ await new Promise(r=>edge.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>edge.close(r)));
+ const endpoint='http://127.0.0.1:'+edge.address().port;
+ // A self-contained page has no intercepted requests: DevTools interception
+ // suppresses Chromium's normal preflight. CSP permits only this local backend.
+ const context=await browser.newContext();t.after(()=>context.close());const p=await context.newPage();
+ await p.goto(base+'/data/genchem.js');
+ await p.setContent(`<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src ${endpoint}"><main class="main"></main><script>window.CHEMATLAS_CONFIG={supabaseUrl:${JSON.stringify(endpoint)},supabasePublishableKey:'fixture-public'};window.ChemAtlasCloud=async()=>({auth:{getSession:async()=>({data:{session:{user:{id:'fixture-user'},access_token:'fixture-only'}}}),onAuthStateChange:()=>{}}});${fs.readFileSync(path.join(root,'data/genchem.js'),'utf8')};${fs.readFileSync(path.join(root,'companion.js'),'utf8')}</script>`);
+ const failures=[];p.on('requestfailed',req=>{if(req.url().startsWith(endpoint))failures.push({url:req.url(),method:req.method(),error:req.failure()?.errorText});});
+ await p.locator('#cwTab-practice').click();await p.locator('#cwStartPractice').click();await p.locator('[data-cw-action="retry-practice"]').waitFor();
+ await fiveEvidence(p,'companion-preflight',{trace,failures,config:await p.evaluate(()=>window.CHEMATLAS_CONFIG.supabaseUrl)});
+ assert(trace.some(r=>r.method==='OPTIONS'&&r.status===403&&r.allowOrigin===null));assert.equal(trace.some(r=>r.method==='POST'),false);assert(failures.length>0);
+ assert.doesNotMatch(await p.locator('#cwPracticeStatus').innerText(),/Failed to fetch/);
+ await fiveEvidence(p,'companion-preflight',{environment:'local browser against unchanged bundled handler; not live-service evidence',trace,failures});
 });
