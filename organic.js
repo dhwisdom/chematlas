@@ -97,6 +97,7 @@
     feedback.className = `organic-feedback ${correct ? 'good' : 'bad'}`;
     feedback.textContent = `${correct ? 'Correct. ' : 'Not quite. '}${challenge.explanation}`;
     try { localStorage.setItem('chematlas-organic-stereo', String(Number(correct))); } catch (_) {}
+    window.dispatchEvent(new CustomEvent('chematlas:practice-completed',{detail:{kind:'stereo',score:Number(correct)}}));
   });
 
   byId('nextStereo')?.addEventListener('click', () => {
@@ -286,6 +287,7 @@
     feedback.textContent = complete ? `Mechanism complete. ${organic.mechanism.explanation}` : 'Good first arrow. Add the second electron-flow arrow for the concerted step.';
     if (complete) {
       try { localStorage.setItem('chematlas-organic-sn2', '1'); } catch (_) {}
+      if(!duplicate)window.dispatchEvent(new CustomEvent('chematlas:practice-completed',{detail:{kind:'sn2',score:1}}));
     }
   });
 

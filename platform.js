@@ -19,7 +19,25 @@
   const routeForView = { home:'/dashboard', curriculum:'/curriculum', courses:'/courses', lab:'/model-lab', organic:'/organic' };
   let cloud = null;
   let session = null;
-  let syncing = false;
+  let sessionEpoch = 0;
+  let syncingEpoch = null;
+  let pendingGuestClaim = false;
+
+  function currentSession(epoch=sessionEpoch,userId=session?.user?.id){
+    return epoch===sessionEpoch && userId===session?.user?.id && (!window.ChemAtlasLearnerState || window.ChemAtlasLearnerState.owner===(userId?'account:'+userId:'guest'));
+  }
+  function adoptSession(next,claimGuest=false){
+    const changed=session?.user?.id!==next?.user?.id;
+    if(changed){sessionEpoch++;clearTimeout(syncTimer);}
+    try{
+      const restored=window.ChemAtlasLearnerState?.transition(next?.user?.id,{claimGuest});
+      session=next;
+      if(changed||restored){
+        window.ChemAtlasViews?.setAccount(next,[]);
+        window.dispatchEvent(new CustomEvent('chematlas:learner-state-changed',{detail:{userId:next?.user?.id||null}}));
+      }
+    }catch(error){session=null;window.ChemAtlasViews?.setAccount(null);throw error;}
+  }
 
   const safeJson = (key, fallback) => {
     try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch (_) { return fallback; }
@@ -27,14 +45,13 @@
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   const words = (text) => new Set(String(text || '').toLowerCase().match(/[a-z0-9]+/g)?.filter(x => x.length > 2) || []);
 
-  function recordActivity(key, value) {
-    const labels = {
-      [LS.modules]:'General Chemistry lesson completed', [LS.tools]:'Foundation Practice Lab mastery',
-      [LS.vsepr]:'VSEPR mastery check', [LS.stereo]:'R/S stereochemistry practice', [LS.sn2]:'SN2 mechanism practice'
-    };
+  function recordPractice(detail) {
+    if(!currentSession())return;
+    const labels={tool:'Practice tool completed',vsepr:'VSEPR practice completed',stereo:'Stereochemistry practice completed',sn2:'SN2 practice completed'};
+    if(!labels[detail?.kind])return;
     const history = safeJson(LS.history, []);
-    history.unshift({ id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`, at:new Date().toISOString(), key, label:labels[key] || key, value });
-    nativeSetItem.call(localStorage, LS.history, JSON.stringify(history.slice(0, 120)));
+    history.unshift({id:crypto.randomUUID(),source:'practice',at:new Date().toISOString(),label:labels[detail.kind],key:detail.kind,value:String(detail.toolId??detail.score??'')});
+    nativeSetItem.call(localStorage, LS.history, JSON.stringify(history));
     if (session) queueCloudSync();
   }
 
@@ -42,9 +59,21 @@
   Storage.prototype.setItem = function(key, value) {
     const old = this === localStorage ? this.getItem(key) : null;
     nativeSetItem.call(this, key, value);
-    if (this === localStorage && key===LS.assessments && old!==String(value) && session) queueCloudSync();
-    if (this === localStorage && tracked.has(key) && old !== String(value)) recordActivity(key, String(value));
+    // Storage notifications schedule persistence only; they are never learning events.
+    if(this===localStorage && (tracked.has(key)||key===LS.assessments) && old!==String(value) && session && currentSession())queueCloudSync();
   };
+
+  function activityHistory(){return window.ChemAtlasActivity?.history(safeJson(LS.assessments,[]),safeJson(LS.history,[]))||safeJson(LS.history,[]);}
+  function renderStreak(){
+    const box=document.querySelector('.streak');if(!box)return;
+    const count=window.ChemAtlasActivity?.streak(safeJson(LS.assessments,[])).count||0;
+    const number=count?String(count):'—',label=count?'day streak':'Start a learning streak';
+    if(box.querySelector('strong').textContent!==number)box.querySelector('strong').textContent=number;
+    if(box.querySelector('small').textContent!==label)box.querySelector('small').textContent=label;
+  }
+  window.addEventListener('chematlas:practice-completed',e=>recordPractice(e.detail));
+  for(const event of ['chematlas:assessment-updated','chematlas:lesson-completed','chematlas:progress-synced','chematlas:learner-state-changed'])window.addEventListener(event,()=>{renderStreak();renderProgress();});
+  document.addEventListener('visibilitychange',renderStreak);
 
   function addShell() {
     if (document.getElementById('caLandingView')) return;
@@ -188,9 +217,9 @@
   function setGoal(goal){localStorage.setItem(LS.goal,goal);localStorage.setItem(LS.onboarded,'1');closeOverlay('caOnboardingOverlay');renderLandingRecommendation(); if(session)queueCloudSync(); navigate(goal==='organic'?'/organic':goal==='genchem2'?'/genchem/intermolecular-forces':'/genchem');}
 
   function readProgress(){
-    const modules=safeJson(LS.modules,[]); const tools=safeJson(LS.tools,[]); const history=safeJson(LS.history,[]);
+    const modules=safeJson(LS.modules,[]); const tools=safeJson(LS.tools,[]); const history=activityHistory();
     const vsepr=Number(localStorage.getItem(LS.vsepr)||0); const stereo=Number(localStorage.getItem(LS.stereo)||0); const sn2=Number(localStorage.getItem(LS.sn2)||0);
-    const days=new Set(history.map(x=>String(x.at||'').slice(0,10)).filter(Boolean)).size;
+    const days=window.ChemAtlasActivity?.streak(safeJson(LS.assessments,[])).activeDays||0;
     return {modules,tools,history,vsepr,stereo,sn2,days};
   }
   function adaptiveNext(){
@@ -225,6 +254,9 @@
       <article class="panel ca-history"><div><p class="eyebrow">PRACTICE HISTORY</p><h3>Recent learning activity</h3></div>${recent.length?`<div class="ca-history-list">${recent.map(x=>`<div><span>${new Date(x.at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><strong>${esc(x.label)}</strong><small>${esc(activitySummary(x))}</small></div>`).join('')}</div>`:'<p class="muted">Complete a module or practice tool and your activity timeline will appear here.</p>'}</article>`;
   }
   function activitySummary(x){
+    if(x.verified===false)return `Earlier label: ${x.legacyLabel||'activity'}. Not used for streaks.`;
+    if(x.source==='assessment')return (window.CHEM_GENCHEM?.modules||[]).find(m=>m.id===x.moduleId)?.title||x.moduleId;
+    if(x.source==='practice')return x.key==='tool'?`Tool: ${x.value}`:`Result: ${x.value}`;
     if(x.key===LS.modules){const a=(()=>{try{return JSON.parse(x.value)}catch(_){return[]}})();return `${a.length} General Chemistry lessons completed`;}
     if(x.key===LS.tools){const a=(()=>{try{return JSON.parse(x.value)}catch(_){return[]}})();return `${a.length} practice engines cleared`;}
     if(x.key===LS.vsepr)return `VSEPR score ${x.value}/3`;
@@ -305,27 +337,58 @@
       });
     }catch(_){if(current())feedback.textContent='Could not load email preferences. Close and reopen Account & sync to retry.';}
   }
-  async function authSubmit(e,signup){e.preventDefault();const email=document.getElementById('caEmail')?.value.trim(),password=document.getElementById('caPassword')?.value;const f=document.getElementById('caAuthFeedback');if(!cloud){if(f)f.textContent='Cloud client is still loading.';return;}const {data,error}=signup?await cloud.auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/dashboard'}}):await cloud.auth.signInWithPassword({email,password});if(error){if(f)f.textContent=error.message;return;}session=data.session||session;if(f)f.textContent=signup&&!data.session?'Check your email to confirm the account.':'Signed in. Syncing your progress…';updateSyncBadge();if(session){await mergeCloudState();await refreshAdminAccess();}renderAccount();}
+  async function authSubmit(e,signup){
+    e.preventDefault();const email=document.getElementById('caEmail')?.value.trim(),password=document.getElementById('caPassword')?.value;
+    const feedback=document.getElementById('caAuthFeedback');
+    if(!cloud){if(feedback)feedback.textContent='Cloud client is still loading.';return;}
+    pendingGuestClaim=!session;
+    const epoch=sessionEpoch;
+    try{
+      const {data,error}=signup?await cloud.auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/dashboard'}}):await cloud.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      if(epoch!==sessionEpoch&&data.session?.user?.id!==session?.user?.id)return;
+      if(data.session)adoptSession(data.session,pendingGuestClaim);
+      if(feedback)feedback.textContent=signup&&!data.session?'Check your email to confirm the account.':'Signed in. Syncing your progress…';
+      updateSyncBadge();if(session){await mergeCloudState();await refreshAdminAccess();}renderAccount();
+    }catch(error){if(feedback)feedback.textContent=error.message||'Could not sign in. Your browser progress is preserved.';}
+    finally{pendingGuestClaim=false;}
+  }
 
   function knownState(){return {[LS.goal]:localStorage.getItem(LS.goal),[LS.assessments]:safeJson(LS.assessments,[]),[LS.modules]:safeJson(LS.modules,[]),[LS.tools]:safeJson(LS.tools,[]),[LS.vsepr]:Number(localStorage.getItem(LS.vsepr)||0),[LS.stereo]:Number(localStorage.getItem(LS.stereo)||0),[LS.sn2]:Number(localStorage.getItem(LS.sn2)||0),[LS.history]:safeJson(LS.history,[]),[LS.tutor]:safeJson(LS.tutor,[])};}
-  function mergeValue(key,local,remote){if(key===LS.assessments)return window.ChemAtlasAssessment.merge(local,remote);if(remote==null)return local;if(local==null)return remote;if(key===LS.modules||key===LS.tools)return [...new Set([...(Array.isArray(remote)?remote:[]),...(Array.isArray(local)?local:[])])];if([LS.vsepr,LS.stereo,LS.sn2].includes(key))return Math.max(Number(local)||0,Number(remote)||0);if(key===LS.history||key===LS.tutor){const map=new Map();[...(Array.isArray(remote)?remote:[]),...(Array.isArray(local)?local:[])].forEach(x=>map.set(x.id||`${x.role}-${x.at}-${x.text}`,x));return [...map.values()].sort((a,b)=>String(a.at)<String(b.at)?1:-1).slice(0,key===LS.history?120:30);}return remote||local;}
-  async function mergeCloudState(){if(!cloud||!session||syncing)return;syncing=true;try{const {data,error}=await cloud.from('learner_state').select('state_key,state_value').eq('user_id',session.user.id);if(error)throw error;const remote=Object.fromEntries((data||[]).map(r=>[r.state_key,r.state_value]));const local=knownState();for(const [key,val] of Object.entries(local)){const merged=mergeValue(key,val,remote[key]);if(typeof merged==='string')nativeSetItem.call(localStorage,key,merged);else nativeSetItem.call(localStorage,key,JSON.stringify(merged));}await syncAll();renderProgress();renderLandingRecommendation();window.dispatchEvent(new Event('chematlas:progress-synced'));}catch(e){console.warn('ChemWaypoint cloud merge:',e.message)}finally{syncing=false;}}
-  let syncInFlight=false;
+  function mergeValue(key,local,remote){if(key===LS.assessments)return window.ChemAtlasAssessment.merge(local,remote);if(remote==null)return local;if(local==null)return remote;if(key===LS.modules||key===LS.tools)return [...new Set([...(Array.isArray(remote)?remote:[]),...(Array.isArray(local)?local:[])])];if([LS.vsepr,LS.stereo,LS.sn2].includes(key))return Math.max(Number(local)||0,Number(remote)||0);if(key===LS.history||key===LS.tutor){const map=new Map();[...(Array.isArray(remote)?remote:[]),...(Array.isArray(local)?local:[])].forEach(x=>map.set(x.id||`${x.role}-${x.at}-${x.text}`,x));return [...map.values()].sort((a,b)=>String(a.at)<String(b.at)?1:-1).slice(0,key===LS.history?Number.MAX_SAFE_INTEGER:30);}return remote||local;}
+  async function mergeCloudState(){
+    if(!cloud||!session||!currentSession()||syncingEpoch===sessionEpoch)return;
+    const epoch=sessionEpoch,userId=session.user.id;syncingEpoch=epoch;
+    try{
+      const {data,error}=await cloud.from('learner_state').select('state_key,state_value').eq('user_id',userId);
+      if(!currentSession(epoch,userId))return;if(error)throw error;
+      const remote=Object.fromEntries((data||[]).map(r=>[r.state_key,r.state_value])),local=knownState();
+      for(const [key,val]of Object.entries(local)){
+        const merged=mergeValue(key,val,remote[key]);
+        nativeSetItem.call(localStorage,key,typeof merged==='string'?merged:JSON.stringify(merged));
+      }
+      await syncAll();if(!currentSession(epoch,userId))return;
+      renderProgress();renderLandingRecommendation();window.dispatchEvent(new Event('chematlas:progress-synced'));
+    }catch(error){if(currentSession(epoch,userId))console.warn('ChemWaypoint cloud merge:',error.message);}
+    finally{if(syncingEpoch===epoch)syncingEpoch=null;}
+  }
+
+  let syncInFlight=null;
   async function syncAll(){
-    if(!cloud||!session)return;
-    if(syncInFlight){queueCloudSync();return;}
-    const userId=session.user.id;syncInFlight=true;
+    if(!cloud||!session||!currentSession())return;
+    if(syncInFlight===sessionEpoch){queueCloudSync();return;}
+    const userId=session.user.id,epoch=sessionEpoch;syncInFlight=epoch;
     try{
       const state=knownState();
       const rows=Object.entries(state).filter(([key])=>key!==LS.assessments).map(([state_key,state_value])=>({user_id:userId,state_key,state_value,updated_at:new Date().toISOString()}));
-      const {error}=await cloud.from('learner_state').upsert(rows,{onConflict:'user_id,state_key'});if(error)throw error;
+      const {error}=await cloud.from('learner_state').upsert(rows,{onConflict:'user_id,state_key'});if(!currentSession(epoch,userId))return;if(error)throw error;
       const merged=await cloud.rpc('merge_assessment_events',{p_events:state[LS.assessments]});if(merged.error)throw merged.error;
-      if(session?.user?.id!==userId)return;
+      if(!currentSession(epoch,userId))return;
       // Keep answers entered while the request was in flight, too.
       nativeSetItem.call(localStorage,LS.assessments,JSON.stringify(window.ChemAtlasAssessment.merge(safeJson(LS.assessments,[]),merged.data)));
-      updateSyncBadge('ok');
-    }catch(e){console.warn('ChemWaypoint sync:',e.message);updateSyncBadge('error');}
-    finally{syncInFlight=false;}
+      updateSyncBadge('ok');window.dispatchEvent(new Event('chematlas:progress-synced'));
+    }catch(e){if(currentSession(epoch,userId)){console.warn('ChemWaypoint sync:',e.message);updateSyncBadge('error');}}
+    finally{if(syncInFlight===epoch)syncInFlight=null;}
   }
   let syncTimer;function queueCloudSync(){clearTimeout(syncTimer);syncTimer=setTimeout(syncAll,1200)}
   function updateSyncBadge(status){const b=document.querySelector('.ca-sync-status');if(!b)return;if(session){b.classList.add('online');b.querySelector('b').textContent='Synced profile';b.querySelector('small').textContent=status==='error'?'sync issue':session.user?.email||'cloud progress';}else{b.classList.remove('online');b.querySelector('b').textContent='Guest';b.querySelector('small').textContent='local progress';}}
@@ -337,20 +400,22 @@
       cloud=await window.ChemAtlasCloud();if(!cloud){window.ChemAtlasViews?.setAccount(null);return;}
       cloud.auth.onAuthStateChange((_event,s)=>{
         // Defer Supabase work outside the auth callback to avoid the auth lock.
-        const changed=session?.user?.id!==s?.user?.id;session=s;
-        setTimeout(async()=>{if(!cloudReady)return;updateSyncBadge();if(s&&changed)await mergeCloudState();await refreshAdminAccess();},0);
+        const changed=session?.user?.id!==s?.user?.id;
+        try{adoptSession(s,pendingGuestClaim);}catch(error){console.warn('ChemWaypoint browser checkpoint:',error.message);return;}
+        const epoch=sessionEpoch;
+        setTimeout(async()=>{if(!cloudReady||epoch!==sessionEpoch)return;updateSyncBadge();if(s&&changed)await mergeCloudState();if(epoch===sessionEpoch)await refreshAdminAccess();},0);
       });
-      const {data,error}=await cloud.auth.getSession();if(error)throw error;session=data.session;
+      const epoch=sessionEpoch;const {data,error}=await cloud.auth.getSession();if(error&&epoch===sessionEpoch)throw error;if(epoch===sessionEpoch)adoptSession(data.session);
       if(session)await mergeCloudState();cloudReady=true;updateSyncBadge();await refreshAdminAccess();
     }catch(e){cloudReady=true;window.ChemAtlasViews?.setAccount(null);console.warn('ChemWaypoint cloud init:',e.message);}
   }
   let adminAccessRequest=0;
   async function refreshAdminAccess(){
-    const request=++adminAccessRequest;
+    const request=++adminAccessRequest,epoch=sessionEpoch;
     document.querySelectorAll('[data-site-admin-link]').forEach(el=>el.remove());
     if(!cloud||!session){window.ChemAtlasViews?.setAccount(null);return;}
     const {data,error}=await cloud.rpc('site_my_rights');
-    if(request!==adminAccessRequest)return;
+    if(request!==adminAccessRequest||epoch!==sessionEpoch)return;
     const rights=error?[]:(data||[]);
     window.ChemAtlasViews?.setAccount(session,rights,true);
     if(!rights.some(r=>r!=='publish'))return;
@@ -363,6 +428,6 @@
     const home=document.getElementById('homeView');if(!home||home.querySelector('.ca-dashboard-next'))return;const grid=home.querySelector('.dashboard-grid');if(!grid)return;const next=adaptiveNext();const card=document.createElement('article');card.className='panel ca-dashboard-next';card.innerHTML=`<p class="eyebrow">ADAPTIVE REVIEW</p><h3>${esc(next.title)}</h3><p>${esc(next.copy)}</p><button class="text-button" data-route="${esc(next.route)}">Continue →</button>`;grid.appendChild(card);
   }
 
-  function boot(){addShell();injectAdaptiveDashboard();initCloud();routeFromLocation();setInterval(()=>{if(document.getElementById('caProgressView')?.classList.contains('active-view'))renderProgress();},5000);}
+  function boot(){addShell();renderStreak();injectAdaptiveDashboard();initCloud();routeFromLocation();setInterval(()=>{renderStreak();if(document.getElementById('caProgressView')?.classList.contains('active-view'))renderProgress();},5000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();

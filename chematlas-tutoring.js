@@ -352,7 +352,7 @@
   function recentHtml(history) {
     if (!history.length) return '<div class="ca-recent-item"><i>·</i><span><strong>Your activity will appear here</strong><small>Complete a lesson or practice set to start your history.</small></span></div>';
     return history.slice(0,3).map(item => `
-      <div class="ca-recent-item"><i>✓</i><span><strong>${esc(item.label || 'Chemistry activity')}</strong><small>${new Date(item.at || Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></span></div>
+      <div class="ca-recent-item"><i>${item.verified===false?'?':'✓'}</i><span><strong>${esc(item.label || 'Chemistry activity')}</strong><small>${new Date(item.at || Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'})}${item.verified===false?' · not used for streaks':''}</small></span></div>
     `).join('');
   }
 
@@ -369,7 +369,7 @@
     const learning = currentLearning();
     const current = learning.current;
     const next = learning.next;
-    const history = safeJson(LS.history, []);
+    const history = window.ChemAtlasActivity?.history(safeJson('chematlas-assessment-events-v1',[]),safeJson(LS.history,[])) || safeJson(LS.history,[]);
     const renderSignature = [current?.id || '', learning.completed.join(','), history.length, history[0]?.id || history[0]?.at || '',JSON.stringify(window.ChemAtlasContent?.dashboard()),localStorage.getItem('chematlas-assessment-events-v1')].join('|');
     if (root.dataset.renderSignature === renderSignature) return;
     root.dataset.renderSignature = renderSignature;

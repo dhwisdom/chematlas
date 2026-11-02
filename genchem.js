@@ -25,7 +25,7 @@
 
   function saveProgress() {
     try {
-      localStorage.setItem(storageKey, JSON.stringify([...completed]));
+      // Navigation saves reading position only. Completion belongs to assessment evidence.
       localStorage.setItem('chematlas-genchem-semester', String(semester));
       localStorage.setItem('chematlas-genchem-current', currentId);
     } catch (_) {}
@@ -291,6 +291,13 @@
   }
 
   window.addEventListener('chematlas:view-changed', () => { if(root.querySelector('.ca-guest-gate') || !window.ChemAtlasViews.canLesson(currentModule()))render(); });
+  window.addEventListener('chematlas:learner-state-changed',()=>{
+    completed=new Set(JSON.parse(localStorage.getItem(storageKey)||'[]'));
+    semester=Number(localStorage.getItem('chematlas-genchem-semester')||1);
+    if(![1,2].includes(semester))semester=1;
+    currentId=localStorage.getItem('chematlas-genchem-current')||modulesForSemester(semester)[0].id;
+    query='';render();updateHomeProgress();updateCourseCards();
+  });
   window.addEventListener('chematlas:lesson-completed', () => { completed = new Set(JSON.parse(localStorage.getItem(storageKey)||'[]')); updateHomeProgress(); updateCourseCards(); const status=root.querySelector('.gc-status'); if(status&&completed.has(currentId)){status.classList.add('complete');status.textContent='✓ Lesson completed';} });
   window.addEventListener('chematlas:progress-synced', () => { completed = new Set(JSON.parse(localStorage.getItem(storageKey)||'[]')); updateHomeProgress(); updateCourseCards(); const status=root.querySelector('.gc-status'); if(status&&completed.has(currentId)){status.classList.add('complete');status.textContent='✓ Lesson completed';} });
 
