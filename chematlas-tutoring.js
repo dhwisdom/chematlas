@@ -106,7 +106,7 @@
         </div>
 
         <div class="ca-marketing-demo">
-          <div class="ca-demo-top"><span>CONTINUE LEARNING</span><strong>General Chemistry I</strong></div>
+          <div class="ca-demo-top"><span>EXAMPLE LEARNING SESSION</span><strong>General Chemistry I</strong></div>
           <div class="ca-demo-card">
             <div>
               <small>MODULE 10 · IN PROGRESS</small>
@@ -123,7 +123,7 @@
           </div>
           <div class="ca-demo-tutor">
             <span>✦</span>
-            <div><small>ASK CHEMATLAS</small><strong>“Why is H₂O polar but CO₂ isn’t?”</strong></div>
+            <div><small>ASK CHEMWAYPOINT</small><strong>“Why is H₂O polar but CO₂ isn’t?”</strong></div>
           </div>
         </div>
       </section>
@@ -208,7 +208,10 @@
   function updateBreadcrumb() {
     const title = document.getElementById('pageTitle');
     const course = document.querySelector('.ca-breadcrumb-course');
-    if (course) course.textContent = location.pathname.startsWith('/organic') ? 'Organic Chemistry' : 'General Chemistry I';
+    const courseName = location.pathname.startsWith('/organic') ? 'Organic Chemistry' : Number(localStorage.getItem(LS.semester)||1)===2 ? 'General Chemistry II' : 'General Chemistry I';
+    if (course && course.textContent !== courseName) course.textContent = courseName;
+    const selectedCourse = document.querySelector('.ca-course-switcher-copy strong');
+    if (selectedCourse && selectedCourse.textContent !== courseName) selectedCourse.textContent = courseName;
     if (title && !document.body.classList.contains('ca-landing-mode')) title.textContent = routeLabel();
   }
 
@@ -468,11 +471,6 @@
     if (summary.dataset.signature !== summarySignature) {
       summary.dataset.signature = summarySignature;
       summary.innerHTML = `
-        <div>
-          <p class="ca-learn-overline">GENERAL CHEMISTRY ${semester === 2 ? 'II' : 'I'}</p>
-          <h2>Learn one idea at a time.</h2>
-          <p>Short explanations, a worked example, then progressive checks. Revisit earlier ideas as you learn new ones.</p>
-        </div>
         <div class="ca-learn-progress" role="progressbar" aria-label="Course lessons completed" aria-valuemin="0" aria-valuemax="${semesterModules.length}" aria-valuenow="${semesterDone}" aria-valuetext="${semesterDone} of ${semesterModules.length} lessons completed">
           <span><b>${semesterDone}</b> / ${semesterModules.length} completed</span>
           <div><i style="width:${semesterModules.length ? Math.round(semesterDone / semesterModules.length * 100) : 0}%"></i></div>
@@ -492,8 +490,10 @@
       if ((prereq || objectives) && !header.querySelector('.ca-lesson-goals')) {
         const details = document.createElement('details');
         details.className = 'ca-lesson-goals';
-        details.innerHTML = '<summary>What will I learn?</summary><div class="ca-lesson-goals-body"></div>';
+        details.innerHTML = '<summary>Goals & lesson help</summary><div class="ca-lesson-goals-body"></div>';
         const body = details.querySelector('.ca-lesson-goals-body');
+        const subtitle = header.querySelector(':scope > p');
+        if (subtitle) body.appendChild(subtitle);
         if (prereq) body.appendChild(prereq);
         if (objectives) body.appendChild(objectives);
         header.appendChild(details);
@@ -510,7 +510,7 @@
             prompt: `I'm learning ${current.title}, specifically ${topic}. Help me reason through it one step at a time, then ask me a question to check my understanding.`
           }}));
         });
-        header.appendChild(tutor);
+        (header.querySelector('.ca-lesson-goals-body') || header).appendChild(tutor);
       }
     }
 
@@ -540,12 +540,12 @@
         <div>
           <span class="ca-focus-count">STEP <b>1</b> OF ${steps.length}</span>
           <span class="ca-focus-kind">LEARN</span>
-          <h3 class="ca-focus-title">${esc(steps[0].label)}</h3>
+          <span class="ca-focus-title" hidden aria-hidden="true">${esc(steps[0].label)}</span>
         </div>
         <div class="ca-focus-meter" role="progressbar" aria-label="Lesson step" aria-valuemin="1" aria-valuemax="${steps.length}" aria-valuenow="1"><span></span></div>
       </header>
       <nav class="ca-focus-dots" aria-label="Lesson steps">
-        ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span>${index + 1}</span>${esc(step.kind)}</button>`).join('')}
+        ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span>${index + 1}</span><span class="ca-step-label">${esc(step.kind)}</span></button>`).join('')}
       </nav>
     `;
 
@@ -662,13 +662,13 @@
   function setActiveNav() {
     const path = location.pathname;
     document.querySelectorAll('.ca-tutor-nav').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('aria-current'); });
-    let selector = '[data-ca-tutor-route="/dashboard"]';
+    let selector = path === '/dashboard' || path === '/' ? '[data-ca-tutor-route="/dashboard"]' : null;
     if (path.startsWith('/genchem')) selector = '[data-ca-tutor-route="/genchem"]';
     else if (path === '/model-lab') selector = '[data-ca-tutor-route="/model-lab"]';
     else if (path === '/tutor') selector = '[data-ca-tutor-route="/tutor"]';
     else if (path === '/companion') selector = '[data-ca-tutor-route="/companion"]';
     else if (path === '/progress') selector = '[data-ca-tutor-route="/progress"]';
-    const active = document.querySelector('.ca-tutor-nav' + selector);
+    const active = selector ? document.querySelector('.ca-tutor-nav' + selector) : null;
     active?.classList.add('active');
     active?.setAttribute('aria-current', 'page');
   }

@@ -279,7 +279,17 @@
             <div id="viewer" class="viewer" aria-label="Interactive 3D molecular model">
               <canvas id="moleculeCanvas" aria-label="Rotatable ball-and-stick molecular model"></canvas>
             </div>
-            <p class="viewer-help">Drag to rotate • scroll to zoom • right-drag / modifier-drag to translate</p>
+            <div class="model-controls" role="group" aria-label="Molecular model controls">
+              <button type="button" data-model-control="left" aria-label="Rotate model left">↶ Left</button>
+              <button type="button" data-model-control="right" aria-label="Rotate model right">Right ↷</button>
+              <button type="button" data-model-control="up" aria-label="Rotate model up">↑ Up</button>
+              <button type="button" data-model-control="down" aria-label="Rotate model down">↓ Down</button>
+              <button type="button" data-model-control="in" aria-label="Zoom model in">＋ Zoom</button>
+              <button type="button" data-model-control="out" aria-label="Zoom model out">− Zoom</button>
+              <button type="button" data-model-control="reset">Reset view</button>
+              <output id="modelViewStatus" aria-live="polite">Default view</output>
+            </div>
+            <p class="viewer-help">Drag to rotate, scroll to zoom, or use the model controls.</p>
           </article>
 
           <aside class="model-info">

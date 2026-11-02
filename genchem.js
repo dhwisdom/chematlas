@@ -85,7 +85,8 @@
       </div>
 
       <section class="gc-workspace">
-        <div class="gc-syllabus panel">
+        <details class="gc-syllabus panel" ${window.matchMedia?.('(min-width:901px)').matches?'open':''}>
+          <summary class="gc-syllabus-toggle">Course contents</summary>
           <div class="gc-syllabus-head">
             <div><p class="eyebrow">COURSE MAP</p><h3>${semester === 1 ? 'General Chemistry I' : 'General Chemistry II'}</h3></div>
             <span class="gc-count">${modulesForSemester(semester).length} modules</span>
@@ -94,7 +95,7 @@
           <nav class="gc-module-nav" aria-label="General chemistry modules">
             ${moduleNavHtml()}
           </nav>
-        </div>
+        </details>
 
         <section class="gc-reader" id="gcReader" aria-label="Current lesson">
           ${moduleHtml(active)}
