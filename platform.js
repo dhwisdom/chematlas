@@ -22,13 +22,14 @@
   let sessionEpoch = 0;
   let syncingEpoch = null;
   let pendingGuestClaim = false;
+  let syncStatus = 'pending';
 
   function currentSession(epoch=sessionEpoch,userId=session?.user?.id){
     return epoch===sessionEpoch && userId===session?.user?.id && (!window.ChemAtlasLearnerState || window.ChemAtlasLearnerState.owner===(userId?'account:'+userId:'guest'));
   }
   function adoptSession(next,claimGuest=false){
     const changed=session?.user?.id!==next?.user?.id;
-    if(changed){sessionEpoch++;clearTimeout(syncTimer);}
+    if(changed){sessionEpoch++;clearTimeout(syncTimer);syncStatus='pending';}
     try{
       const restored=window.ChemAtlasLearnerState?.transition(next?.user?.id,{claimGuest});
       session=next;
@@ -112,7 +113,7 @@
       const avatar=topActions.querySelector('.avatar'); if (avatar) avatar.replaceWith(sync); else topActions.appendChild(sync);
     }
 
-    const account=document.createElement('div'); account.id='caAccountOverlay'; account.className='ca-overlay'; account.innerHTML=`<div class="ca-modal"><button class="ca-modal-x" data-account-close>×</button><p class="eyebrow">CHEMWAYPOINT ACCOUNT</p><h2 id="caAccountTitle">Keep your chemistry progress with you.</h2><p id="caAccountCopy">Guest mode stores progress on this browser. An account opens the full Learn sequence and syncs completion, reviews, and history across devices.</p><div id="caAccountBody"></div></div>`; document.body.appendChild(account);
+    const account=document.createElement('div'); account.id='caAccountOverlay'; account.className='ca-overlay'; account.innerHTML=`<div class="ca-modal"><button class="ca-modal-x" data-account-close>×</button><p class="eyebrow">CHEMWAYPOINT ACCOUNT</p><h2 id="caAccountTitle">Keep your chemistry progress with you.</h2><p id="caAccountCopy">Guest mode keeps your work on this browser. Your first explicit sign-in can carry that work into the first account; later accounts keep separate progress.</p><div id="caAccountBody"></div></div>`; document.body.appendChild(account);
     const onboarding=document.createElement('div'); onboarding.id='caOnboardingOverlay'; onboarding.className='ca-overlay'; onboarding.innerHTML=`<div class="ca-modal ca-goal-modal"><button class="ca-modal-x" data-onboarding-close>×</button><p class="eyebrow">PERSONALIZE THE PATH</p><h2>What are you trying to do?</h2><p>This only changes what ChemWaypoint recommends first. You can explore everything at any time.</p><div class="ca-goal-grid"><button data-goal="foundations"><span>Σ</span><strong>Build my foundations</strong><small>Start at Gen Chem and build the sequence correctly.</small></button><button data-goal="organic"><span>⌬</span><strong>Prepare for Organic</strong><small>Prioritize bonding, geometry, polarity, acid–base, and stereochemistry.</small></button><button data-goal="genchem2"><span>K</span><strong>Review Gen Chem II</strong><small>Equilibrium, acids/bases, thermodynamics, and electrochemistry.</small></button><button data-goal="biochem"><span>ATP</span><strong>Prepare for Biochemistry</strong><small>Strengthen energy, equilibria, acids/bases, and molecular structure.</small></button></div></div>`; document.body.appendChild(onboarding);
 
     bindShell(); renderLandingRecommendation(); renderProgress(); renderTutor();
@@ -179,7 +180,10 @@
     let attempts=0;
     const tryOpen=()=>{
       const btn=document.querySelector('.genchem-nav');
-      if(btn?.dataset.genchemReady==='1'){ if(moduleId) btn.dataset.genchemModule=moduleId; else delete btn.dataset.genchemModule; btn.click(); return; }
+      if(btn?.dataset.genchemReady==='1'){
+        // A ready event can finish routing before this startup retry fires.
+        if(attempts>0&&document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module===decodeURIComponent(location.pathname.split('/')[2]||''))return;
+        if(moduleId) btn.dataset.genchemModule=moduleId; else delete btn.dataset.genchemModule; btn.click(); return; }
       if(attempts++<60) setTimeout(tryOpen,150); else clickCore('courses');
     }; tryOpen();
   }
@@ -248,7 +252,7 @@
     const mastered=evidence.filter(x=>x.s?.mastered).length;
     const reviewRows=evidence.filter(x=>x.s?.complete).sort((a,b)=>a.s.dueAt-b.s.dueAt);
     root.innerHTML=`<div class="ca-page-head"><div><p class="eyebrow">MASTERY, NOT CHECKBOXES</p><h2>Your chemistry progress</h2><p>Lesson completion records your first pass. Mastery records successful retrieval across later review sessions. Your existing completed lessons are preserved.</p></div><button class="secondary-button" data-account-open>${session?'Account & sync':'Sync across devices'}</button></div>
-      <div class="ca-stat-grid"><article><span>GEN CHEM</span><strong>${p.modules.length}/${total}</strong><small>lessons completed</small></article><article><span>PRACTICE</span><strong>${p.tools.length}/7</strong><small>engines cleared</small></article><article><span>VSEPR</span><strong>${p.vsepr}/3</strong><small>best mastery score</small></article><article><span>MASTERY</span><strong>${mastered}/${total}</strong><small>demonstrated in spaced reviews</small></article></div>
+      <div class="ca-stat-grid"><article><span>GEN CHEM</span><strong>${p.modules.length}/${total}</strong><small>lessons completed</small></article><article><span>PRACTICE</span><strong>${p.tools.length}/7</strong><small>engines cleared</small></article><article><span>VSEPR</span><strong>${p.vsepr}/3</strong><small>best practice score</small></article><article><span>MASTERY</span><strong>${mastered}/${total}</strong><small>demonstrated in spaced reviews</small></article></div>
       <div class="ca-progress-grid"><article class="panel ca-next-card"><p class="eyebrow">ADAPTIVE NEXT STEP</p><h3>${esc(next.title)}</h3><p>${esc(next.copy)}</p><button class="primary-button" data-route="${esc(next.route)}">Continue here →</button></article><article class="panel"><p class="eyebrow">LEARNING GOAL</p><h3>${esc(goalInfo()[0])}</h3><p>${esc(goalInfo()[1])}</p><button class="text-button" data-start-learning>Change goal</button></article></div>
       <article class="panel ca-review-panel"><p class="eyebrow">REINFORCEMENT QUEUE</p><h3>Come back to earlier ideas</h3><p>Two fully correct review sets on later days demonstrate mastery. Recently repeated answers remain practice. A later mistake recommends review again.</p><div class="ca-review-list">${reviewRows.length?reviewRows.map(({m,s})=>`<div class="ca-review-row"><span><strong>${esc(m.title)}</strong><small>Lesson completed · ${esc(s.label)} · ${s.reviewWins}/2 spaced reviews</small></span><a href="/genchem/${esc(m.id)}?review=1">${s.due?'Review now':'Practice · due '+new Date(s.dueAt).toLocaleDateString()} →</a></div>`).join(''):'<p>Complete your first lesson to begin a review schedule.</p>'}</div></article>
       <article class="panel ca-history"><div><p class="eyebrow">PRACTICE HISTORY</p><h3>Recent learning activity</h3></div>${recent.length?`<div class="ca-history-list">${recent.map(x=>`<div><span>${new Date(x.at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><strong>${esc(x.label)}</strong><small>${esc(activitySummary(x))}</small></div>`).join('')}</div>`:'<p class="muted">Complete a module or practice tool and your activity timeline will appear here.</p>'}</article>`;
@@ -260,7 +264,7 @@
     if(x.key===LS.modules){const a=(()=>{try{return JSON.parse(x.value)}catch(_){return[]}})();return `${a.length} General Chemistry lessons completed`;}
     if(x.key===LS.tools){const a=(()=>{try{return JSON.parse(x.value)}catch(_){return[]}})();return `${a.length} practice engines cleared`;}
     if(x.key===LS.vsepr)return `VSEPR score ${x.value}/3`;
-    return Number(x.value)?'mastery recorded':'practice attempted';
+    return 'Recorded activity';
   }
 
   function courseContext(question){
@@ -277,17 +281,17 @@
   function saveTutor(messages){nativeSetItem.call(localStorage,LS.tutor,JSON.stringify(messages.slice(-30)));if(session)queueCloudSync();}
   function renderTutor(){
     const root=document.getElementById('caTutorView');if(!root)return;const messages=tutorHistory();
-    root.innerHTML=`<div class="ca-tutor-layout"><section class="ca-tutor-main"><div class="ca-page-head"><div><p class="eyebrow">COURSE-GROUNDED AI</p><h2>Ask ChemWaypoint</h2><p>The tutor retrieves the most relevant ChemWaypoint lesson context first, then teaches from that foundation. Web lookup is optional for current or external context.</p></div><span class="ca-ai-status ${cfg.tutorEndpoint?'ready':''}"><i></i>${cfg.tutorEndpoint?'Tutor endpoint installed':'Tutor setup pending'}</span></div><div class="ca-chat panel" id="caChat">${messages.length?messages.map(m=>`<div class="ca-message ${m.role}"><span>${m.role==='user'?'YOU':'C'}</span><div>${esc(m.text).replace(/\n/g,'<br>')}</div></div>`).join(''):`<div class="ca-tutor-empty"><span>✦</span><h3>Start with a concept, not a magic answer.</h3><p>Ask for an explanation, a worked problem, a comparison, or help finding the gap in your reasoning.</p><div><button data-tutor-prompt="Why does molecular geometry affect polarity?">Geometry → polarity</button><button data-tutor-prompt="Walk me through a limiting-reagent problem without skipping units.">Stoichiometry</button><button data-tutor-prompt="How do acid-base concepts from Gen Chem show up in organic chemistry?">Bridge to Organic</button></div></div>`}</div><form class="ca-tutor-form" id="caTutorForm"><textarea id="caTutorInput" rows="3" placeholder="Ask a chemistry question…"></textarea><div><label><input id="caTutorWeb" type="checkbox" checked> Allow web context when useful</label><button class="primary-button" type="submit">Ask Tutor ✦</button></div></form></section><aside class="ca-tutor-side"><article class="panel"><p class="eyebrow">CURRENT LEARNER CONTEXT</p><h3>${esc(goalInfo()[0])}</h3><p>${esc(adaptiveNext().copy)}</p></article><article class="panel"><p class="eyebrow">HOW IT ANSWERS</p><ol><li>Find relevant ChemWaypoint material.</li><li>Explain the governing chemistry.</li><li>Show units/reasoning for calculations.</li><li>Connect the concept forward.</li><li>Check your understanding.</li></ol></article><article class="panel ca-tutor-guardrail"><p class="eyebrow">LEARNING GUARDRAIL</p><p>The tutor is assistive. Chemistry calculations, safety-critical lab decisions, and externally sourced claims should still be checked against authoritative course/lab sources.</p></article></aside></div>`;
+    root.innerHTML=`<div class="ca-tutor-layout"><section class="ca-tutor-main"><div class="ca-page-head"><div><p class="eyebrow">COURSE-GROUNDED AI</p><h2>Ask ChemWaypoint</h2><p>The tutor retrieves the most relevant ChemWaypoint lesson context first, then teaches from that foundation. Web lookup is optional for current or external context.</p></div><span class="ca-ai-status"><i></i>Connection checked on send</span></div><div class="ca-chat panel" id="caChat">${messages.length?messages.map(m=>`<div class="ca-message ${m.role}"><span>${m.role==='user'?'YOU':'C'}</span><div>${esc(m.text).replace(/\n/g,'<br>')}</div></div>`).join(''):`<div class="ca-tutor-empty"><span>✦</span><h3>Start with a concept, not a magic answer.</h3><p>Ask for an explanation, a worked problem, a comparison, or help finding the gap in your reasoning.</p><div><button data-tutor-prompt="Why does molecular geometry affect polarity?">Geometry → polarity</button><button data-tutor-prompt="Walk me through a limiting-reagent problem without skipping units.">Stoichiometry</button><button data-tutor-prompt="How do acid-base concepts from Gen Chem show up in organic chemistry?">Bridge to Organic</button></div></div>`}</div><form class="ca-tutor-form" id="caTutorForm"><textarea id="caTutorInput" rows="3" placeholder="Ask a chemistry question…"></textarea><div><label><input id="caTutorWeb" type="checkbox" checked> Allow web context when useful</label><button class="primary-button" type="submit">Ask Tutor ✦</button></div></form></section><aside class="ca-tutor-side"><article class="panel"><p class="eyebrow">CURRENT LEARNER CONTEXT</p><h3>${esc(goalInfo()[0])}</h3><p>${esc(adaptiveNext().copy)}</p></article><article class="panel"><p class="eyebrow">HOW IT ANSWERS</p><ol><li>Find relevant ChemWaypoint material.</li><li>Explain the governing chemistry.</li><li>Show units/reasoning for calculations.</li><li>Connect the concept forward.</li><li>Check your understanding.</li></ol></article><article class="panel ca-tutor-guardrail"><p class="eyebrow">LEARNING GUARDRAIL</p><p>The tutor is assistive. Chemistry calculations, safety-critical lab decisions, and externally sourced claims should still be checked against authoritative course/lab sources.</p></article></aside></div>`;
     root.querySelectorAll('[data-tutor-prompt]').forEach(b=>b.addEventListener('click',()=>{const i=document.getElementById('caTutorInput');if(i){i.value=b.dataset.tutorPrompt;i.focus()}}));
     document.getElementById('caTutorForm')?.addEventListener('submit',askTutor);
     requestAnimationFrame(()=>{const c=document.getElementById('caChat');if(c)c.scrollTop=c.scrollHeight});
   }
   async function askTutor(e){
-    e.preventDefault();const input=document.getElementById('caTutorInput');const question=input?.value.trim();if(!question)return;const messages=tutorHistory();messages.push({role:'user',text:question,at:new Date().toISOString()});saveTutor(messages);renderTutor();
+    e.preventDefault();const epoch=sessionEpoch,userId=session?.user?.id;const input=document.getElementById('caTutorInput');const question=input?.value.trim();if(!question)return;const messages=tutorHistory();messages.push({role:'user',text:question,at:new Date().toISOString()});saveTutor(messages);renderTutor();
     const chat=document.getElementById('caChat');if(chat)chat.insertAdjacentHTML('beforeend','<div class="ca-message assistant ca-thinking"><span>C</span><div>Thinking through the chemistry…</div></div>');
     try{
-      const current=localStorage.getItem('chematlas-genchem-current')||'';const p=readProgress();const res=await fetch(cfg.tutorEndpoint||'/api/tutor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,context:courseContext(question),includeWeb:Boolean(document.getElementById('caTutorWeb')?.checked),learner:{goal:goalInfo()[0],currentModule:current,masterySummary:`${p.modules.length} lessons completed; ${(window.CHEM_GENCHEM?.modules||[]).filter(m=>window.ChemAtlasAssessment?.summarize(m.id).mastered).length} modules with mastery demonstrated; ${p.tools.length} practice engines cleared`}})});const data=await res.json();if(!res.ok)throw new Error(data.error||'Tutor request failed');messages.push({role:'assistant',text:data.answer||'No response returned.',at:new Date().toISOString()});
-    }catch(err){messages.push({role:'assistant',text:`Tutor connection note: ${err.message}. The course-grounded interface is installed; the server key/environment still needs to be connected if this is a configuration error.`,at:new Date().toISOString()});}
+      const current=localStorage.getItem('chematlas-genchem-current')||'';const p=readProgress();const res=await fetch(cfg.tutorEndpoint||'/api/tutor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,context:courseContext(question),includeWeb:Boolean(document.getElementById('caTutorWeb')?.checked),learner:{goal:goalInfo()[0],currentModule:current,masterySummary:`${p.modules.length} lessons completed; ${(window.CHEM_GENCHEM?.modules||[]).filter(m=>window.ChemAtlasAssessment?.summarize(m.id).mastered).length} modules with mastery demonstrated; ${p.tools.length} practice engines cleared`}})});const data=await res.json();if(!currentSession(epoch,userId))return;if(!res.ok)throw new Error(data.error||'Tutor request failed');messages.push({role:'assistant',text:data.answer||'No response returned.',at:new Date().toISOString()});
+    }catch(err){if(!currentSession(epoch,userId))return;messages.push({role:'assistant',text:`Tutor connection note: ${err.message}. Your question is saved on this browser. Please try again when the connection is available.`,at:new Date().toISOString()});}
     saveTutor(messages);renderTutor();
   }
 
@@ -296,9 +300,9 @@
     const body=document.getElementById('caAccountBody');if(!body)return;
     const title=document.getElementById('caAccountTitle'),copy=document.getElementById('caAccountCopy');
     if(title)title.textContent=session?'Account & sync':'Keep your chemistry progress with you.';
-    if(copy)copy.textContent=session?'Manage your saved progress and email reminders.':'Guest mode stores progress on this browser. An account opens the full Learn sequence and syncs completion, reviews, and history across devices.';
+    if(copy)copy.textContent=session?'Manage your saved progress and reminders. Each account has separate browser progress.':'Guest mode keeps your work on this browser. Your first explicit sign-in can carry that work into the first account; later accounts keep separate progress.';
     if(session){
-      body.innerHTML=`<div class="ca-account-signed"><span>✓</span><strong>${esc(session.user?.email||'Signed in')}</strong><small>Cloud sync enabled</small></div>
+      body.innerHTML=`<div class="ca-account-signed"><span>✓</span><strong>${esc(session.user?.email||'Signed in')}</strong><small>Signed in</small></div>
         <section class="ca-reminder-settings" aria-labelledby="caReminderHeading"><h3 id="caReminderHeading">Email reminders</h3>
           <label for="caReviewReminders"><input id="caReviewReminders" type="checkbox" disabled><span>Remind me when reviews are due</span></label>
           <p>At most once a week, sent to your verified account email. Each message links to your reviews and lets you unsubscribe.</p>
@@ -308,7 +312,7 @@
       document.getElementById('caSyncNow')?.addEventListener('click',syncAll);
       document.getElementById('caSignOut')?.addEventListener('click',async()=>{await cloud?.auth.signOut();session=null;updateSyncBadge();renderAccount()});return;
     }
-    if(!cfg.supabaseUrl||!cfg.supabasePublishableKey){body.innerHTML=`<div class="ca-setup-note"><strong>Guest mode is active.</strong><p>The profile UI and sync model are installed, but ChemWaypoint needs its own Supabase project URL and publishable key before account creation can go live. No secret keys belong in this browser configuration.</p></div>`;return;}
+    if(!cfg.supabaseUrl||!cfg.supabasePublishableKey){body.innerHTML=`<div class="ca-setup-note"><strong>Guest mode is active.</strong><p>Account sync is unavailable right now. You can keep learning as a guest; your work stays in this browser.</p></div>`;return;}
     body.innerHTML=`<form id="caAuthForm"><label>Email<input id="caEmail" type="email" autocomplete="email" required></label><label>Password<input id="caPassword" type="password" minlength="6" autocomplete="current-password" required></label><div class="ca-auth-actions"><button class="primary-button" type="submit">Sign in</button><button class="secondary-button" type="button" id="caSignUp">Create account</button></div><p id="caAuthFeedback" class="muted"></p></form>`;
     document.getElementById('caAuthForm')?.addEventListener('submit',e=>authSubmit(e,false));document.getElementById('caSignUp')?.addEventListener('click',e=>authSubmit(e,true));
   }
@@ -340,7 +344,7 @@
   async function authSubmit(e,signup){
     e.preventDefault();const email=document.getElementById('caEmail')?.value.trim(),password=document.getElementById('caPassword')?.value;
     const feedback=document.getElementById('caAuthFeedback');
-    if(!cloud){if(feedback)feedback.textContent='Cloud client is still loading.';return;}
+    if(!cloud){if(feedback)feedback.textContent='The account service is still connecting. Please try again.';return;}
     pendingGuestClaim=!session;
     const epoch=sessionEpoch;
     try{
@@ -390,8 +394,14 @@
     }catch(e){if(currentSession(epoch,userId)){console.warn('ChemWaypoint sync:',e.message);updateSyncBadge('error');}}
     finally{if(syncInFlight===epoch)syncInFlight=null;}
   }
-  let syncTimer;function queueCloudSync(){clearTimeout(syncTimer);syncTimer=setTimeout(syncAll,1200)}
-  function updateSyncBadge(status){const b=document.querySelector('.ca-sync-status');if(!b)return;if(session){b.classList.add('online');b.querySelector('b').textContent='Synced profile';b.querySelector('small').textContent=status==='error'?'sync issue':session.user?.email||'cloud progress';}else{b.classList.remove('online');b.querySelector('b').textContent='Guest';b.querySelector('small').textContent='local progress';}}
+  let syncTimer;function queueCloudSync(){clearTimeout(syncTimer);syncStatus='pending';updateSyncBadge();syncTimer=setTimeout(syncAll,1200)}
+  function updateSyncBadge(status){
+    if(status)syncStatus=status;
+    const badge=document.querySelector('.ca-sync-status');if(!badge)return;
+    badge.classList.toggle('online',Boolean(session));
+    badge.querySelector('b').textContent=!session?'Guest':syncStatus==='ok'?'Progress synced':syncStatus==='error'?'Sync needs attention':'Signed in';
+    badge.querySelector('small').textContent=!session?'local progress':syncStatus==='error'?'Please retry syncing':syncStatus==='ok'?'Saved on this account':'Syncing progress…';
+  }
 
   let cloudReady=false;
   async function initCloud(){

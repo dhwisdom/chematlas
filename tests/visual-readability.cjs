@@ -5,12 +5,16 @@ const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),
 const root=path.resolve(__dirname,'..'),out=process.env.VISUAL_ARTIFACTS||'/tmp/chematlas-visual';
 const baseline=process.env.VISUAL_BASELINE==='1';
 const samples={landing:['.ca-marketing-hero','.ca-marketing-lede','.ca-flow-grid p'],courses:['.course-grid','.course-card h3','.course-card>p','.module-list span','.course-actions small'],learn:['.gc-workspace','.gc-reading p','.gc-module-link strong','.ca-focus-next'],practice:['.gc-practice-shell','.gc-practice-intro h3','.gc-practice-score strong','.gc-tool-panel h4','.gc-tool-panel p','.gc-tool-tab strong'],model:['.lab-layout','.viewer','.viewer-help','.property-list strong','.why-card p:last-child'],tutor:['#caTutorV2','.ca-chat-v2','.ca-tutor-empty p','.ca-tutor-form-v2 textarea','.ca-tutor-side-v2 p']};
-const routes={landing:'/',courses:'/courses',learn:'/genchem/measurement',practice:'/genchem/measurement',model:'/model-lab',tutor:'/tutor'};
+samples.organic=['.organic-hero p:not(.eyebrow)','.organic-tab strong','.organic-toolbar label','.organic-feedback'];
+samples.companion=['.cw-subtitle','.cw-hint','.cw-tabs button'];
+samples.account=['#caAccountCopy','#caAccountBody label'];
+samples.menu=['.ca-tutor-nav','.ca-course-switcher'];
+const routes={menu:'/genchem/measurement',organic:'/organic',companion:'/companion',account:'/genchem/measurement',landing:'/',courses:'/courses',learn:'/genchem/measurement',practice:'/genchem/measurement',model:'/model-lab',tutor:'/tutor'};
 (async()=>{
 fs.mkdirSync(out,{recursive:true});
 const server=http.createServer((req,res)=>{
  let p=new URL(req.url,'http://localhost').pathname;
- if(p==='/'||/^\/(courses|genchem|model-lab|tutor)(\/|$)/.test(p))p='/index.html';
+ if(p==='/'||/^\/(courses|genchem|model-lab|tutor|organic|companion)(\/|$)/.test(p))p='/index.html';
  const f=path.resolve(root,'.'+decodeURIComponent(p));
  if(!f.startsWith(root+path.sep)||p.includes('/.'))return res.writeHead(403).end();
  fs.readFile(f,(e,b)=>{if(e)return res.writeHead(404).end();res.setHeader('Content-Type',f.endsWith('.js')?'text/javascript':f.endsWith('.css')?'text/css':'text/html');res.end(b)});
@@ -20,7 +24,7 @@ const base='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,headless:true,args:['--no-sandbox']});
 const results=[],failures=[];
 try{
- for(const width of (process.env.VISUAL_WIDTHS?process.env.VISUAL_WIDTHS.split(',').map(Number):[2048,1440,768,390,320,720,360]))for(const [name,route] of Object.entries(routes)){
+ for(const width of (process.env.VISUAL_WIDTHS?process.env.VISUAL_WIDTHS.split(',').map(Number):[2048,1440,768,390,320,720,360]))for(const [name,route] of Object.entries(routes).filter(([name])=>(process.env.VISUAL_VIEWS?process.env.VISUAL_VIEWS.split(','):['landing','courses','learn','practice','model','tutor']).includes(name))){
   const context=await browser.newContext({viewport:{width,height:1000}});
   await context.route('**/*',r=>new URL(r.request().url()).origin===base?r.continue():r.abort());
   const p=await context.newPage();const errors=[];p.on('pageerror',e=>errors.push(String(e)));
@@ -29,6 +33,8 @@ try{
    if(width<=820)await p.locator('#mobileMenu').click();
    await p.locator('[data-ca-tutor-practice]').click();await p.locator('#gcPracticeOverlay.open').waitFor();
   }
+  if(name==='menu'&&width<=820)await p.locator('#mobileMenu').click();
+  if(name==='account'){if(width<=820)await p.locator('#mobileMenu').click();await p.locator('.ca-student-row').click();await p.locator('#caAccountOverlay.open').waitFor();}
   await p.waitForTimeout(150);
   const data=await p.evaluate(selectors=>{
    function bg(el){for(let e=el;e;e=e.parentElement){const c=getComputedStyle(e).backgroundColor;if(c!=='rgba(0, 0, 0, 0)')return c;}return 'rgb(255, 255, 255)'}
@@ -44,7 +50,7 @@ try{
    await p.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
    violations=await p.evaluate(async()=>{const r=await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,html:n.html,summary:n.failureSummary}))}))});
   }
-  if([2048,390].includes(width))await p.screenshot({path:path.join(out,`${name}-${width}.png`),fullPage:true});
+  if([2048,1440,390].includes(width))await p.screenshot({path:path.join(out,`${name}-${width}.png`),fullPage:true});
   results.push({name,width,zoomEquivalent:width===720?200:width===360?400:100,...data,violations,errors});
   if(!baseline){
    if(data.overflow||data.dialogOverflow)failures.push(`${name} ${width}: horizontal overflow`);

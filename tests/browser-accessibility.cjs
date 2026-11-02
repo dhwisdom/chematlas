@@ -77,8 +77,8 @@ test('mobile drawer exposes state, excludes hidden controls, dismisses and survi
   await menu.click();await p.locator('[data-ca-tutor-route="/progress"]').click();
   await p.waitForFunction(()=>location.pathname==='/progress');
   assert.equal(await menu.getAttribute('aria-expanded'),'false');assert.equal(await sidebar.evaluate(e=>e.inert),true);
-  await p.setViewportSize({width:1440,height:1000});assert.equal(await sidebar.evaluate(e=>e.inert),false);
-  await p.setViewportSize({width:800,height:1000});await menu.waitFor({state:'visible'});
+  await p.setViewportSize({width:1440,height:1000});await p.waitForFunction(()=>!document.querySelector('.sidebar').inert);assert.equal(await sidebar.evaluate(e=>e.inert),false);
+  await p.setViewportSize({width:800,height:1000});await menu.waitFor({state:'visible'});await p.waitForFunction(()=>document.querySelector('.sidebar').inert);
   assert.equal(await sidebar.evaluate(e=>e.inert),true);
 });
 test('module and assessment transitions keep focus and preserve first-answer evidence',async t=>{
@@ -86,7 +86,7 @@ test('module and assessment transitions keep focus and preserve first-answer evi
   await p.locator('[data-module="atoms-moles"]').focus();await p.keyboard.press('Enter');
   await p.waitForFunction(()=>document.activeElement.matches('.gc-module-header h2'));
   await p.locator('[data-module="measurement"]').click();
-  await p.locator('[data-focus-index]').last().click();await p.locator('[data-check-start]').click();
+  await p.locator('.ca-step-jump summary').click();await p.locator('[data-focus-index]').last().click();await p.locator('[data-check-start]').click();
   await p.locator('[data-choice="0"]').focus();await p.keyboard.press('Space');
   await p.locator('#gcCheckAnswer').focus();await p.keyboard.press('Enter');
   assert.equal(await p.evaluate(()=>document.activeElement.id),'gcFeedback');
@@ -215,7 +215,7 @@ test('real assessment completion projects one activity, survives resume/reload, 
   const p=await setup(t);
   const legacy='[{"id":"legacy","at":"2026-01-01T12:00:00Z","label":"General Chemistry lesson completed","value":"[]"}]';
   await p.evaluate(value=>localStorage.setItem('chematlas-practice-history-v1',value),legacy);
-  await p.locator('[data-focus-index]').last().click();await p.locator('[data-check-start]').click();
+  await p.locator('.ca-step-jump summary').click();await p.locator('[data-focus-index]').last().click();await p.locator('[data-check-start]').click();
   for(let i=0;i<5;i++){
     await p.locator('[data-choice="0"]').click();await p.locator('#gcCheckAnswer').click();await p.locator('[data-check-next]').click();
     if(i===0){await p.locator('[data-module="atoms-moles"]').click();await p.locator('[data-module="measurement"]').click();assert.match(await p.locator('.gc-check').innerText(),/CHECK 2 OF 5/);}
@@ -284,4 +284,61 @@ test('explicit first guest sign-in can retain guest evidence without claiming it
   await p.evaluate(()=>window.__cloudFixture.change('B'));await p.waitForFunction(()=>window.ChemAtlasLearnerState.owner==='account:B');
   assert.deepEqual(await p.evaluate(()=>JSON.parse(localStorage.getItem('chematlas-genchem-completed-v1')||'[]')),[]);
   assert.equal(await p.evaluate(()=>window.ChemAtlasActivity.streak(window.ChemAtlasAssessment.events()).count),0);
+});
+
+test('all 19 Learn modules keep optional jumps, keyboard Previous/Continue and section/review deep links',async t=>{
+  const p=await setup(t);await cloudFixture(p);
+  const modules=await p.evaluate(()=>window.CHEM_GENCHEM.modules.map(m=>({id:m.id,sections:m.sections.length,answer:m.example.answer})));
+  assert.equal(modules.length,19);
+  for(const module of modules){
+    await p.goto(base+'/genchem/'+module.id);await p.waitForFunction(id=>window.ChemAtlasLearnerState?.owner==='account:A'&&document.querySelector('.gc-module-link.active')?.dataset.module===id,module.id);
+    await p.locator('.ca-step-jump').waitFor();
+    assert.equal(await p.locator('.ca-step-jump').evaluate(e=>e.open),false);
+    assert.equal(await p.locator('.gc-reading').count(),module.sections);
+    assert.equal(await p.locator('.gc-example-answer strong').innerText(),module.answer);
+    assert.equal(await p.locator('.ca-focus-panel:not([hidden])').count(),1);
+    assert.equal(await p.locator('.ca-focus-meter').getAttribute('aria-valuenow'),'1');
+    await p.locator('.ca-focus-next').focus();await p.keyboard.press('Enter');
+    assert.equal(await p.locator('.ca-focus-meter').getAttribute('aria-valuenow'),'2');
+    assert.equal(await p.evaluate(()=>document.activeElement.matches('.ca-focus-panel:not([hidden]) h3')),true);
+    await p.locator('.ca-focus-back').focus();await p.keyboard.press('Enter');
+    assert.equal(await p.locator('.ca-focus-meter').getAttribute('aria-valuenow'),'1');
+    await p.locator('.ca-step-jump summary').focus();await p.keyboard.press('Enter');
+    await p.locator('[data-focus-index]').last().click();
+    assert.equal(await p.locator('.ca-step-jump').evaluate(e=>e.open),false);
+    assert.equal(await p.locator('.gc-check').isVisible(),true);
+  }
+  await p.goto(base+'/genchem/measurement?section=1');await p.waitForFunction(()=>document.querySelector('.ca-focus-meter')?.getAttribute('aria-valuenow')==='2');
+  await p.goto(base+'/genchem/measurement');await p.waitForFunction(()=>document.querySelector('.ca-focus-meter')?.getAttribute('aria-valuenow')==='2');
+  await p.goto(base+'/genchem/measurement?review=1');await p.locator('.gc-check').waitFor({state:'visible'});
+  await p.goto(base+'/genchem/acid-base?review=1');await p.waitForFunction(()=>window.ChemAtlasLearnerState?.owner==='account:A');await p.locator('.gc-check').waitFor({state:'visible'});
+  assert.equal(await p.evaluate(()=>location.pathname+location.search),'/genchem/acidbase?review=1');
+  await p.setViewportSize({width:390,height:900});
+  await p.locator('.ca-step-jump summary').focus();await p.keyboard.press('Enter');
+  await p.locator('[data-focus-index]').first().click();
+  await p.locator('.ca-focus-next').focus();await p.keyboard.press('Enter');
+  assert.equal(await p.locator('.ca-focus-meter').getAttribute('aria-valuenow'),'2');
+  assert.equal(await p.evaluate(()=>window.ChemAtlasAssessment.events().length),0);
+});
+
+test('Courses and Organic state truthful availability, route context and accessible tool results',async t=>{
+  const p=await setup(t);
+  await p.locator('.ca-course-switcher button').click();await p.waitForFunction(()=>location.pathname==='/courses'&&!document.querySelector('[data-ca-tutor-route="/dashboard"].active'));
+  assert.doesNotMatch(await p.locator('#coursesView').innerText(),/prototype|scaffolded/i);
+  const organic=p.getByRole('heading',{name:'Organic Chemistry I',exact:true}).locator('..');
+  assert.match(await organic.locator('.course-availability').innerText(),/4 interactive tools/);
+  const future=p.getByRole('heading',{name:'Organic Chemistry II',exact:true}).locator('..');
+  assert.match(await future.locator('.course-availability').innerText(),/lessons not yet available/);
+  await organic.locator('.open-organic').click();await p.waitForFunction(()=>location.pathname==='/organic');
+  await p.addScriptTag({path:require.resolve('axe-core/axe.min.js')});
+  for(const tool of ['stereo','newman','chair','mechanism']){
+    await p.locator(`.organic-tab[data-organic-tool="${tool}"]`).click();
+    assert.equal(await p.locator(`.organic-tab[data-organic-tool="${tool}"]`).getAttribute('aria-pressed'),'true');
+    const violations=await p.evaluate(async()=>{const r=await axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}});return r.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))}));});
+    assert.deepEqual(violations,[]);
+  }
+  await p.locator('.organic-tab[data-organic-tool="stereo"]').click();
+  await p.locator('[data-stereo-answer="R"]').click();await p.locator('#checkStereo').click();assert.match(await p.locator('#stereoFeedback').innerText(),/Correct/);
+  await p.locator('[data-stereo-answer="S"]').click();await p.locator('#checkStereo').click();assert.match(await p.locator('#stereoFeedback').innerText(),/Not quite/);
+  assert.equal(await p.locator('[data-stereo-answer="S"]').getAttribute('aria-pressed'),'true');
 });

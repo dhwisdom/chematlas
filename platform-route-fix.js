@@ -29,6 +29,9 @@
     const open = () => {
       const nav = document.querySelector('.genchem-nav');
       if (!nav || nav.dataset.genchemReady !== '1') return setTimeout(open, 100);
+      // The main router may already have opened this lesson. Do not reset an
+      // active reading step or disclosure when the delayed alias repair runs.
+      if(document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module===slug){setPath(slug);return;}
       nav.dataset.genchemModule = slug;
       nav.click();
       setTimeout(() => setPath(slug), 0);
@@ -59,7 +62,7 @@
     const requested = decodeURIComponent(match[1]);
     const slug = canonical(requested);
     if (slug !== requested || validModule(slug)) {
-      if (slug !== requested) history.replaceState({}, '', `/genchem/${slug}`);
+      if (slug !== requested) history.replaceState({}, '', `/genchem/${slug}${location.search}${location.hash}`);
       setTimeout(() => openCanonicalModule(slug), 80);
     }
   }

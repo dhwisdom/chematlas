@@ -49,7 +49,7 @@
     byId('stereoFeedback').className = 'organic-feedback';
     byId('stereoFeedback').textContent = 'Choose R or S, then check your reasoning.';
     byId('stereoCounter').textContent = `${stereoIndex + 1} / ${organic.stereoChallenges.length}`;
-    document.querySelectorAll('[data-stereo-answer]').forEach(btn => btn.classList.remove('selected','correct','wrong'));
+    document.querySelectorAll('[data-stereo-answer]').forEach(btn => {btn.classList.remove('selected','correct','wrong');btn.setAttribute('aria-pressed','false');});
 
     const entries = Object.entries(challenge.groups);
     byId('stereoSvg').innerHTML = `
@@ -76,7 +76,7 @@
   });
 
   document.querySelectorAll('[data-stereo-answer]').forEach(btn => btn.addEventListener('click', () => {
-    document.querySelectorAll('[data-stereo-answer]').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('[data-stereo-answer]').forEach(b => {b.classList.remove('selected');b.setAttribute('aria-pressed',String(b===btn));});
     btn.classList.add('selected');
   }));
 
@@ -225,12 +225,12 @@
     byId('targetChoices').innerHTML = mech.targets.map(t => `<button class="mech-choice" data-mech-target="${t.id}"><strong>${t.label}</strong><small>${t.description}</small></button>`).join('');
     document.querySelectorAll('[data-mech-source]').forEach(btn => btn.addEventListener('click', () => {
       selectedSource = btn.dataset.mechSource;
-      document.querySelectorAll('[data-mech-source]').forEach(b => b.classList.toggle('selected', b === btn));
+      document.querySelectorAll('[data-mech-source]').forEach(b => {b.classList.toggle('selected', b === btn);b.setAttribute('aria-pressed',String(b===btn));});
       updateMechanismSelection();
     }));
     document.querySelectorAll('[data-mech-target]').forEach(btn => btn.addEventListener('click', () => {
       selectedTarget = btn.dataset.mechTarget;
-      document.querySelectorAll('[data-mech-target]').forEach(b => b.classList.toggle('selected', b === btn));
+      document.querySelectorAll('[data-mech-target]').forEach(b => {b.classList.toggle('selected', b === btn);b.setAttribute('aria-pressed',String(b===btn));});
       updateMechanismSelection();
     }));
     renderMechanismSvg();
@@ -307,9 +307,10 @@
   });
 
   // ---------- Organic studio tabs ----------
+  document.querySelectorAll('.organic-tab').forEach(button=>button.setAttribute('aria-pressed',String(button.classList.contains('active'))));
   document.querySelectorAll('[data-organic-tool]').forEach(button => button.addEventListener('click', () => {
     const target = button.dataset.organicTool;
-    document.querySelectorAll('.organic-tab').forEach(b => b.classList.toggle('active', b.dataset.organicTool === target));
+    document.querySelectorAll('.organic-tab').forEach(b => {const active=b.dataset.organicTool===target;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
     document.querySelectorAll('.organic-tool-panel').forEach(panel => panel.classList.toggle('active', panel.id === `${target}Panel`));
   }));
 
