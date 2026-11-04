@@ -68,7 +68,7 @@ Studio, Storage, Realtime, and analytics are disabled to keep the test stack sma
 | `npm run build` | Creates a mock frontend artifact in ignored `dist/` by default |
 | `npm run build:companion` | Rebuilds function bundles from canonical course/check data and handler source |
 
-The integration suite requires a running backend. It fails visibly if the backend is absent; `npm test` is the Cloud fallback. Run the integration suite only against disposable local data. Most SQL suites roll back their fixtures; Companion integration tests intentionally leave synthetic practice evidence that a reset removes. Use a reset before a clean test cycle.
+The integration suite requires a running backend. It fails visibly if the backend is absent; `npm test` is the Cloud fallback. Run the integration suite only against disposable local data. The integration suite creates uniquely named synthetic Auth accounts for each run and deletes those accounts and their dependent practice/progress rows afterward. SQL suites roll back their fixtures. A reset provides an additional clean rebuild check; it is an explicit destructive command, not part of the normal test command.
 
 One standard local backend uses fixed ports and the project ID `chemwaypoint-local`. Do not run two copies simultaneously. Stop the first before starting another worktree. Windows and Mac have independent local data; migrations and fixtures travel through Git, not database synchronization. Two browser profiles against one instance exercise concurrent-device behavior. Use separate profiles for different synthetic accounts when testing the current main baseline: the account-cache isolation improvements in stacked PR #24 are intentionally not merged here. Test that PR separately on this safety foundation.
 

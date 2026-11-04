@@ -2,20 +2,23 @@
 const {test,before,after}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),crypto=require('node:crypto');
 const {Client}=require('pg'),{createClient}=require('@supabase/supabase-js');
 const {runtime,assertDatabase}=require('../../scripts/backend.cjs');
-let r,db,fixtures,a,b,sessionA,sessionB;
+let r,db,fixtures,a,b,admin,sessionA,sessionB;
+const testAccounts=[];
 const authOptions={auth:{persistSession:false,autoRefreshToken:false}};
 before(async()=>{
  r=runtime();db=new Client({connectionString:r.DATABASE_URL});await db.connect();await assertDatabase(db);
- fixtures=JSON.parse(fs.readFileSync('.local/accounts.json','utf8'));
+ fixtures={password:crypto.randomBytes(24).toString('base64url'),run:crypto.randomUUID()};
+ admin=createClient(r.SUPABASE_URL,r.SUPABASE_SERVICE_ROLE_KEY,authOptions);
+ for(const [name,confirmed] of [['a',true],['b',true],['unconfirmed',false]]){const email=`qa-${fixtures.run}-${name}@example.invalid`;const created=await admin.auth.admin.createUser({email,password:fixtures.password,email_confirm:confirmed});assert.ifError(created.error);testAccounts.push(created.data.user.id);fixtures[name]=email;}
  a=createClient(r.SUPABASE_URL,r.SUPABASE_PUBLISHABLE_KEY,authOptions);b=createClient(r.SUPABASE_URL,r.SUPABASE_PUBLISHABLE_KEY,authOptions);
- const first=await a.auth.signInWithPassword({email:'learner-a@example.invalid',password:fixtures.password});assert.ifError(first.error);sessionA=first.data.session;
- const second=await b.auth.signInWithPassword({email:'learner-b@example.invalid',password:fixtures.password});assert.ifError(second.error);sessionB=second.data.session;
+ const first=await a.auth.signInWithPassword({email:fixtures.a,password:fixtures.password});assert.ifError(first.error);sessionA=first.data.session;
+ const second=await b.auth.signInWithPassword({email:fixtures.b,password:fixtures.password});assert.ifError(second.error);sessionB=second.data.session;
 });
-after(async()=>{await db?.end();});
+after(async()=>{try{for(const id of testAccounts)assert.ifError((await admin.auth.admin.deleteUser(id)).error);}finally{await db?.end();}});
 test('real local Auth signs in confirmed synthetic accounts and refuses the unconfirmed account',async()=>{
  assert.notEqual(sessionA.user.id,sessionB.user.id);
  const c=createClient(r.SUPABASE_URL,r.SUPABASE_PUBLISHABLE_KEY,authOptions);
- const denied=await c.auth.signInWithPassword({email:'unconfirmed@example.invalid',password:fixtures.password});assert(denied.error);
+ const denied=await c.auth.signInWithPassword({email:fixtures.unconfirmed,password:fixtures.password});assert(denied.error);
  const refreshed=await a.auth.refreshSession();assert.ifError(refreshed.error);sessionA=refreshed.data.session;
 });
 test('real local RLS isolates progress, denies foreign writes and admin self-promotion',async()=>{
@@ -29,7 +32,7 @@ test('real local RLS isolates progress, denies foreign writes and admin self-pro
 test('two clients merge immutable assessment evidence without losing existing progress',async()=>{
  const prefix='qa-'+crypto.randomUUID();
  const secondDevice=createClient(r.SUPABASE_URL,r.SUPABASE_PUBLISHABLE_KEY,authOptions);
- assert.ifError((await secondDevice.auth.signInWithPassword({email:'learner-a@example.invalid',password:fixtures.password})).error);
+ assert.ifError((await secondDevice.auth.signInWithPassword({email:fixtures.a,password:fixtures.password})).error);
  await Promise.all([a.rpc('merge_assessment_events',{p_events:[{id:prefix+'-a',moduleId:'measurement',type:'start',at:100}]}),secondDevice.rpc('merge_assessment_events',{p_events:[{id:prefix+'-b',moduleId:'measurement',type:'start',at:200}]})].map(async p=>assert.ifError((await p).error)));
  const merged=await a.rpc('merge_assessment_events',{p_events:[{id:prefix+'-a',moduleId:'measurement',type:'start',at:999}]});assert.ifError(merged.error);
  assert.equal(merged.data.find(e=>e.id===prefix+'-a').at,100);assert(merged.data.some(e=>e.id===prefix+'-b'));
@@ -54,7 +57,7 @@ test('real website Companion grades, saves once, rejects cross-account access an
 });
 test('real connector verifies test signatures, rejects replays and uses only the local audience',async()=>{
  const keys=JSON.parse(fs.readFileSync('.local/connector-keys.json','utf8'));
- const body=JSON.stringify({audience:'chemwaypoint-local-only',at:Date.now(),nonce:crypto.randomUUID(),email:'learner-a@example.invalid',subject:'local-synthetic-subject',action:'get_learning_progress',args:{}});
+ const body=JSON.stringify({audience:'chemwaypoint-local-only',at:Date.now(),nonce:crypto.randomUUID(),email:fixtures.a,subject:'local-synthetic-subject',action:'get_learning_progress',args:{}});
  const signature=crypto.sign(null,Buffer.from(body),crypto.createPrivateKey({key:keys.privateKey,format:'jwk'})).toString('base64');
  const request=()=>fetch(r.SUPABASE_URL+'/functions/v1/chemwaypoint-companion',{method:'POST',headers:{'x-companion-signature':signature,'Content-Type':'application/json'},body,redirect:'error'});
  const first=await request();assert.equal(first.status,200,await first.text());assert.equal((await request()).status,409);
