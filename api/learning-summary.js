@@ -2,7 +2,7 @@
 
 const { createHash, timingSafeEqual } = require('node:crypto');
 const { buildSummary, stateKeys } = require('../lib/learning-summary.cjs');
-const config = require('../data/platform-config.js');
+const config = require('../lib/environment.cjs').config();
 
 const digest = value => createHash('sha256').update(value).digest();
 

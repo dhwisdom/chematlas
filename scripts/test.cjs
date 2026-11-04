@@ -1,0 +1,10 @@
+'use strict';
+const fs=require('node:fs'),{spawnSync}=require('node:child_process');
+const vm=require('node:vm');
+const sources=fs.readdirSync('.').filter(f=>f.endsWith('.js')||f.endsWith('.cjs'));
+for(const dir of ['api','companion-server','data','lib','scripts','tests','supabase/functions'])for(const file of fs.readdirSync(dir,{recursive:true}))if(/\.(js|cjs)$/.test(file))sources.push(dir+'/'+file);
+for(const file of sources)new vm.Script(fs.readFileSync(file,'utf8'),{filename:file});
+console.log('Syntax checked '+sources.length+' JavaScript sources.');
+const files=fs.readdirSync('tests').filter(f=>f.endsWith('.test.cjs')||f.endsWith('-ui.cjs')).map(f=>'tests/'+f);
+const result=spawnSync(process.execPath,['--require','./tests/offline.cjs','--test',...files],{stdio:'inherit',env:{...process.env,APP_ENV:'test'}});
+process.exit(result.status??1);

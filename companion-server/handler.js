@@ -1,6 +1,9 @@
 // Website requests use the learner’s existing Supabase session.
 const SB=Deno.env.get('SUPABASE_URL');
 const SERVICE=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const FUNCTION_ENV=Deno.env.get('APP_ENV')||'local';
+const SITE_ORIGIN=Deno.env.get('APP_ORIGIN')||'http://127.0.0.1:3000';
+if(FUNCTION_ENV!=='production'&&!['127.0.0.1','localhost','kong'].includes(new URL(SB).hostname))throw Error('Local Companion refuses remote Supabase.');
 async function rest(path,options={}){
  const r=await fetch(SB+'/rest/v1/'+path,{...options,headers:{apikey:SERVICE,authorization:'Bearer '+SERVICE,'content-type':'application/json',...options.headers},signal:AbortSignal.timeout(12000)});
  if(!r.ok){const detail=await r.json().catch(()=>null);if(detail?.code==='P0001')throw Object.assign(new Error(detail.message),{safe:true});throw new Error('Storage request failed ('+r.status+').');}
@@ -26,6 +29,7 @@ async function handleBridge(req){
  if(!args||typeof args!=='object'||Array.isArray(args))return json({error:'Invalid arguments'},400);
  if(action==='lookup_compound'){
   const name=String(args.name||'').trim();if(!name||name.length>150)return json({error:'Enter one compound name.'},400);
+  if(FUNCTION_ENV!=='production')return json({query:name,compounds:[{CID:2244,MolecularFormula:'C9H8O4',MolecularWeight:'180.16',IUPACName:'Local reference fixture',url:'https://pubchem.ncbi.nlm.nih.gov/compound/2244'}]});
   const response=await fetch('https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/'+encodeURIComponent(name)+'/property/MolecularFormula,MolecularWeight,IUPACName,CanonicalSMILES,InChIKey/JSON',{signal:AbortSignal.timeout(15000)});
   if(!response.ok)return json({error:response.status===404?'No compound found. Try a more specific name.':'PubChem is temporarily unavailable. Please try again.'},response.status===404?404:502);
   const payload=await response.json();return json({query:name,source:'NIH PubChem',compounds:(payload.PropertyTable?.Properties||[]).slice(0,5).map(p=>({...p,url:'https://pubchem.ncbi.nlm.nih.gov/compound/'+p.CID}))});
@@ -36,7 +40,7 @@ async function handleBridge(req){
  }
  if(action==='get_lesson'){const m=modules.find(m=>m.id===args.module_id);return m?json({lesson:publicModule(m,true),source:SOURCE}):json({error:'Lesson not found. Search lessons for an exact module ID.'},404);}
  const userId=actor.id;
- if(action==='get_companion_status')return json({accountConnected:!!userId,lessonsAvailable:modules.length,accountMatching:'Uses your signed-in ChemWaypoint account.',source:SOURCE,website:'https://www.chemwaypoint.com'});
+ if(action==='get_companion_status')return json({accountConnected:!!userId,lessonsAvailable:modules.length,accountMatching:'Uses your signed-in ChemWaypoint account.',source:SOURCE,website:SITE_ORIGIN});
 
  const state=await learnerState(userId);
  if(action==='get_learning_progress')return json(progressFor(modules,state));
@@ -53,11 +57,11 @@ async function handleBridge(req){
  const owned=await rest('companion_practice_sessions?id=eq.'+args.session_id+'&user_id=eq.'+userId+'&select=id');if(!owned.length)return json({error:'Practice set not found'},404);
  // Server/database computes grades; callers never supply correctness or mastery.
  const result=await rest('rpc/companion_submit_practice',{method:'POST',body:JSON.stringify({p_user_id:userId,p_session_id:args.session_id,p_choices:args.choices})});
- const next=await learnerState(userId);return json({...result,mastery:summarize(result.moduleId,next.events,next.legacy)});
+ const next=await learnerState(userId);return json({...result,url:SITE_ORIGIN+'/progress',mastery:summarize(result.moduleId,next.events,next.legacy)});
  }
  return json({error:'Unknown action'},400);
 }
-const SITE_ORIGINS=new Set(['https://www.chemwaypoint.com','https://chemwaypoint.com']);
+const SITE_ORIGINS=new Set(FUNCTION_ENV==='production'?[SITE_ORIGIN]:[SITE_ORIGIN,'http://localhost:3000']);
 async function serveSiteCompanion(req){
  const origin=req.headers.get('origin');
  if(origin&&!SITE_ORIGINS.has(origin))return json({error:'Origin is not allowed.'},403);

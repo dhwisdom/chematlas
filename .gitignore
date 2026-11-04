@@ -3,3 +3,13 @@
 supabase/.temp/
 .env.local
 .env.*.local
+
+node_modules/
+dist/
+.local/
+.vercel/
+.env
+.env.*
+!.env.example
+!dev/*.env.example
+.supabase/

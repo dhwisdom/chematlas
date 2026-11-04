@@ -9,7 +9,7 @@ test('HTML email includes actual totals, direct review links and sync informatio
   const summary=buildSummary([{state_key:stateKeys[1],state_value:['measurement','atoms-moles','formulas'],updated_at:'2026-10-03T23:40:00Z'}],[],now);
   assert.equal(summary.counts.completed,3);assert.equal(summary.counts.reviewsDue,3);
   assert.match(summary.email.html,/3\/19/);assert.match(summary.email.html,/Start a quick review/);
-  assert.match(summary.email.html,/href="https:\/\/www\.chemwaypoint\.com\/genchem\/measurement\?review=1"/);
+  assert.match(summary.email.html,/href="http:\/\/127\.0\.0\.1:3000\/genchem\/measurement\?review=1"/);
   assert.match(summary.email.html,/Oct 3, 2026, 6:40 PM CDT/);
   assert.match(summary.email.text,/Total lessons completed: 3 of 19/);
   assert.match(summary.email.html,/No new lesson completions were recorded/);
@@ -35,5 +35,5 @@ test('email links reject external or executable URLs and do not require remote a
   const html=renderEmail(summary);
   assert(!html.includes('javascript:'));assert(!html.includes('example.org'));assert(!html.includes('<script'));
   assert(!html.includes('<img'));assert(!html.includes('<link'));
-  for(const match of html.matchAll(/href="([^"]+)"/g)) assert(match[1].startsWith('https://www.chemwaypoint.com/'));
+  for(const match of html.matchAll(/href="([^"]+)"/g)) assert(match[1].startsWith('http://127.0.0.1:3000/'));
 });

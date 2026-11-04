@@ -3,6 +3,7 @@
   let pending;
   window.ChemAtlasCloud = () => pending ||= (async () => {
     const cfg = window.CHEMATLAS_CONFIG;
+    if (cfg?.mode === 'mock' || cfg?.mode === 'test') return window.ChemAtlasMock.client;
     if (!cfg?.supabaseUrl || !cfg.supabasePublishableKey) throw new Error('Account service is not configured.');
     if (!window.supabase?.createClient) await new Promise((resolve, reject) => {
       const script = document.createElement('script');
