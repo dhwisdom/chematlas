@@ -20,7 +20,7 @@ function guard(){
 let verifiedEndpoint;
 function run(args){
   if(!verifiedEndpoint)verifiedEndpoint=localDocker().endpoint;
-  const result=spawnSync(process.execPath,[cli,...args],{cwd:root,env:{...cleanEnv(),DOCKER_HOST:verifiedEndpoint},encoding:'utf8',maxBuffer:8*1024*1024});
+  const result=spawnSync(process.execPath,[cli,...args,'--network-id','chemwaypoint-loopback'],{cwd:root,env:{...cleanEnv(),DOCKER_HOST:verifiedEndpoint},encoding:'utf8',maxBuffer:8*1024*1024});
   if(result.status!==0)throw Error(`Local Supabase ${args[0]} failed: ${(result.stderr||result.error?.message||'').slice(-1800)}`);
   return result.stdout;
 }
@@ -39,6 +39,10 @@ async function seed(r){
   const {Client}=require('pg'),db=new Client({connectionString:r.DATABASE_URL});await db.connect();
   try{
     await assertDatabase(db);
+    // A reset restarts Postgres; wait for Auth to reconnect before provisioning fixtures.
+    let ready=false;
+    for(let attempt=0;attempt<12;attempt++){const check=await client.auth.admin.listUsers({page:1,perPage:1});if(!check.error){ready=true;break;}await new Promise(resolve=>setTimeout(resolve,500));}
+    if(!ready)throw Error('Local Auth did not reconnect after database startup/reset.');
     const fixtureFile=path.join(state,'accounts.json');
     const password=fs.existsSync(fixtureFile)?JSON.parse(fs.readFileSync(fixtureFile,'utf8')).password:crypto.randomBytes(24).toString('base64url');
     const accounts=[];
