@@ -111,13 +111,16 @@ The General Chemistry sequence is an original ChemWaypoint instructional design 
 
 ## Run locally
 
-The current release intentionally keeps the learning client framework-light while Vercel supplies the server-side tutor route.
+Use the guarded development server; it serves only generated public assets and keeps local credentials, tests, and backend files private.
 
-```bash
-python -m http.server 8000
+```text
+npm ci
+npm run dev:mock
 ```
 
-Static learning features work locally. The `/api/tutor` endpoint requires a Vercel-compatible server environment and the `OPENAI_API_KEY` environment variable.
+For real local database, authentication, and Companion tests, use `npm run backend:start`, then `npm run dev:local`. AI responses are simulated and email stays in the local mail catcher. Do not serve the repository root with a generic file server: ignored local credential files must not be exposed.
+
+See [Windows/macOS local setup and testing](docs/local-development.md) for prerequisites, generated test-account credentials, reset/stop commands, and the production release boundary.
 
 ## Architecture
 
