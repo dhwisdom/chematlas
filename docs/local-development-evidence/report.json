@@ -1,0 +1,18 @@
+{
+  "engine": "Chromium",
+  "mode": "mock",
+  "checks": [
+    "real app boot",
+    "demo banner",
+    "account-form sign-in",
+    "guest evidence merged into first synthetic account",
+    "production fetch rejected before network",
+    "mock Tutor response",
+    "five-question simulated Companion practice",
+    "desktop screenshot",
+    "mobile screenshot"
+  ],
+  "uncaughtErrors": [],
+  "externalRequestsBlocked": 3,
+  "productionBackendRequests": 0
+}

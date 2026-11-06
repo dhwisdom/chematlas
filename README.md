@@ -111,13 +111,16 @@ The General Chemistry sequence is an original ChemWaypoint instructional design 
 
 ## Run locally
 
-The current release intentionally keeps the learning client framework-light while Vercel supplies the server-side tutor route.
+Use the guarded development server; it serves only generated public assets and keeps local credentials, tests, and backend files private.
 
-```bash
-python -m http.server 8000
+```text
+npm ci
+npm run dev:mock
 ```
 
-Static learning features work locally. The `/api/tutor` endpoint requires a Vercel-compatible server environment and the `OPENAI_API_KEY` environment variable.
+For real local database, authentication, and Companion tests, use `npm run backend:start`, then `npm run dev:local`. AI responses are simulated and email stays in the local mail catcher. Do not serve the repository root with a generic file server: ignored local credential files must not be exposed.
+
+See [Windows/macOS local setup and testing](docs/local-development.md) for prerequisites, generated test-account credentials, reset/stop commands, and the production release boundary.
 
 ## Architecture
 
@@ -212,3 +215,8 @@ The `chemwaypoint-site-companion` Supabase Edge Function verifies the current le
 Run `node scripts/build-companion-bridge.cjs` after bundled curriculum or handler changes, then deploy `supabase/functions/chemwaypoint-site-companion/index.js` to the existing ChemAtlas Supabase project. Existing `companion_practice_sessions` and `companion_submit_practice` are prerequisites; no additional database migration is required for this page. The function uses platform-supplied Supabase credentials only. Deploy it with JWT verification enabled. Allowed browser origins are `https://www.chemwaypoint.com` and `https://chemwaypoint.com`.
 
 Validation: `node --test tests/companion-server.test.cjs tests/assessment.test.cjs tests/content-store.test.cjs tests/startup.test.cjs`; run `tests/companion-ui.cjs` with `jsdom@26.1.0` available. The UI test covers account switching, stale-response isolation, safe chat rendering, first-answer capture, result synchronization, and guest gating.
+
+## Safe local development and frontend previews
+
+See [Windows/macOS setup, local Supabase, synthetic fixtures, and test commands](docs/local-development.md).
+Source checkouts and Vercel previews default to mocked services. Production releases and hosted migrations require separate review; do not replay this local rebuild sequence against the existing hosted database.

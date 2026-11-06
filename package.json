@@ -1,0 +1,29 @@
+{
+  "name": "chemwaypoint-development",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "dev:mock": "node scripts/dev.cjs mock",
+    "dev:local": "node scripts/dev.cjs local",
+    "backend:start": "node scripts/backend.cjs start",
+    "backend:stop": "node scripts/backend.cjs stop",
+    "backend:reset": "node scripts/backend.cjs reset",
+    "backend:seed": "node scripts/backend.cjs seed",
+    "backend:status": "node scripts/backend.cjs status",
+    "test": "node scripts/test.cjs",
+    "test:integration": "node scripts/integration.cjs",
+    "build:companion": "node scripts/build-companion-bridge.cjs",
+    "test:browser": "node --require ./tests/offline.cjs tests/browser/mock.cjs"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "2.117.2",
+    "jsdom": "26.1.0",
+    "pg": "8.23.1",
+    "playwright": "1.65.0",
+    "supabase": "3.0.0"
+  }
+}

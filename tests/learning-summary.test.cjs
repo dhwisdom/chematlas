@@ -23,7 +23,7 @@ test('empty and legacy progress are explicit, without invented completion dates 
   const legacy = buildSummary([row(stateKeys[1],['measurement'],now-8*DAY)],[],now);
   assert.equal(legacy.counts.completed,1); assert.equal(legacy.counts.completedInPeriod,0);
   assert.equal(legacy.counts.mastered,0); assert.equal(legacy.lessons[0].completedAt,null);
-  assert.equal(legacy.nextStep.url,'https://www.chemwaypoint.com/genchem/measurement?review=1');
+  assert.equal(legacy.nextStep.url,'http://127.0.0.1:3000/genchem/measurement?review=1');
   assert.equal(legacy.warnings.length,1);
 });
 test('summary matches the live mastery rule including due dates and a later mistake', () => {

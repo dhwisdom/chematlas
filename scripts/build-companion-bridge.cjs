@@ -5,7 +5,10 @@ for(const f of ['data/genchem.js','data/concept-checks.js'])vm.runInContext(fs.r
 const course=box.CHEM_GENCHEM;
 const banks=Object.fromEntries(course.modules.map(m=>[m.id,box.ChemAtlasChecks.questions(m)]));
 const slots=Object.fromEntries(Object.entries(box.CompanionRawBanks).map(([id,rows])=>[id,rows.flatMap((r,i)=>r===null?[i]:[])]));
-const prelude=`const BASE_COURSE=${JSON.stringify(course)};\nconst BASE_BANKS=${JSON.stringify(banks)};\nconst LEGACY_SLOTS=${JSON.stringify(slots)};\nconst SOURCE={repository:'dhwisdom/chematlas',channel:'ChemWaypoint site companion',snapshotAt:'2026-10-16'};\n`;
+const prelude=`const BASE_COURSE=${JSON.stringify(course)};\nconst BASE_BANKS=${JSON.stringify(banks)};\nconst LEGACY_SLOTS=${JSON.stringify(slots)};\nconst SOURCE={repository:'dhwisdom/chematlas',channel:'ChemWaypoint site companion',curriculumSha256:'${require('node:crypto').createHash('sha256').update(JSON.stringify(course)).digest('hex')}'};\n`;
 const code=prelude+fs.readFileSync(path.join(root,'companion-server/shared.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'companion-server/handler.js'),'utf8');
 fs.writeFileSync(path.join(root,'supabase/functions/chemwaypoint-site-companion/index.js'),code);
-console.log('Built the site companion function from the canonical course data.');
+fs.mkdirSync(path.join(root,'supabase/functions/chemwaypoint-companion'),{recursive:true});
+const connector=prelude+fs.readFileSync(path.join(root,'companion-server/shared.js'),'utf8')+'\n'+fs.readFileSync(path.join(root,'companion-server/connector-handler.js'),'utf8');
+fs.writeFileSync(path.join(root,'supabase/functions/chemwaypoint-companion/index.js'),connector);
+console.log('Built local Companion functions from canonical course data.');

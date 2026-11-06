@@ -50,6 +50,7 @@ function sanitizeConversation(value) {
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST required.' });
+  if (process.env.APP_ENV !== 'production' || process.env.VERCEL_ENV !== 'production') return res.status(200).json({answer:'Simulated tutor: identify the governing relationship, check your units, and explain each step. What would you try first?',model:'mock',usedWeb:false,webSources:[],citations:[]});
   if (!process.env.OPENAI_API_KEY) {
     return res.status(503).json({ error: 'ChemWaypoint Tutor is installed but OPENAI_API_KEY has not been configured in Vercel yet.' });
   }

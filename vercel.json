@@ -2,27 +2,69 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
-    "api/review-reminders.js": { "maxDuration": 60 }
+    "api/review-reminders.js": {
+      "maxDuration": 60
+    }
   },
   "redirects": [
     {
       "source": "/:path*",
-      "has": [{ "type": "host", "value": "chematlas-red.vercel.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": "chematlas-red.vercel.app"
+        }
+      ],
       "destination": "https://www.chemwaypoint.com/:path*",
       "permanent": true
     }
   ],
   "rewrites": [
-    { "source": "/dashboard", "destination": "/" },
-    { "source": "/curriculum", "destination": "/" },
-    { "source": "/courses", "destination": "/" },
-    { "source": "/progress", "destination": "/" },
-    { "source": "/tutor", "destination": "/" },
-    { "source": "/companion", "destination": "/" },
-    { "source": "/model-lab", "destination": "/" },
-    { "source": "/organic", "destination": "/" },
-    { "source": "/organic/:path*", "destination": "/" },
-    { "source": "/genchem", "destination": "/" },
-    { "source": "/genchem/:path*", "destination": "/" }
-  ]
+    {
+      "source": "/dashboard",
+      "destination": "/"
+    },
+    {
+      "source": "/curriculum",
+      "destination": "/"
+    },
+    {
+      "source": "/courses",
+      "destination": "/"
+    },
+    {
+      "source": "/progress",
+      "destination": "/"
+    },
+    {
+      "source": "/tutor",
+      "destination": "/"
+    },
+    {
+      "source": "/companion",
+      "destination": "/"
+    },
+    {
+      "source": "/model-lab",
+      "destination": "/"
+    },
+    {
+      "source": "/organic",
+      "destination": "/"
+    },
+    {
+      "source": "/organic/:path*",
+      "destination": "/"
+    },
+    {
+      "source": "/genchem",
+      "destination": "/"
+    },
+    {
+      "source": "/genchem/:path*",
+      "destination": "/"
+    }
+  ],
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }
