@@ -71,3 +71,31 @@ test('Tutor messages cannot reference another account’s thread',async()=>{
  assert((await b.from('tutor_messages').insert({thread_id:thread,user_id:sessionB.user.id,role:'user',content:'Synthetic attack fixture'})).error);
  await a.from('tutor_threads').delete().eq('id',thread);
 });
+
+test('real local sessions persist across clients, switch accounts, and clear on logout',async()=>{
+ const values=new Map(),storage={getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value),removeItem:key=>values.delete(key)};
+ const options={auth:{persistSession:true,autoRefreshToken:false,detectSessionInUrl:false,storage,storageKey:'qa-local-session'}};
+ const first=createClient(r.SUPABASE_URL,r.SUPABASE_PUBLISHABLE_KEY,options);
+ assert.ifError((await first.auth.signInWithPassword({email:fixtures.a,password:fixtures.password})).error);
+ const restored=createClient(r.SUPABASE_URL,r.SUPABASE_PUBLISHABLE_KEY,options);
+ const session=await restored.auth.getSession();assert.ifError(session.error);assert.equal(session.data.session.user.id,sessionA.user.id);
+ assert.ifError((await restored.auth.signOut({scope:'local'})).error);
+ assert.equal((await restored.auth.getSession()).data.session,null);
+ assert.equal(values.has('qa-local-session'),false);
+ assert.ifError((await restored.auth.signInWithPassword({email:fixtures.b,password:fixtures.password})).error);
+ assert.equal((await restored.auth.getSession()).data.session.user.id,sessionB.user.id);
+ assert.ifError((await restored.auth.signOut({scope:'local'})).error);
+});
+test('signup confirmation is captured in local Mailpit without external delivery',async()=>{
+ const email=`qa-${fixtures.run}-mail@example.invalid`;
+ const client=createClient(r.SUPABASE_URL,r.SUPABASE_PUBLISHABLE_KEY,authOptions);
+ const created=await client.auth.signUp({email,password:fixtures.password,options:{emailRedirectTo:'http://127.0.0.1:3000/dashboard'}});
+ assert.ifError(created.error);assert(created.data.user);testAccounts.push(created.data.user.id);assert.equal(created.data.session,null);
+ let captured=false;
+ for(let attempt=0;attempt<20;attempt++){
+   const response=await fetch('http://127.0.0.1:54324/api/v1/messages',{redirect:'error'});assert.equal(response.status,200);
+   const mailbox=await response.json();captured=(mailbox.messages||[]).some(message=>(message.To||[]).some(to=>to.Address===email));
+   if(captured)break;await new Promise(resolve=>setTimeout(resolve,250));
+ }
+ assert(captured,'Confirmation must be present in the local mail catcher.');
+});

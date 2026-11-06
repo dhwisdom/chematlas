@@ -109,3 +109,84 @@ The supported baseline is the same container workflow where a local daemon is av
 ## Costs and limits
 
 No new hosting/database subscriptions or API/email charges are required. Use existing Codex and Vercel Hobby allowances. Standard GitHub-hosted CI jobs on this public repository run tests without secrets or paid services; do not select paid/larger runners. CI and previews remain subject to provider limits. If a limit is reached, stop or run locally instead of upgrading or enabling paid usage.
+
+## Exact Windows desktop setup
+
+Install Git for Windows, **Node.js 24**, and a free-for-personal-use Docker Desktop installation with WSL2 and Linux containers. Open Docker Desktop and wait for the engine to be ready. No Supabase account login or production credentials are needed. Confirm `node --version` starts with `v24` and `docker version` reports a server.
+
+For your existing checkout, open PowerShell:
+
+```powershell
+Set-Location 'C:\Users\dalto\GitHub\chematlas'
+git status --short
+git fetch origin
+git switch chore/local-dev-safety
+git pull --ff-only
+node --version
+docker version
+npm ci
+npm test
+npm run backend:start
+npm run dev:local
+```
+
+If `git status --short` lists personal changes, save or commit them before switching branches; do not discard them. If the checkout does not exist yet, clone first:
+
+```powershell
+git clone https://github.com/dhwisdom/chematlas.git 'C:\Users\dalto\GitHub\chematlas'
+```
+
+Open **http://127.0.0.1:3000**. In a second PowerShell window:
+
+```powershell
+Set-Location 'C:\Users\dalto\GitHub\chematlas'
+npm run test:integration
+```
+
+For frontend-only work, use `npm run dev:mock` instead of starting the database. Stop the frontend with Ctrl+C. Stop the database with `npm run backend:stop`. Rebuild disposable local data with `npm run backend:reset`.
+
+## Exact macOS setup
+
+Install Git, **Node.js 24**, and a free Docker-compatible runtime using the local dockerd/Moby engine. Docker Desktop for eligible personal use works on Intel and Apple silicon; Rancher Desktop is another free option. Start the engine. The experimental native Supabase runtime is not required.
+
+For a new checkout in Terminal:
+
+```sh
+mkdir -p ~/GitHub
+cd ~/GitHub
+git clone https://github.com/dhwisdom/chematlas.git
+cd chematlas
+git switch chore/local-dev-safety
+node --version
+docker version
+npm ci
+npm test
+npm run backend:start
+npm run dev:local
+```
+
+For an existing checkout, use `cd ~/GitHub/chematlas`, check `git status --short`, save personal changes if needed, then `git fetch origin`, `git switch chore/local-dev-safety`, and `git pull --ff-only` before the Node commands. Substitute your existing checkout's path if different.
+
+Open **http://127.0.0.1:3000**. In another Terminal window:
+
+```sh
+cd ~/GitHub/chematlas
+npm run test:integration
+```
+
+Stop the frontend with Ctrl+C, stop services with `npm run backend:stop`, and reset only disposable local data with `npm run backend:reset`.
+
+## Browser verification and durable evidence
+
+Real Chromium verification is separate from jsdom and from real Supabase integration tests:
+
+```text
+npx --no-install playwright install chromium
+npm run test:browser
+```
+
+On Linux, install the browser's system dependencies if needed using the documented Playwright installer (`npx --no-install playwright install --with-deps chromium`). This is a free local dependency install. CI does this on its standard Ubuntu runner. Browser downloads require access to the vendor download hosts; if a restricted Cloud environment blocks them, use the browser CI job or an already installed Chromium executable rather than bypassing network policy.
+
+The browser suite uses only mock data and blocks outbound requests. It checks real app boot, the account form, guest evidence merging into the first synthetic account, mock Tutor chat, five-question Companion practice, and production-fetch rejection. It saves desktop/mobile screenshots and a JSON report to ignored `.local/browser-evidence/`. CI uploads only those synthetic screenshots/report, with three-day retention. A durable local result is committed under `docs/local-development-evidence/`; those files contain no real account, password, token, or learner data.
+
+Codex Cloud with an existing Chromium installation can set `CHROMIUM_EXECUTABLE_PATH` for the browser command. In PowerShell use `$env:CHROMIUM_EXECUTABLE_PATH = 'path-to-chromium.exe'`; in macOS/Linux use `CHROMIUM_EXECUTABLE_PATH=/path/to/chromium npm run test:browser`. Leave it unset to use Playwright's installed browser.

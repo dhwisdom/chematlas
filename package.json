@@ -16,12 +16,14 @@
     "backend:status": "node scripts/backend.cjs status",
     "test": "node scripts/test.cjs",
     "test:integration": "node scripts/integration.cjs",
-    "build:companion": "node scripts/build-companion-bridge.cjs"
+    "build:companion": "node scripts/build-companion-bridge.cjs",
+    "test:browser": "node --require ./tests/offline.cjs tests/browser/mock.cjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.2",
     "jsdom": "26.1.0",
     "pg": "8.23.1",
+    "playwright": "1.65.0",
     "supabase": "3.0.0"
   }
 }

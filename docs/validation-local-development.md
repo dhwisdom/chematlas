@@ -35,3 +35,31 @@ The standard local container startup was also attempted in Cloud. The managed Do
 No OpenAI request, real email, SMS, n8n execution, paid provisioning, hosted migration, production Auth change, or function deployment is part of validation. Frontend PR previews use mocks. Local connector signature tests do not change the production ChatGPT connector or make localhost reachable from ChatGPT.
 
 Account-cache improvements in existing stacked PR #24 remain separate. This branch retains baseline learner algorithms/contracts and uses separate browser profiles for multi-account testing. The local database includes stricter Tutor-message thread ownership; that hardening has not been applied to production.
+
+## Handoff acceptance follow-up
+
+The repository and PR state were refreshed: PRs #22–#25 remain open and stacked, and `fix/account-resources-companion-streak` remains one commit above `fix/learn-task-flow`. PR #26 remains separate and unmerged.
+
+Additional safeguards reject a Vercel Production build unless production mode is explicitly selected and configured. This prevents a future production build from silently becoming a mock site when settings are missing; no deployed production configuration was changed.
+
+Local follow-up results:
+
+- **90 offline checks passed**, with the new production-build rejection check.
+- **9 real Chromium checks passed**, including account-form sign-in, first-account guest-evidence merge, simulated Tutor/Companion use, and production-fetch rejection before any network request.
+- Desktop and mobile screenshots plus the JSON result are in `docs/local-development-evidence/`. The browser tests use mocks and do not establish RLS correctness.
+- The real Supabase suite now also checks persisted SDK sessions across client instances, local logout, account switching, and confirmation email capture in local Mailpit. Updated real-backend results will be reported from CI; these new cases are not claimed as passed based on the browser/mock runs.
+
+| Handoff requirement | Evidence and boundary |
+| --- | --- |
+| Configuration and production isolation | Offline rejection tests, browser fetch rejection, generated-asset/private-file checks; raw CLI commands remain outside wrapper guarantees |
+| Database, RLS, admin, Companion, concurrent progress merge | Real local Supabase CI, including reset/reseed; synthetic per-run identities |
+| Auth persistence/logout/account switching | Real SDK integration cases, separate from mocked form sign-in |
+| Email confirmation | Unconfirmed login rejection and local Mailpit capture test; no external mail provider |
+| Completion, mastery, spaced reviews | Existing assessment/learning-summary tests; real Companion saves/Progress reconciliation |
+| Guest-to-first-account handling | Real Chromium interaction with synthetic mock storage |
+| Cross-account browser-cache handling and accurate streaks | Known baseline application changes live in unmerged PR #24; not merged into infrastructure work, and not represented as fixed here |
+| Browser rendering | Real Chromium screenshots at desktop/mobile sizes; not a cross-browser or screen-reader certification |
+| Windows/macOS | CI Node tests/builds plus explicit setup instructions; personal-machine container setup still requires a running local engine |
+| Cloud backend | Previously bounded native/container failures remain documented; no repeated infrastructure experiment |
+
+Production learner data, accounts, sessions, migration records, Auth settings, connector identity, n8n workflows, and deployment settings remain unchanged. A future production release requires separate approval and explicit production configuration.

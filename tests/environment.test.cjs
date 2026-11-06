@@ -49,3 +49,8 @@ test('local public configuration rejects privileged keys instead of serializing 
  for(const key of ['sb_secret_placeholder','service_role', 'header.'+Buffer.from('{"role":"service_role"}').toString('base64url')+'.signature'])assert.throws(()=>config({...env,SUPABASE_PUBLISHABLE_KEY:key}),/publishable/);
  assert.equal(config({...env,SUPABASE_PUBLISHABLE_KEY:'sb_publishable_synthetic'}).mode,'local');
 });
+
+test('production builds cannot silently ship mocks when explicit production settings are absent',()=>{
+  for(const env of [{VERCEL_ENV:'production'},{VERCEL_ENV:'production',APP_ENV:'mock'},{VERCEL_ENV:'production',APP_ENV:'local'}])assert.throws(()=>config(env),/explicit production/);
+  assert.throws(()=>config({APP_ENV:'production'},'mock'),/Conflicting/);
+});
