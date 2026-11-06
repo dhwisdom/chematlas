@@ -47,7 +47,7 @@ Local follow-up results:
 - **90 offline checks passed**, with the new production-build rejection check.
 - **9 real Chromium checks passed**, including account-form sign-in, first-account guest-evidence merge, simulated Tutor/Companion use, and production-fetch rejection before any network request.
 - Desktop and mobile screenshots plus the JSON result are in `docs/local-development-evidence/`. The browser tests use mocks and do not establish RLS correctness.
-- The real Supabase suite now also checks persisted SDK sessions across client instances, local logout, account switching, and confirmation email capture in local Mailpit. Updated real-backend results will be reported from CI; these new cases are not claimed as passed based on the browser/mock runs.
+- The real Supabase suite now also checks persisted SDK sessions across client instances, local logout, account switching, and confirmation email capture in local Mailpit. All **12 real integration checks passed before and after database reset**, independently of the mock/browser results.
 
 | Handoff requirement | Evidence and boundary |
 | --- | --- |
@@ -63,3 +63,5 @@ Local follow-up results:
 | Cloud backend | Previously bounded native/container failures remain documented; no repeated infrastructure experiment |
 
 Production learner data, accounts, sessions, migration records, Auth settings, connector identity, n8n workflows, and deployment settings remain unchanged. A future production release requires separate approval and explicit production configuration.
+
+Final follow-up CI: [Development safety run 6](https://github.com/dhwisdom/chematlas/actions/runs/42277226267), code commit `61224d3071b9852428432c5b85c9f04a4e0c2427`. All five jobs passed: offline tests/builds on Windows, macOS, and Ubuntu; real local Supabase startup → 12 integration checks → reset/reseed → 12 integration checks → shutdown; and the 9-check Chromium mock browser suite.
