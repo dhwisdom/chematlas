@@ -2,13 +2,27 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {start}=require('../scripts/dev.cjs');
 test('mock server serves chemistry, blocks private files, and simulates paid services',async t=>{
- const server=await start('mock',0);t.after(()=>server.close());const origin='http://127.0.0.1:'+server.address().port;
- const page=await fetch(origin+'/genchem/measurement');assert.equal(page.status,200);assert.match(await page.text(),/Content-Security-Policy/);
+ const messages=[];
+ const server=await start('mock',0,{log:message=>messages.push(message)});t.after(()=>server.close());const origin='http://127.0.0.1:'+server.address().port;
+ assert(messages.some(line=>line.includes('[###] 3/3')));
+ assert(messages.some(line=>line.includes('READY (mock mode): '+origin)));
+ assert(!messages.some(line=>line.includes('[browser]')),'Do not claim a browser visit before one occurs.');
+ const page=await fetch(origin+'/genchem/measurement?token=synthetic-secret');assert.equal(page.status,200);assert.match(await page.text(),/Content-Security-Policy/);
+ assert(messages.includes('[browser] Page sent (HTTP 200).'));
  for(const file of ['/.env.local','/supabase/config.toml','/scripts/backend.cjs','/.local/accounts.json','/node_modules/pg/package.json'])assert.equal((await fetch(origin+file)).status,404,file);
  const tutor=await fetch(origin+'/api/tutor',{method:'POST',body:'{}'});assert.equal((await tutor.json()).model,'mock');
  assert.equal((await fetch(origin+'/api/review-reminders',{method:'POST'})).status,503);
  const config=await(await fetch(origin+'/data/platform-config.js')).text();assert(!config.includes('sb_publishable_CQn'));
  assert(!fs.existsSync('dist/supabase'));assert(!fs.existsSync('dist/.local'));assert(!fs.existsSync('dist/api'));
+ assert(messages.includes('[request] HTTP 404'));
+ assert(messages.includes('[request] HTTP 503'));
+ assert(!messages.join('\n').includes('synthetic-secret'),'Query values must not enter development logs.');
+});
+test('occupied development port fails with guidance and never reports ready',async t=>{
+ const server=await start('mock',0,{log:()=>{}});t.after(()=>server.close());
+ const messages=[];
+ await assert.rejects(start('mock',server.address().port,{log:message=>messages.push(message)}),/already in use.*Ctrl\+C/);
+ assert(!messages.some(line=>line.includes('READY')||line.includes('[###]')));
 });
 test('full frontend boot uses synthetic sign-in and never loads a production backend',async t=>{
  const {JSDOM,ResourceLoader,VirtualConsole}=require('jsdom');

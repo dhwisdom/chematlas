@@ -24,6 +24,8 @@ npm run dev:mock
 
 Open **http://127.0.0.1:3000**. Ctrl+C stops the frontend. This mode requires no container runtime. Use `learner-a@example.invalid`, `learner-b@example.invalid`, or `editor@example.invalid` to sign into the mock adapter; typed passwords are ignored only in mock mode. The banner identifies synthetic frontend demonstrations. Admin writes not implemented by the adapter report that local integration mode is required. The mock adapter does not establish database RLS correctness.
 
+Both frontend commands print a three-step startup bar followed by **READY** and the browser URL. Once ready, the terminal stays running; silence while idle is normal. A `[browser] Page sent (HTTP 200).` message confirms a page request was served, not that browser JavaScript or backend requests have finished. Check the browser for those results. HTTP errors are logged by status only; URLs, query strings, passwords, and request bodies are not logged. These commands rebuild files when started; after editing source, stop and restart the frontend, then refresh the browser. In PowerShell, use `npm.cmd` instead of `npm` if script execution is blocked.
+
 For real local Auth/database/Companion testing, stop the mock server and run:
 
 ```text
