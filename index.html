@@ -43,7 +43,7 @@
     <noscript><p>Enable JavaScript to use the interactive lessons.</p></noscript>
   </div>
   <div class="app-shell">
-    <aside class="sidebar" aria-label="Primary navigation">
+    <aside id="primarySidebar" class="sidebar" aria-label="Primary navigation">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">C</div>
         <div><strong>ChemWaypoint</strong><span>Learn chemistry spatially.</span></div>
@@ -57,20 +57,20 @@
       </nav>
       <button type="button" class="ca-periodic-trigger" data-periodic-open>▦ Periodic table</button>
       <div class="sidebar-foot">
-        <div class="source-chip">Prototype curriculum<br><strong>UArk 2026–27</strong></div>
+        <div class="source-chip">Degree pathway reference<br><strong>UArk 2026–27</strong></div>
         <p>Built as an expandable learning architecture, not a replacement for official advising.</p>
       </div>
     </aside>
 
     <main class="main">
       <header class="topbar">
-        <button id="mobileMenu" class="icon-button mobile-only" aria-label="Toggle navigation">☰</button>
+        <button id="mobileMenu" class="icon-button mobile-only" aria-label="Toggle navigation" aria-controls="primarySidebar" aria-expanded="false">☰</button>
         <div>
           <p class="eyebrow">COLLEGE CHEMISTRY • INTERACTIVE</p>
           <h1 id="pageTitle">Your chemistry roadmap</h1>
         </div>
         <div class="top-actions">
-          <div class="streak"><span>◈</span><div><strong>1</strong><small>day streak</small></div></div>
+          <div class="streak" data-empty="true" role="status" aria-live="polite" title="Complete an assessment to start your streak."><span aria-hidden="true">◈</span><div><strong hidden></strong><small>Start your streak</small></div></div>
           <button class="avatar" aria-label="Profile">CT</button>
         </div>
       </header>
@@ -135,7 +135,7 @@
         <div class="intro-copy">
           <p class="eyebrow">ACADEMIC BACKBONE</p>
           <h2>Four-year chemistry + biochemistry map</h2>
-          <p>Degree-level ordering follows the University of Arkansas 2026–27 B.S. Chemistry with Biochemistry concentration. ChemWaypoint adds interactive learning modules beneath each course.</p>
+          <p>Explore the University of Arkansas 2026–27 chemistry pathway. Study the available General Chemistry lessons and Organic tools; other courses show planned topics rather than released lessons.</p>
         </div>
         <div id="degreeMap" class="degree-map"></div>
         <article class="standards-note panel">
@@ -145,14 +145,14 @@
       </section>
 
       <section id="coursesView" class="view">
-        <div class="intro-copy"><p class="eyebrow">COURSE LIBRARY</p><h2>Choose a course</h2><p>The prototype includes a detailed General Chemistry I sequence and scaffolds for later courses.</p></div>
+        <div class="intro-copy"><p class="eyebrow">COURSE LIBRARY</p><h2>Choose a course</h2><p>Build your foundation with General Chemistry I and II lessons. Explore Organic Chemistry tools, and see which course topics are planned next.</p></div>
         <div id="courseCards" class="course-grid"></div>
       </section>
 
       <section id="organicView" class="view">
         <div class="organic-intro">
           <article class="panel organic-hero">
-            <p class="eyebrow">ORGANIC CHEMISTRY I • PHASE 2</p>
+            <p class="eyebrow">ORGANIC CHEMISTRY • INTERACTIVE TOOLS</p>
             <h2>Organic Chemistry Studio</h2>
             <p>Practice the spatial skills that make organic chemistry click: assign stereochemistry, rotate conformations, flip cyclohexane chairs, and build reaction mechanisms by following electron flow.</p>
             <div class="hero-actions">
@@ -168,7 +168,7 @@
           </article>
         </div>
 
-        <div class="organic-tabs" role="tablist" aria-label="Organic chemistry tools">
+        <div class="organic-tabs" role="group" aria-label="Organic chemistry tools">
           <button class="organic-tab active" data-organic-tool="stereo"><strong>R / S Trainer</strong><small>CIP priorities + wedge/dash</small></button>
           <button class="organic-tab" data-organic-tool="newman"><strong>Newman Projection</strong><small>Rotate butane C2–C3</small></button>
           <button class="organic-tab" data-organic-tool="chair"><strong>Chair Flip</strong><small>Axial vs equatorial</small></button>
@@ -279,7 +279,17 @@
             <div id="viewer" class="viewer" aria-label="Interactive 3D molecular model">
               <canvas id="moleculeCanvas" aria-label="Rotatable ball-and-stick molecular model"></canvas>
             </div>
-            <p class="viewer-help">Drag to rotate • scroll to zoom • right-drag / modifier-drag to translate</p>
+            <div class="model-controls" role="group" aria-label="Molecular model controls">
+              <button type="button" data-model-control="left" aria-label="Rotate model left">↶ Left</button>
+              <button type="button" data-model-control="right" aria-label="Rotate model right">Right ↷</button>
+              <button type="button" data-model-control="up" aria-label="Rotate model up">↑ Up</button>
+              <button type="button" data-model-control="down" aria-label="Rotate model down">↓ Down</button>
+              <button type="button" data-model-control="in" aria-label="Zoom model in">＋ Zoom</button>
+              <button type="button" data-model-control="out" aria-label="Zoom model out">− Zoom</button>
+              <button type="button" data-model-control="reset">Reset view</button>
+              <output id="modelViewStatus" aria-live="polite">Default view</output>
+            </div>
+            <p class="viewer-help">Drag to rotate, scroll to zoom, or use the model controls.</p>
           </article>
 
           <aside class="model-info">
@@ -305,7 +315,7 @@
           </article>
 
           <article class="panel quiz-card">
-            <p class="eyebrow">MASTERY CHECK</p><h3>Predict before you rotate</h3>
+            <p class="eyebrow">SHAPE CHECK</p><h3>Predict before you rotate</h3>
             <div id="quizArea"></div>
             <div id="quizResult" class="quiz-result" aria-live="polite"></div>
           </article>
@@ -313,6 +323,8 @@
       </section>
     </main>
   </div>
+  <script src="learning-activity.js"></script>
+  <script src="learner-state.js"></script>
   <script src="data/platform-config.js"></script>
   <script src="dev-mocks.js"></script>
   <script src="shared-client.js"></script>

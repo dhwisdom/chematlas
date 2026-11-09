@@ -42,10 +42,14 @@ module.exports=async function labsTutor(page,output){
 
   await navigate('/tutor');
   await page.locator('#caTutorV2').waitFor({state:'visible'});
+  // Readability stack makes context a disclosure; measure its expanded contents.
+  await page.locator('#caTutorV2 .ca-tutor-side-v2').evaluate(el=>el.open=true);
   if(width<800){
    const cardWidths=await page.locator('#caTutorV2 .ca-tutor-side-v2>article').evaluateAll(els=>els.map(el=>el.getBoundingClientRect().width));
-   assert(cardWidths.every(value=>value>250),'Tutor context cards must stack at readable widths on phones.');
+   assert(cardWidths.length>0&&cardWidths.every(value=>value>200),'Expanded Tutor context cards must occupy the phone content column.');
+   assert.equal(await page.locator('#caTutorV2 .ca-tutor-side-v2').evaluate(el=>el.scrollWidth>el.clientWidth+1),false,'Expanded Tutor context must not overflow.');
   }
+  await page.locator('#caTutorV2 .ca-thread-rail').evaluate(el=>el.open=true);
   await page.locator('#caTutorV2 [data-tutor-new]').first().click();
   await lightSurfaces(page,'#caTutorV2 .ca-chat-v2, #caTutorV2 .ca-thread-rail, #caTutorV2 .ca-tutor-empty button, #caTutorV2 .ca-memory-grid>div');
   await contrast(page,'#caTutorView');

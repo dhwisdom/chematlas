@@ -1,0 +1,4 @@
+{
+  "message": "Failed to fetch",
+  "cause": "simulated network/CORS-style fetch rejection; not live backend evidence"
+}

@@ -11,6 +11,8 @@ This branch is for local development and mock frontend review. It creates no hos
 
 The Node commands below are identical in Windows PowerShell and macOS Terminal. No Bash activation, global Supabase installation, Supabase login, hosted project linking, production key, or OpenAI key is needed.
 
+The isolated reconciliation is on local branch `integration/review-baseline`; it is not a production release. See `docs/integration-baseline.md` for exact inputs and validation.
+
 The current published local-development branch is `fix/practice-lab-contrast` (PR #27). It includes the setup foundation from PR #26 and the accepted Labs/Tutor light-theme and startup fixes. `chore/local-dev-safety` stops before those fixes.
 
 ## Install and run
@@ -78,7 +80,7 @@ Studio, Storage, Realtime, and analytics are disabled to keep the test stack sma
 
 The integration suite requires a running backend. It fails visibly if the backend is absent; `npm test` is the Cloud fallback. Run the integration suite only against disposable local data. The integration suite creates uniquely named synthetic Auth accounts for each run and deletes those accounts and their dependent practice/progress rows afterward. SQL suites roll back their fixtures. A reset provides an additional clean rebuild check; it is an explicit destructive command, not part of the normal test command.
 
-One standard local backend uses fixed ports and the project ID `chemwaypoint-local`. Do not run two copies simultaneously. Stop the first before starting another worktree. Windows and Mac have independent local data; migrations and fixtures travel through Git, not database synchronization. Two browser profiles against one instance exercise concurrent-device behavior. Use separate profiles for different synthetic accounts when testing the current main baseline: the account-cache isolation improvements in stacked PR #24 are intentionally not merged here. Test that PR separately on this safety foundation.
+One standard local backend uses fixed ports and the project ID `chemwaypoint-local`. Do not run two copies simultaneously. Stop the first before starting another worktree. Windows and Mac have independent local data; migrations and fixtures travel through Git, not database synchronization. Two browser profiles against one instance exercise concurrent-device behavior. This integration baseline includes PR #24 account-cache isolation. Verify sign-out and account switching in one browser as well as independent profiles.
 
 ## Production safety
 
@@ -189,6 +191,7 @@ Real Chromium verification is separate from jsdom and from real Supabase integra
 ```text
 npx --no-install playwright install chromium
 npm run test:browser
+npm run test:accessibility
 ```
 
 On Linux, install the browser's system dependencies if needed using the documented Playwright installer (`npx --no-install playwright install --with-deps chromium`). This is a free local dependency install. CI does this on its standard Ubuntu runner. Browser downloads require access to the vendor download hosts; if a restricted Cloud environment blocks them, use the browser CI job or an already installed Chromium executable rather than bypassing network policy.
@@ -196,3 +199,5 @@ On Linux, install the browser's system dependencies if needed using the document
 The browser suite uses only mock data and blocks outbound requests. It checks real app boot, the account form, guest evidence merging into the first synthetic account, mock Tutor chat, five-question Companion practice, and production-fetch rejection. It saves desktop/mobile screenshots and a JSON report to ignored `.local/browser-evidence/`. CI uploads only those synthetic screenshots/report, with three-day retention. A durable local result is committed under `docs/local-development-evidence/`; those files contain no real account, password, token, or learner data.
 
 Codex Cloud with an existing Chromium installation can set `CHROMIUM_EXECUTABLE_PATH` for the browser command. In PowerShell use `$env:CHROMIUM_EXECUTABLE_PATH = 'path-to-chromium.exe'`; in macOS/Linux use `CHROMIUM_EXECUTABLE_PATH=/path/to/chromium npm run test:browser`. Leave it unset to use Playwright's installed browser.
+
+The accessibility suite uses the guarded mock server and pinned axe-core. It covers keyboard navigation, all 19 Learn modules, account switching with delayed responses, resource readability, and Companion failure/retry behavior. Set `CHROMIUM_EXECUTABLE` to use an existing browser for that suite (`CHROMIUM_EXECUTABLE_PATH` remains the variable for `test:browser`).

@@ -21,6 +21,13 @@
   let cloudInitStarted = false;
   let renderQueued = false;
   let lessonPrompt = '';
+  let tutorAvailability = 'unverified';
+  let tutorEpoch = 0;
+  const currentTutor=(epoch=tutorEpoch,userId=tutorSession?.user?.id)=>epoch===tutorEpoch&&userId===tutorSession?.user?.id&&(!window.ChemAtlasLearnerState||window.ChemAtlasLearnerState.owner===(userId?'account:'+userId:'guest'));
+  window.addEventListener('chematlas:learner-state-changed',()=>{
+    tutorEpoch++;pendingThreadId=null;pendingText='';lessonPrompt='';tutorAvailability='unverified';
+    document.getElementById('caTutorView')?.replaceChildren();queueRender();
+  });
 
   function applyLessonPrompt() {
     const input = document.querySelector('#caTutorV2 #caTutorInput');
@@ -244,22 +251,24 @@
   }
 
   function renderTutorV2() {
+    if(!currentTutor())return;
     const root = document.getElementById('caTutorView'); if (!root) return;
     const threads = readThreads();
     let thread = activeThread(threads); if (!thread && threads.length) thread = threads[0];
     if (thread && localStorage.getItem(ACTIVE_KEY) !== thread.id) localStorage.setItem(ACTIVE_KEY, thread.id);
     const activeId = thread?.id || ''; const messages = thread?.messages || []; const snapshot = learnerSnapshot();
     const cloudLabel = tutorSession ? 'Cloud history' : 'Local history';
-    root.innerHTML = `<div id="caTutorV2" class="ca-tutor-v2"><aside class="ca-thread-rail panel"><div class="ca-thread-head"><div><p class="eyebrow">CONVERSATIONS</p><h3>AI Tutor history</h3></div><button class="ca-new-thread" data-tutor-new title="New conversation">＋</button></div><button class="ca-new-chat" data-tutor-new><span>✦</span> New chemistry chat</button><div class="ca-thread-list">${threadListHtml(threads, activeId)}</div><div class="ca-thread-sync"><i class="${tutorSession ? 'online' : ''}"></i><span><strong>${cloudLabel}</strong><small>${tutorSession ? 'synced with your profile' : 'sign in to sync across devices'}</small></span></div></aside>
-      <section class="ca-tutor-main ca-tutor-main-v2"><div class="ca-page-head ca-tutor-head-v2"><div><p class="eyebrow">COURSE-GROUNDED AI • CONTEXT-AWARE</p><h2>${esc(thread?.title || 'Ask ChemWaypoint')}</h2><p>Follow-up questions remember this conversation. Equations render as mathematics, and every answer shows which ChemWaypoint or web context it used.</p></div><span class="ca-ai-status ready"><i></i> Tutor live</span></div><div class="ca-chat panel ca-chat-v2" id="caChat">${messages.length ? messages.map(renderMessage).join('') : `<div class="ca-tutor-empty"><span>✦</span><h3>Start with a concept, not a magic answer.</h3><p>Ask for an explanation, a worked problem, a comparison, or help finding the gap in your reasoning.</p><div><button data-tutor-v2-prompt="Why does molecular geometry affect polarity?">Geometry → polarity</button><button data-tutor-v2-prompt="Walk me through a limiting-reagent problem without skipping units.">Stoichiometry</button><button data-tutor-v2-prompt="How do acid-base concepts from Gen Chem show up in organic chemistry?">Bridge to Organic</button></div></div>`}${pendingThreadId === activeId ? `<div class="ca-message assistant ca-thinking"><span>C</span><div class="ca-message-body"><div class="ca-message-copy">${esc(pendingText || 'Thinking through the chemistry…')}</div></div></div>` : ''}</div><form class="ca-tutor-form ca-tutor-form-v2" id="caTutorForm"><textarea id="caTutorInput" rows="3" placeholder="Ask a chemistry question or follow up on this conversation…"></textarea><div><label><input id="caTutorWeb" type="checkbox" checked> Allow web context when useful</label><button class="primary-button" type="submit" ${pendingThreadId ? 'disabled' : ''}>${pendingThreadId ? 'Thinking…' : 'Ask Tutor ✦'}</button></div></form></section>
-      <aside class="ca-tutor-side ca-tutor-side-v2">${learnerPanelHtml(snapshot)}<article class="panel"><p class="eyebrow">HOW IT ANSWERS</p><ol><li>Retrieves relevant ChemWaypoint modules.</li><li>Uses this thread’s recent turns.</li><li>Shows governing chemistry and units.</li><li>Renders equations and chemical notation.</li><li>Surfaces the context and sources used.</li></ol></article><article class="panel ca-tutor-guardrail"><p class="eyebrow">LEARNING GUARDRAIL</p><p>The Tutor is assistive. Safety-critical lab decisions and externally sourced claims should still be checked against authoritative course or laboratory sources.</p></article></aside></div>`;
+    root.innerHTML = `<div id="caTutorV2" class="ca-tutor-v2"><details class="ca-thread-rail panel" ${window.matchMedia?.('(min-width:1101px)').matches?'open':''}><summary>Conversation history</summary><div class="ca-thread-head"><div><p class="eyebrow">CONVERSATIONS</p><h2>AI Tutor history</h2></div><button class="ca-new-thread" data-tutor-new title="New conversation">＋</button></div><button class="ca-new-chat" data-tutor-new><span>✦</span> New chemistry chat</button><div class="ca-thread-list">${threadListHtml(threads, activeId)}</div><div class="ca-thread-sync"><i class="${tutorSession ? 'online' : ''}"></i><span><strong>${cloudLabel}</strong><small>${tutorSession ? 'synced with your profile' : 'sign in to sync across devices'}</small></span></div></details>
+      <section class="ca-tutor-main ca-tutor-main-v2"><div class="ca-page-head ca-tutor-head-v2"><div><p class="eyebrow">COURSE-GROUNDED AI • CONTEXT-AWARE</p><h2>${esc(thread?.title || 'Ask ChemWaypoint')}</h2><p>Follow-up questions remember this conversation. Equations render as mathematics, and every answer shows which ChemWaypoint or web context it used.</p></div><span class="ca-ai-status" role="status">${pendingThreadId?'Sending question…':tutorAvailability==='connected'?'Connected on last request':tutorAvailability==='unavailable'?'Connection unavailable':'Connection checked on send'}</span></div><div class="ca-chat panel ca-chat-v2" id="caChat">${messages.length ? messages.map(renderMessage).join('') : `<div class="ca-tutor-empty"><span>✦</span><h3>Start with a concept, not a magic answer.</h3><p>Ask for an explanation, a worked problem, a comparison, or help finding the gap in your reasoning.</p><div><button data-tutor-v2-prompt="Why does molecular geometry affect polarity?">Geometry → polarity</button><button data-tutor-v2-prompt="Walk me through a limiting-reagent problem without skipping units.">Stoichiometry</button><button data-tutor-v2-prompt="How do acid-base concepts from Gen Chem show up in organic chemistry?">Bridge to Organic</button></div></div>`}${pendingThreadId === activeId ? `<div class="ca-message assistant ca-thinking"><span>C</span><div class="ca-message-body"><div class="ca-message-copy">${esc(pendingText || 'Thinking through the chemistry…')}</div></div></div>` : ''}</div><form class="ca-tutor-form ca-tutor-form-v2" id="caTutorForm"><label for="caTutorInput">Your chemistry question</label><textarea id="caTutorInput" rows="3" placeholder="Ask a chemistry question or follow up on this conversation…"></textarea><div><label><input id="caTutorWeb" type="checkbox" checked> Allow web context when useful</label><button class="primary-button" type="submit" ${pendingThreadId ? 'disabled' : ''}>${pendingThreadId ? 'Thinking…' : 'Ask Tutor ✦'}</button></div></form></section>
+      <details class="ca-tutor-side ca-tutor-side-v2"><summary>Context & guidance</summary>${learnerPanelHtml(snapshot)}<article class="panel"><p class="eyebrow">HOW IT ANSWERS</p><ol><li>Retrieves relevant ChemWaypoint modules.</li><li>Uses this thread’s recent turns.</li><li>Shows governing chemistry and units.</li><li>Renders equations and chemical notation.</li><li>Surfaces the context and sources used.</li></ol></article><article class="panel ca-tutor-guardrail"><p class="eyebrow">LEARNING GUARDRAIL</p><p>The Tutor is assistive. Safety-critical lab decisions and externally sourced claims should still be checked against authoritative course or laboratory sources.</p></article></details></div>`;
     applyLessonPrompt();
     requestAnimationFrame(() => { const chat = document.getElementById('caChat'); if (chat) chat.scrollTop = chat.scrollHeight; renderMath(root); });
   }
 
   async function askTutorV2(form) {
     const input = form.querySelector('#caTutorInput'); const question = input?.value.trim();
-    if (!question || pendingThreadId) return;
+    if (!question || pendingThreadId || !currentTutor()) return;
+    const epoch=tutorEpoch,userId=tutorSession?.user?.id;
     let threads = readThreads(); let thread = activeThread(threads);
     if (!thread) { thread = { id: uuid(), title: compactText(question), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), messages: [] }; threads.unshift(thread); localStorage.setItem(ACTIVE_KEY, thread.id); }
     const priorConversation = thread.messages.slice(-10).map(message => ({ role: message.role, content: message.text }));
@@ -270,18 +279,21 @@
     thread.updatedAt = userMessage.at;
     threads = saveThreads(threads.map(item => item.id === thread.id ? thread : item));
     pendingThreadId = thread.id; pendingText = 'Retrieving course context and working through the chemistry…';
-    renderTutorV2(); syncThreadToCloud(thread).catch(() => {});
+    renderTutorV2(); syncThreadToCloud(thread,epoch).catch(() => {});
     try {
       const response = await fetch(cfg.tutorEndpoint || '/api/tutor', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, context: contextPack.context, includeWeb: Boolean(form.querySelector('#caTutorWeb')?.checked), conversation: priorConversation, learner }) });
-      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'Tutor request failed');
+      const data = await response.json(); if(!currentTutor(epoch,userId))return; if (!response.ok) throw new Error(data.error || 'Tutor request failed');
+      tutorAvailability = 'connected';
       const assistantMessage = { id: uuid(), threadId: thread.id, role: 'assistant', text: data.answer || 'No response returned.', at: new Date().toISOString(), model: data.model || '', usedWeb: Boolean(data.usedWeb), courseSources: contextPack.sources, webSources: data.webSources || [], citations: data.citations || [], learner, responseId: data.responseId || null };
       thread.messages.push(assistantMessage); thread.updatedAt = assistantMessage.at;
-      saveThreads(readThreads().map(item => item.id === thread.id ? thread : item)); await syncThreadToCloud(thread);
+      saveThreads(readThreads().map(item => item.id === thread.id ? thread : item)); await syncThreadToCloud(thread,epoch);
     } catch (error) {
+      if(!currentTutor(epoch,userId))return;
+      tutorAvailability = 'unavailable';
       const assistantMessage = { id: uuid(), threadId: thread.id, role: 'assistant', text: `Tutor connection note: ${error?.message || 'The request failed.'}`, at: new Date().toISOString(), courseSources: contextPack.sources, learner };
       thread.messages.push(assistantMessage); thread.updatedAt = assistantMessage.at;
-      saveThreads(readThreads().map(item => item.id === thread.id ? thread : item)); await syncThreadToCloud(thread).catch(() => {});
-    } finally { pendingThreadId = null; pendingText = ''; renderTutorV2(); }
+      saveThreads(readThreads().map(item => item.id === thread.id ? thread : item)); await syncThreadToCloud(thread,epoch).catch(() => {});
+    } finally { if(currentTutor(epoch,userId)){pendingThreadId = null; pendingText = ''; renderTutorV2();} }
   }
 
   function addStylesheet(href) { if (document.querySelector(`link[href="${href}"]`)) return; const link = document.createElement('link'); link.rel = 'stylesheet'; link.href = href; document.head.appendChild(link); }
@@ -308,28 +320,30 @@
     cloudInitStarted = true;
     try {
       tutorCloud = await window.ChemAtlasCloud();
-      const { data } = await tutorCloud.auth.getSession(); tutorSession = data.session;
-      tutorCloud.auth.onAuthStateChange((_event, nextSession) => { tutorSession = nextSession; if (nextSession) mergeCloudThreads().catch(error => console.warn('ChemWaypoint tutor cloud merge:', error.message)); renderTutorV2(); });
+      tutorCloud.auth.onAuthStateChange((_event, nextSession) => { if(tutorSession?.user?.id!==nextSession?.user?.id)tutorEpoch++;tutorSession = nextSession; if (nextSession) mergeCloudThreads().catch(error => console.warn('ChemWaypoint tutor cloud merge:', error.message)); renderTutorV2(); });
+      const epoch=tutorEpoch;const { data } = await tutorCloud.auth.getSession(); if(epoch===tutorEpoch)tutorSession = data.session;
       if (tutorSession) await mergeCloudThreads(); renderTutorV2();
     } catch (error) { console.warn('ChemWaypoint tutor cloud:', error.message); }
   }
 
-  async function syncThreadToCloud(thread) {
-    if (!tutorCloud || !tutorSession || !thread) return;
+  async function syncThreadToCloud(thread,epoch=tutorEpoch) {
+    if (!tutorCloud || !tutorSession || !thread || !currentTutor(epoch)) return;
     const userId = tutorSession.user.id;
     const threadRow = { id: thread.id, user_id: userId, title: thread.title, course_context: goalLabel(), created_at: thread.createdAt, updated_at: thread.updatedAt };
-    const { error: threadError } = await tutorCloud.from('tutor_threads').upsert(threadRow, { onConflict: 'id' }); if (threadError) throw threadError;
+    const { error: threadError } = await tutorCloud.from('tutor_threads').upsert(threadRow, { onConflict: 'id' }); if(!currentTutor(epoch,userId))return;if (threadError) throw threadError;
     const rows = thread.messages.map(message => ({ id: message.id, thread_id: thread.id, user_id: userId, role: message.role, content: message.text, model_name: message.model || null, used_web: Boolean(message.usedWeb), created_at: message.at, metadata: { courseSources: message.courseSources || [], webSources: message.webSources || [], citations: message.citations || [], learner: message.learner || null, responseId: message.responseId || null } }));
     if (rows.length) { const { error: messageError } = await tutorCloud.from('tutor_messages').upsert(rows, { onConflict: 'id' }); if (messageError) throw messageError; }
   }
 
   async function mergeCloudThreads() {
-    if (!tutorCloud || !tutorSession) return;
+    if (!tutorCloud || !tutorSession || !currentTutor()) return;
+    const epoch=tutorEpoch;
     const userId = tutorSession.user.id;
     const { data: remoteThreads, error: threadError } = await tutorCloud.from('tutor_threads').select('id,title,course_context,created_at,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }).limit(MAX_THREADS);
-    if (threadError) throw threadError;
+    if(!currentTutor(epoch,userId))return;if (threadError) throw threadError;
     const threadIds = (remoteThreads || []).map(row => row.id); let remoteMessages = [];
     if (threadIds.length) { const { data, error } = await tutorCloud.from('tutor_messages').select('id,thread_id,role,content,model_name,used_web,created_at,metadata').eq('user_id', userId).in('thread_id', threadIds).order('created_at', { ascending: true }); if (error) throw error; remoteMessages = data || []; }
+    if(!currentTutor(epoch,userId))return;
     const localThreads = readThreads(); const map = new Map(localThreads.map(thread => [thread.id, thread]));
     for (const row of remoteThreads || []) {
       const remoteThread = normalizeThread({ id: row.id, title: row.title, createdAt: row.created_at, updatedAt: row.updated_at, messages: remoteMessages.filter(message => message.thread_id === row.id) });
@@ -342,7 +356,7 @@
       }
     }
     const merged = saveThreads([...map.values()]); if (!localStorage.getItem(ACTIVE_KEY) && merged[0]) localStorage.setItem(ACTIVE_KEY, merged[0].id);
-    for (const thread of merged) await syncThreadToCloud(thread);
+    for (const thread of merged) await syncThreadToCloud(thread,epoch);
     renderTutorV2();
   }
 

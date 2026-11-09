@@ -17,7 +17,11 @@
     if(!box){box=document.createElement('div');box.dataset.taskViewSwitch='';box.className='ca-task-view';}
     const target=document.querySelector('[data-task-view-slot]')||document.querySelector('.sidebar')||document.querySelector('.admin-top');
     if(target&&box.parentElement!==target)target.appendChild(box);
-    box.innerHTML=`<label for="caTaskView">TASK VIEW</label><select id="caTaskView" aria-label="Task view" ${!ready?'disabled':''}>${isAdmin()?'<option value="admin">Admin</option>':''}<option value="learner">${user?'Learner':'Guest preview'}</option></select><small>${!ready?'Checking your account…':isAdmin()?'One site, views for different tasks.':user?'Full course · personal progress':'2 lesson previews · create an account for the full course'}</small>${!user&&ready&&location.pathname!=='/admin'?'<button type="button" data-account-open>Create account / sign in</button>':''}`;
+    box.innerHTML=`<details class="ca-account-options"><summary>Account & task view</summary><label for="caTaskView">TASK VIEW</label><select id="caTaskView" aria-label="Task view" ${!ready?'disabled':''}>${isAdmin()?'<option value="admin">Admin</option>':''}<option value="learner">${user?'Learner':'Guest preview'}</option></select><small>${!ready?'Checking your account…':isAdmin()?'One site, views for different tasks.':user?'General Chemistry lessons · personal progress':'2 lesson previews · sign in for all General Chemistry lessons'}</small>${!user&&ready&&location.pathname!=='/admin'?'<button type="button" data-account-open>Create account / sign in</button>':''}</details>`;
+    if(location.pathname.startsWith('/admin')){
+      const details=box.querySelector('.ca-account-options');
+      details.replaceWith(...details.childNodes);
+    }
     const select=box.querySelector('select');select.value=location.pathname==='/admin'&&isAdmin()?'admin':'learner';select.onchange=()=>choose(select.value);
   }
   function setAccount(session, allowedRights=[], allowDefault=false) {
@@ -29,7 +33,7 @@
   }
   function gate(module) {
     if(!ready)return '<section class="panel ca-focus-shell ca-guest-gate"><p role="status">Checking access to this lesson…</p></section>';
-    return `<section class="panel ca-focus-shell ca-guest-gate"><p class="eyebrow">GUEST PREVIEW</p><h2>Keep building your chemistry foundation.</h2><p>Create a free account to open the full Learn sequence, save your progress, and return for spaced reviews.</p><p>Your guest preview includes Measurement and Atoms & the Mole. Your work on this browser stays here when you sign in.</p><button class="primary-button" data-account-open>Create account / sign in</button><a href="/genchem/measurement">Explore the first lesson →</a></section>`;
+    return `<section class="panel ca-focus-shell ca-guest-gate"><p class="eyebrow">GUEST PREVIEW</p><h2>Keep building your chemistry foundation.</h2><p>Create a free account to open the General Chemistry lesson sequence, save your progress, and return for spaced reviews.</p><p>Your guest preview includes Measurement and Atoms & the Mole. Your work on this browser stays here when you sign in.</p><button class="primary-button" data-account-open>Create account / sign in</button><a href="/genchem/measurement">Explore the first lesson →</a></section>`;
   }
   function describe() {
     return `<section class="editor-card"><h2>Task views</h2><p>Shared content, different working contexts. The Admin view is the administration workspace for accounts with editing rights. Learner and Guest use the same published chemistry content.</p><div class="ca-view-categories"><article><h3>Admin</h3><p>Menus, dashboards, learning content, and users & groups, according to assigned rights.</p><strong>Your administration workspace</strong></article><article><h3>Learner</h3><p>Published lessons, concept checks, spaced reviews, AI Tutor, Practice Lab, Organic Studio, and Model Lab.</p><a href="/dashboard" data-learner-view>Open Learner view →</a></article><article><h3>Guest preview</h3><p>First two Learn modules and reference tools. Remaining Learn modules prompt account creation. Preview progress remains local until sign-in.</p><small>These are presentation categories; admin editing remains protected by database permissions.</small></article></div></section>`;

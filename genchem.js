@@ -25,7 +25,7 @@
 
   function saveProgress() {
     try {
-      localStorage.setItem(storageKey, JSON.stringify([...completed]));
+      // Navigation saves reading position only. Completion belongs to assessment evidence.
       localStorage.setItem('chematlas-genchem-semester', String(semester));
       localStorage.setItem('chematlas-genchem-current', currentId);
     } catch (_) {}
@@ -78,14 +78,15 @@
         </aside>
       </section>
 
-      <div class="gc-semester-tabs" role="tablist" aria-label="General chemistry semester">
-        ${course.semesters.map(s => `<button class="gc-semester-tab ${semester===s.number?'active':''}" data-semester="${s.number}">
+      <div class="gc-semester-tabs" role="group" aria-label="General chemistry semester">
+        ${course.semesters.map(s => `<button type="button" class="gc-semester-tab ${semester===s.number?'active':''}" data-semester="${s.number}" aria-pressed="${semester===s.number}">
           <span>SEMESTER ${s.number}</span><strong>${esc(s.title)}</strong><small>${esc(s.focus)}</small>
         </button>`).join('')}
       </div>
 
       <section class="gc-workspace">
-        <aside class="gc-syllabus panel">
+        <details class="gc-syllabus panel" ${window.matchMedia?.('(min-width:901px)').matches?'open':''}>
+          <summary class="gc-syllabus-toggle">Course contents</summary>
           <div class="gc-syllabus-head">
             <div><p class="eyebrow">COURSE MAP</p><h3>${semester === 1 ? 'General Chemistry I' : 'General Chemistry II'}</h3></div>
             <span class="gc-count">${modulesForSemester(semester).length} modules</span>
@@ -94,11 +95,11 @@
           <nav class="gc-module-nav" aria-label="General chemistry modules">
             ${moduleNavHtml()}
           </nav>
-        </aside>
+        </details>
 
-        <main class="gc-reader" id="gcReader">
+        <section class="gc-reader" id="gcReader" aria-label="Current lesson">
           ${moduleHtml(active)}
-        </main>
+        </section>
       </section>
     `;
 
@@ -110,7 +111,7 @@
     const mods = modulesForSemester(semester).filter(m => !q || [m.title,m.subtitle,...m.outcomes,...m.vocabulary].join(' ').toLowerCase().includes(q));
     if (!mods.length) return '<p class="gc-empty">No modules match that search.</p>';
     return mods.map(m => `
-      <button class="gc-module-link ${m.id===currentId?'active':''} ${completed.has(m.id)?'complete':''}" data-module="${m.id}">
+      <button type="button" class="gc-module-link ${m.id===currentId?'active':''} ${completed.has(m.id)?'complete':''}" data-module="${m.id}" ${m.id===currentId?'aria-current="page"':''}>
         <span class="gc-module-number">${completed.has(m.id)?'✓':String(m.number).padStart(2,'0')}</span>
         <span><strong>${esc(m.title)}</strong><small>${esc(m.subtitle)}</small></span>
       </button>`).join('');
@@ -188,6 +189,7 @@
       query = '';
       saveProgress();
       render();
+      root.querySelector(`[data-semester="${semester}"]`)?.focus();
     }));
 
     root.querySelectorAll('[data-module]').forEach(btn => btn.addEventListener('click', () => selectModule(btn.dataset.module)));
@@ -214,7 +216,12 @@
     query = '';
     saveProgress();
     render();
-    requestAnimationFrame(() => byId('gcReader')?.scrollIntoView({ behavior:'smooth', block:'start' }));
+    requestAnimationFrame(() => {
+      const heading = byId('gcReader')?.querySelector('h2');
+      heading?.setAttribute('tabindex', '-1');
+      heading?.focus({preventScroll:true});
+      byId('gcReader')?.scrollIntoView({ behavior:'smooth', block:'start' });
+    });
   }
 
   function bindModuleInteractions() {
@@ -284,6 +291,13 @@
   }
 
   window.addEventListener('chematlas:view-changed', () => { if(root.querySelector('.ca-guest-gate') || !window.ChemAtlasViews.canLesson(currentModule()))render(); });
+  window.addEventListener('chematlas:learner-state-changed',()=>{
+    completed=new Set(JSON.parse(localStorage.getItem(storageKey)||'[]'));
+    semester=Number(localStorage.getItem('chematlas-genchem-semester')||1);
+    if(![1,2].includes(semester))semester=1;
+    currentId=localStorage.getItem('chematlas-genchem-current')||modulesForSemester(semester)[0].id;
+    query='';render();updateHomeProgress();updateCourseCards();
+  });
   window.addEventListener('chematlas:lesson-completed', () => { completed = new Set(JSON.parse(localStorage.getItem(storageKey)||'[]')); updateHomeProgress(); updateCourseCards(); const status=root.querySelector('.gc-status'); if(status&&completed.has(currentId)){status.classList.add('complete');status.textContent='✓ Lesson completed';} });
   window.addEventListener('chematlas:progress-synced', () => { completed = new Set(JSON.parse(localStorage.getItem(storageKey)||'[]')); updateHomeProgress(); updateCourseCards(); const status=root.querySelector('.gc-status'); if(status&&completed.has(currentId)){status.classList.add('complete');status.textContent='✓ Lesson completed';} });
 

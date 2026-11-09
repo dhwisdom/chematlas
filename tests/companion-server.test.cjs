@@ -6,3 +6,14 @@ test('progress queries bind to the authenticated user and ignore supplied accoun
 test('practice uses canonical checks and never returns answer keys',async()=>{const s=setup(),r=await s.request('create_practice_set',{module_id:'measurement'}),d=await r.json();assert.equal(r.status,200);assert.equal(d.questions.length,5);assert(d.questions.every(q=>!('answer' in q)&&!('explanation' in q)));const write=s.calls.find(c=>c.opt.method==='POST');const row=JSON.parse(write.opt.body);assert.equal(row.user_id,'account-a');assert(row.questions.every(q=>Number.isInteger(q.answer)));});
 test('a practice session belonging to another user is not submitted',async()=>{const s=setup(),r=await s.request('submit_practice_set',{session_id:'00000000-0000-4000-8000-000000000000',choices:[0,1,0]});assert.equal(r.status,404);assert(!s.calls.some(c=>c.url.includes('/rpc/')));assert(s.calls.some(c=>c.url.includes('user_id=eq.account-a')));});
 test('allowed site preflights succeed without a learner token',async()=>{const s=setup();const r=await s.handler(new Request('https://db.test/functions/v1/companion',{method:'OPTIONS',headers:{origin:'http://127.0.0.1:3000'}}));assert.equal(r.status,204);assert.equal(r.headers.get('Access-Control-Allow-Origin'),'http://127.0.0.1:3000');assert.equal(s.calls.length,0);});
+test('review-preview preflight is denied without CORS reflection or downstream auth/data requests',async()=>{
+ const s=setup();
+ for(const origin of ['https://chematlas-qwhf9cquo-thetruedaltino-3388.vercel.app','https://another.vercel.app','https://www.chemwaypoint.com.evil.test']){
+  const r=await s.handler(new Request('https://db.test/functions/v1/companion',{method:'OPTIONS',headers:{origin,'Access-Control-Request-Method':'POST','Access-Control-Request-Headers':'authorization,apikey,content-type'}}));
+  assert.equal(r.status,403);assert.equal(r.headers.get('Access-Control-Allow-Origin'),null);
+ }
+ assert.equal(s.calls.length,0);
+});
+test('allowed-origin auth errors retain exact CORS headers so clients can distinguish an expired session',async()=>{
+ const s=setup(),r=await s.request('create_practice_set',{},'Bearer expired');assert.equal(r.status,401);assert.equal(r.headers.get('Access-Control-Allow-Origin'),'http://127.0.0.1:3000');assert.equal(r.headers.get('Vary'),'Origin');
+});

@@ -17,10 +17,12 @@
     "test": "node scripts/test.cjs",
     "test:integration": "node scripts/integration.cjs",
     "build:companion": "node scripts/build-companion-bridge.cjs",
-    "test:browser": "node --require ./tests/offline.cjs tests/browser/mock.cjs"
+    "test:browser": "node --require ./tests/offline.cjs tests/browser/mock.cjs",
+    "test:accessibility": "node --require ./tests/offline.cjs --test tests/browser-accessibility.cjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.2",
+    "axe-core": "4.14.0",
     "jsdom": "26.1.0",
     "pg": "8.23.1",
     "playwright": "1.65.0",

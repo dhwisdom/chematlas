@@ -43,11 +43,18 @@
     root.innerHTML = data.courses.map(c => `
       <article class="course-card ${c.id === 'genchem1' ? 'featured' : ''}">
         <span class="course-code">${c.code}</span><h3>${c.name}</h3><p>${c.description}</p>
-        <div class="module-list">${c.modules.slice(0,7).map(m => `<span>${m.title}</span>`).join('')}</div>
-        <div class="course-actions"><small>${c.modules.length} modules • ${c.completion}% complete</small>${c.id === 'genchem1' ? '<button class="text-button open-lab">Open VSEPR lab →</button>' : c.id === 'organic1' ? '<button class="text-button open-organic">Open Organic Studio →</button>' : '<span class="pill">Scaffolded</span>'}</div>
+        <p class="course-availability">${c.id.startsWith('genchem')?'Lessons available':c.id==='organic1'?'4 interactive tools available':'Course outline only · lessons not yet available'}</p>
+        <details class="course-modules"><summary>${c.id.startsWith('genchem')?'View course modules':'View planned topics'}</summary><div class="module-list">${c.modules.map(m => `<span>${m.title}</span>`).join('')}</div></details>
+        <div class="course-actions"><small>${c.id.startsWith('genchem')?c.modules.length+' modules':'Planned course topics'}</small>${c.id === 'genchem1' ? '<button class="text-button open-lab">Open VSEPR lab →</button>' : c.id === 'organic1' ? '<button class="text-button open-organic">Open Organic Studio →</button>' : c.id.startsWith('genchem')?'':'<span class="pill">Not yet available</span>'}</div>
       </article>`).join('');
-    root.querySelector('.open-lab')?.addEventListener('click', () => showView('lab'));
-    root.querySelector('.open-organic')?.addEventListener('click', () => showView('organic'));
+    const openCourseTool=name=>{
+      // Use the existing navigation adapter so the URL and active view agree.
+      document.querySelector(`.nav-item[data-view="${name}"]`)?.click();
+      const heading=document.querySelector('.view.active-view h2');
+      heading?.setAttribute('tabindex','-1');heading?.focus({preventScroll:true});
+    };
+    root.querySelector('.open-lab')?.addEventListener('click', () => openCourseTool('lab'));
+    root.querySelector('.open-organic')?.addEventListener('click', () => openCourseTool('organic'));
   }
 
   function parseXYZ(xyz) {
@@ -79,10 +86,10 @@
     return { ...p, x:x1, y:y2, z:z2 };
   }
 
-  function project(p, w, h) {
+  function project(p, w, h, scale) {
     const camera=7.5;
     const perspective=camera/(camera-p.z);
-    const base=Math.min(w,h)*0.17*zoom;
+    const base=scale*zoom;
     return { ...p, sx:w/2+p.x*base*perspective, sy:h/2-p.y*base*perspective, perspective };
   }
 
@@ -118,7 +125,12 @@
     halo.addColorStop(0,'rgba(98,230,207,.035)'); halo.addColorStop(1,'rgba(98,230,207,0)');
     ctx.fillStyle=halo; ctx.fillRect(0,0,w,h);
 
-    const rotated=atoms.map(rotatePoint).map(a=>project(a,w,h));
+    const points=atoms.map(rotatePoint);
+    // Fit the projected molecule to the viewer, reserving room for atom radii.
+    // Coordinates, bond inference and scientific geometry remain unchanged.
+    const extent=axis=>Math.max(.1,...points.map(p=>Math.abs(p[axis]*7.5/(7.5-p.z))));
+    const scale=Math.min(w*.34/extent('x'),h*.34/extent('y'));
+    const rotated=points.map(a=>project(a,w,h,scale));
     bonds.slice().sort((A,B)=>((rotated[A[0]].z+rotated[A[1]].z)-(rotated[B[0]].z+rotated[B[1]].z))).forEach(([i,j])=>{
       const a=rotated[i], b=rotated[j];
       const z=(a.z+b.z)/2;
@@ -182,8 +194,9 @@
       if (answered < quiz.length) { result.className='quiz-result bad'; result.textContent='Answer all three questions first.'; return; }
       const score = quiz.reduce((s, q, i) => s + (quizState[i] === q.answer ? 1 : 0), 0);
       result.className = 'quiz-result ' + (score === quiz.length ? 'good' : 'bad');
-      result.textContent = score === quiz.length ? '3/3 — Mastered. You are ready to connect geometry to polarity and reactivity.' : `${score}/3 — Review the 3D models, then try again.`;
+      result.textContent = score === quiz.length ? '3/3 — Correct. You are ready to connect geometry to polarity and reactivity.' : `${score}/3 — Review the 3D models, then try again.`;
       try { localStorage.setItem('chematlas-vsepr-score', String(score)); } catch (_) {}
+      window.dispatchEvent(new CustomEvent('chematlas:practice-completed',{detail:{kind:'vsepr',score}}));
     });
   }
 
@@ -200,13 +213,58 @@
   document.getElementById('moleculeSelect').addEventListener('change', () => { yaw=-.55; pitch=.35; zoom=1; renderMolecule(); });
   document.querySelectorAll('.seg').forEach(b => b.addEventListener('click', () => {
     currentStyle = b.dataset.style;
-    document.querySelectorAll('.seg').forEach(x => x.classList.toggle('active', x === b));
+    document.querySelectorAll('.seg').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
     renderMolecule();
   }));
-  document.getElementById('mobileMenu').addEventListener('click', () => document.querySelector('.sidebar').classList.toggle('open'));
+  document.querySelectorAll('.seg').forEach(b=>b.setAttribute('aria-pressed',String(b.classList.contains('active'))));
+  document.querySelectorAll('[data-model-control]').forEach(button=>button.addEventListener('click',()=>{
+    const action=button.dataset.modelControl;
+    if(action==='left')yaw-=.25;
+    if(action==='right')yaw+=.25;
+    if(action==='up')pitch=Math.min(1.45,pitch+.2);
+    if(action==='down')pitch=Math.max(-1.45,pitch-.2);
+    if(action==='in')zoom=Math.min(2.2,zoom*1.15);
+    if(action==='out')zoom=Math.max(.55,zoom/1.15);
+    if(action==='reset'){yaw=-.55;pitch=.35;zoom=1;}
+    document.getElementById('modelViewStatus').textContent=action==='reset'?'Default view':`${button.textContent.trim()} · ${Math.round(zoom*100)}%`;
+    renderCanvas();
+  }));
+  const menu = document.getElementById('mobileMenu');
+  const sidebar = document.querySelector('.sidebar');
+  const mobile = matchMedia('(max-width:820px)');
+  function syncNavigation() {
+    const open = mobile.matches && sidebar.classList.contains('open');
+    menu.setAttribute('aria-expanded', String(open));
+    // Inert also excludes controls injected into the sidebar after startup.
+    sidebar.inert = mobile.matches && !open;
+    if (sidebar.inert && sidebar.contains(document.activeElement)) menu.focus();
+  }
+  menu.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    syncNavigation();
+    if (mobile.matches && sidebar.classList.contains('open')) {
+      [...sidebar.querySelectorAll('button,a[href],select,input')]
+        .find(el => !el.disabled && el.checkVisibility())?.focus();
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !mobile.matches || !sidebar.classList.contains('open')) return;
+    event.preventDefault();
+    sidebar.classList.remove('open');
+    syncNavigation();
+    menu.focus();
+  });
+  // Existing route handlers close the drawer by removing its open class.
+  new MutationObserver(syncNavigation).observe(sidebar, {attributes:true, attributeFilter:['class']});
+  mobile.addEventListener('change', () => {
+    sidebar.classList.remove('open');
+    syncNavigation();
+  });
+  syncNavigation();
 
   renderDegreeMap();
   renderCourseCards();
   renderQuiz();
+  window.addEventListener('chematlas:learner-state-changed',()=>{quizState.fill(null);renderQuiz();document.getElementById('quizResult').textContent='';});
   resizeCanvas();
 })();

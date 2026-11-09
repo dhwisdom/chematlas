@@ -1,0 +1,21 @@
+✔ Practice is modal, contains keyboard focus, preserves nested reference and restores opener (2528.055195ms)
+✔ mobile drawer exposes state, excludes hidden controls, dismisses and survives resizing (1122.541293ms)
+✔ module and assessment transitions keep focus and preserve first-answer evidence (1248.295527ms)
+✔ Learn uses one main, a selected semester group and valued progress indicators (729.68671ms)
+✔ model fits all scientific geometries and retains pointer, keyboard and display controls (2370.16563ms)
+✔ Tutor preserves course context, follow-up history and honest success/error status (2607.481243ms)
+✔ Practice engines retain representative chemistry results and accessible result states (5463.986596ms)
+✔ progress activity is neutral for a fresh guest and navigation creates no completion (925.936008ms)
+✔ real assessment completion projects one activity, survives resume/reload, and never rewrites legacy history (4136.755483ms)
+✔ account checkpoints and epoch guards isolate delayed read, write, RPC and Tutor responses (2007.926638ms)
+✔ explicit first guest sign-in can retain guest evidence without claiming it for a second account (1022.194513ms)
+✔ all 19 Learn modules keep optional jumps, keyboard Previous/Continue and section/review deep links (7493.227466ms)
+✔ Courses and Organic state truthful availability, route context and accessible tool results (2163.150083ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 34184.931635

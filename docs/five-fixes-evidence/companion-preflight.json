@@ -1,0 +1,29 @@
+{
+  "environment": "local browser against unchanged bundled handler; not live-service evidence",
+  "trace": [
+    {
+      "method": "OPTIONS",
+      "origin": "http://127.0.0.1:40189",
+      "status": 403,
+      "allowOrigin": null
+    },
+    {
+      "method": "OPTIONS",
+      "origin": "http://127.0.0.1:40189",
+      "status": 403,
+      "allowOrigin": null
+    }
+  ],
+  "failures": [
+    {
+      "url": "http://127.0.0.1:38661/functions/v1/chemwaypoint-site-companion",
+      "method": "POST",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "url": "http://127.0.0.1:38661/functions/v1/chemwaypoint-site-companion",
+      "method": "POST",
+      "error": "net::ERR_FAILED"
+    }
+  ]
+}

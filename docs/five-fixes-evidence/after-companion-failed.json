@@ -1,0 +1,4 @@
+{
+  "message": "Could not connect to your learning tools. Check your connection and try again.\n\nYour selected lesson is retained. Retry when you are ready.\n\nRetry practice",
+  "cause": "simulated network/CORS-style fetch rejection; not live backend evidence"
+}

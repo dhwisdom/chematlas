@@ -19,7 +19,26 @@
   const routeForView = { home:'/dashboard', curriculum:'/curriculum', courses:'/courses', lab:'/model-lab', organic:'/organic' };
   let cloud = null;
   let session = null;
-  let syncing = false;
+  let sessionEpoch = 0;
+  let syncingEpoch = null;
+  let pendingGuestClaim = false;
+  let syncStatus = 'pending';
+
+  function currentSession(epoch=sessionEpoch,userId=session?.user?.id){
+    return epoch===sessionEpoch && userId===session?.user?.id && (!window.ChemAtlasLearnerState || window.ChemAtlasLearnerState.owner===(userId?'account:'+userId:'guest'));
+  }
+  function adoptSession(next,claimGuest=false){
+    const changed=session?.user?.id!==next?.user?.id;
+    if(changed){sessionEpoch++;clearTimeout(syncTimer);syncStatus='pending';}
+    try{
+      const restored=window.ChemAtlasLearnerState?.transition(next?.user?.id,{claimGuest});
+      session=next;
+      if(changed||restored){
+        window.ChemAtlasViews?.setAccount(next,[]);
+        window.dispatchEvent(new CustomEvent('chematlas:learner-state-changed',{detail:{userId:next?.user?.id||null}}));
+      }
+    }catch(error){session=null;window.ChemAtlasViews?.setAccount(null);throw error;}
+  }
 
   const safeJson = (key, fallback) => {
     try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch (_) { return fallback; }
@@ -27,14 +46,13 @@
   const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   const words = (text) => new Set(String(text || '').toLowerCase().match(/[a-z0-9]+/g)?.filter(x => x.length > 2) || []);
 
-  function recordActivity(key, value) {
-    const labels = {
-      [LS.modules]:'General Chemistry lesson completed', [LS.tools]:'Foundation Practice Lab mastery',
-      [LS.vsepr]:'VSEPR mastery check', [LS.stereo]:'R/S stereochemistry practice', [LS.sn2]:'SN2 mechanism practice'
-    };
+  function recordPractice(detail) {
+    if(!currentSession())return;
+    const labels={tool:'Practice tool completed',vsepr:'VSEPR practice completed',stereo:'Stereochemistry practice completed',sn2:'SN2 practice completed'};
+    if(!labels[detail?.kind])return;
     const history = safeJson(LS.history, []);
-    history.unshift({ id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`, at:new Date().toISOString(), key, label:labels[key] || key, value });
-    nativeSetItem.call(localStorage, LS.history, JSON.stringify(history.slice(0, 120)));
+    history.unshift({id:crypto.randomUUID(),source:'practice',at:new Date().toISOString(),label:labels[detail.kind],key:detail.kind,value:String(detail.toolId??detail.score??'')});
+    nativeSetItem.call(localStorage, LS.history, JSON.stringify(history));
     if (session) queueCloudSync();
   }
 
@@ -42,9 +60,23 @@
   Storage.prototype.setItem = function(key, value) {
     const old = this === localStorage ? this.getItem(key) : null;
     nativeSetItem.call(this, key, value);
-    if (this === localStorage && key===LS.assessments && old!==String(value) && session) queueCloudSync();
-    if (this === localStorage && tracked.has(key) && old !== String(value)) recordActivity(key, String(value));
+    // Storage notifications schedule persistence only; they are never learning events.
+    if(this===localStorage && (tracked.has(key)||key===LS.assessments) && old!==String(value) && session && currentSession())queueCloudSync();
   };
+
+  function activityHistory(){return window.ChemAtlasActivity?.history(safeJson(LS.assessments,[]),safeJson(LS.history,[]))||safeJson(LS.history,[]);}
+  function renderStreak(){
+    const box=document.querySelector('.streak');if(!box)return;
+    const count=window.ChemAtlasActivity?.streak(safeJson(LS.assessments,[])).count||0;
+    const number=count?String(count):'',label=count?'day streak':'Start your streak';
+    box.dataset.empty=String(!count);box.querySelector('strong').hidden=!count;
+    box.title=count?"Consecutive local calendar days with a completed assessment. Yesterday's streak remains active until today ends.":'Complete an assessment to start your streak.';
+    if(box.querySelector('strong').textContent!==number)box.querySelector('strong').textContent=number;
+    if(box.querySelector('small').textContent!==label)box.querySelector('small').textContent=label;
+  }
+  window.addEventListener('chematlas:practice-completed',e=>recordPractice(e.detail));
+  for(const event of ['chematlas:assessment-updated','chematlas:lesson-completed','chematlas:progress-synced','chematlas:learner-state-changed'])window.addEventListener(event,()=>{renderStreak();renderProgress();});
+  document.addEventListener('visibilitychange',renderStreak);
 
   function addShell() {
     if (document.getElementById('caLandingView')) return;
@@ -83,7 +115,7 @@
       const avatar=topActions.querySelector('.avatar'); if (avatar) avatar.replaceWith(sync); else topActions.appendChild(sync);
     }
 
-    const account=document.createElement('div'); account.id='caAccountOverlay'; account.className='ca-overlay'; account.innerHTML=`<div class="ca-modal"><button class="ca-modal-x" data-account-close>×</button><p class="eyebrow">CHEMWAYPOINT ACCOUNT</p><h2 id="caAccountTitle">Keep your chemistry progress with you.</h2><p id="caAccountCopy">Guest mode stores progress on this browser. An account opens the full Learn sequence and syncs completion, reviews, and history across devices.</p><div id="caAccountBody"></div></div>`; document.body.appendChild(account);
+    const account=document.createElement('div'); account.id='caAccountOverlay'; account.className='ca-overlay'; account.innerHTML=`<div class="ca-modal"><button class="ca-modal-x" data-account-close>×</button><p class="eyebrow">CHEMWAYPOINT ACCOUNT</p><h2 id="caAccountTitle">Keep your chemistry progress with you.</h2><p id="caAccountCopy">Guest mode keeps your work on this browser. Your first explicit sign-in can carry that work into the first account; later accounts keep separate progress.</p><div id="caAccountBody"></div></div>`; document.body.appendChild(account);
     const onboarding=document.createElement('div'); onboarding.id='caOnboardingOverlay'; onboarding.className='ca-overlay'; onboarding.innerHTML=`<div class="ca-modal ca-goal-modal"><button class="ca-modal-x" data-onboarding-close>×</button><p class="eyebrow">PERSONALIZE THE PATH</p><h2>What are you trying to do?</h2><p>This only changes what ChemWaypoint recommends first. You can explore everything at any time.</p><div class="ca-goal-grid"><button data-goal="foundations"><span>Σ</span><strong>Build my foundations</strong><small>Start at Gen Chem and build the sequence correctly.</small></button><button data-goal="organic"><span>⌬</span><strong>Prepare for Organic</strong><small>Prioritize bonding, geometry, polarity, acid–base, and stereochemistry.</small></button><button data-goal="genchem2"><span>K</span><strong>Review Gen Chem II</strong><small>Equilibrium, acids/bases, thermodynamics, and electrochemistry.</small></button><button data-goal="biochem"><span>ATP</span><strong>Prepare for Biochemistry</strong><small>Strengthen energy, equilibria, acids/bases, and molecular structure.</small></button></div></div>`; document.body.appendChild(onboarding);
 
     bindShell(); renderLandingRecommendation(); renderProgress(); renderTutor();
@@ -150,7 +182,10 @@
     let attempts=0;
     const tryOpen=()=>{
       const btn=document.querySelector('.genchem-nav');
-      if(btn?.dataset.genchemReady==='1'){ if(moduleId) btn.dataset.genchemModule=moduleId; else delete btn.dataset.genchemModule; btn.click(); return; }
+      if(btn?.dataset.genchemReady==='1'){
+        // A ready event can finish routing before this startup retry fires.
+        if(attempts>0&&document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module===decodeURIComponent(location.pathname.split('/')[2]||''))return;
+        if(moduleId) btn.dataset.genchemModule=moduleId; else delete btn.dataset.genchemModule; btn.click(); return; }
       if(attempts++<60) setTimeout(tryOpen,150); else clickCore('courses');
     }; tryOpen();
   }
@@ -188,9 +223,9 @@
   function setGoal(goal){localStorage.setItem(LS.goal,goal);localStorage.setItem(LS.onboarded,'1');closeOverlay('caOnboardingOverlay');renderLandingRecommendation(); if(session)queueCloudSync(); navigate(goal==='organic'?'/organic':goal==='genchem2'?'/genchem/intermolecular-forces':'/genchem');}
 
   function readProgress(){
-    const modules=safeJson(LS.modules,[]); const tools=safeJson(LS.tools,[]); const history=safeJson(LS.history,[]);
+    const modules=safeJson(LS.modules,[]); const tools=safeJson(LS.tools,[]); const history=activityHistory();
     const vsepr=Number(localStorage.getItem(LS.vsepr)||0); const stereo=Number(localStorage.getItem(LS.stereo)||0); const sn2=Number(localStorage.getItem(LS.sn2)||0);
-    const days=new Set(history.map(x=>String(x.at||'').slice(0,10)).filter(Boolean)).size;
+    const days=window.ChemAtlasActivity?.streak(safeJson(LS.assessments,[])).activeDays||0;
     return {modules,tools,history,vsepr,stereo,sn2,days};
   }
   function adaptiveNext(){
@@ -219,16 +254,19 @@
     const mastered=evidence.filter(x=>x.s?.mastered).length;
     const reviewRows=evidence.filter(x=>x.s?.complete).sort((a,b)=>a.s.dueAt-b.s.dueAt);
     root.innerHTML=`<div class="ca-page-head"><div><p class="eyebrow">MASTERY, NOT CHECKBOXES</p><h2>Your chemistry progress</h2><p>Lesson completion records your first pass. Mastery records successful retrieval across later review sessions. Your existing completed lessons are preserved.</p></div><button class="secondary-button" data-account-open>${session?'Account & sync':'Sync across devices'}</button></div>
-      <div class="ca-stat-grid"><article><span>GEN CHEM</span><strong>${p.modules.length}/${total}</strong><small>lessons completed</small></article><article><span>PRACTICE</span><strong>${p.tools.length}/7</strong><small>engines cleared</small></article><article><span>VSEPR</span><strong>${p.vsepr}/3</strong><small>best mastery score</small></article><article><span>MASTERY</span><strong>${mastered}/${total}</strong><small>demonstrated in spaced reviews</small></article></div>
+      <div class="ca-stat-grid"><article><span>GEN CHEM</span><strong>${p.modules.length}/${total}</strong><small>lessons completed</small></article><article><span>PRACTICE</span><strong>${p.tools.length}/7</strong><small>engines cleared</small></article><article><span>VSEPR</span><strong>${p.vsepr}/3</strong><small>best practice score</small></article><article><span>MASTERY</span><strong>${mastered}/${total}</strong><small>demonstrated in spaced reviews</small></article></div>
       <div class="ca-progress-grid"><article class="panel ca-next-card"><p class="eyebrow">ADAPTIVE NEXT STEP</p><h3>${esc(next.title)}</h3><p>${esc(next.copy)}</p><button class="primary-button" data-route="${esc(next.route)}">Continue here →</button></article><article class="panel"><p class="eyebrow">LEARNING GOAL</p><h3>${esc(goalInfo()[0])}</h3><p>${esc(goalInfo()[1])}</p><button class="text-button" data-start-learning>Change goal</button></article></div>
       <article class="panel ca-review-panel"><p class="eyebrow">REINFORCEMENT QUEUE</p><h3>Come back to earlier ideas</h3><p>Two fully correct review sets on later days demonstrate mastery. Recently repeated answers remain practice. A later mistake recommends review again.</p><div class="ca-review-list">${reviewRows.length?reviewRows.map(({m,s})=>`<div class="ca-review-row"><span><strong>${esc(m.title)}</strong><small>Lesson completed · ${esc(s.label)} · ${s.reviewWins}/2 spaced reviews</small></span><a href="/genchem/${esc(m.id)}?review=1">${s.due?'Review now':'Practice · due '+new Date(s.dueAt).toLocaleDateString()} →</a></div>`).join(''):'<p>Complete your first lesson to begin a review schedule.</p>'}</div></article>
       <article class="panel ca-history"><div><p class="eyebrow">PRACTICE HISTORY</p><h3>Recent learning activity</h3></div>${recent.length?`<div class="ca-history-list">${recent.map(x=>`<div><span>${new Date(x.at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</span><strong>${esc(x.label)}</strong><small>${esc(activitySummary(x))}</small></div>`).join('')}</div>`:'<p class="muted">Complete a module or practice tool and your activity timeline will appear here.</p>'}</article>`;
   }
   function activitySummary(x){
+    if(x.verified===false)return `Earlier label: ${x.legacyLabel||'activity'}. Not used for streaks.`;
+    if(x.source==='assessment')return (window.CHEM_GENCHEM?.modules||[]).find(m=>m.id===x.moduleId)?.title||x.moduleId;
+    if(x.source==='practice')return x.key==='tool'?`Tool: ${x.value}`:`Result: ${x.value}`;
     if(x.key===LS.modules){const a=(()=>{try{return JSON.parse(x.value)}catch(_){return[]}})();return `${a.length} General Chemistry lessons completed`;}
     if(x.key===LS.tools){const a=(()=>{try{return JSON.parse(x.value)}catch(_){return[]}})();return `${a.length} practice engines cleared`;}
     if(x.key===LS.vsepr)return `VSEPR score ${x.value}/3`;
-    return Number(x.value)?'mastery recorded':'practice attempted';
+    return 'Recorded activity';
   }
 
   function courseContext(question){
@@ -245,17 +283,17 @@
   function saveTutor(messages){nativeSetItem.call(localStorage,LS.tutor,JSON.stringify(messages.slice(-30)));if(session)queueCloudSync();}
   function renderTutor(){
     const root=document.getElementById('caTutorView');if(!root)return;const messages=tutorHistory();
-    root.innerHTML=`<div class="ca-tutor-layout"><section class="ca-tutor-main"><div class="ca-page-head"><div><p class="eyebrow">COURSE-GROUNDED AI</p><h2>Ask ChemWaypoint</h2><p>The tutor retrieves the most relevant ChemWaypoint lesson context first, then teaches from that foundation. Web lookup is optional for current or external context.</p></div><span class="ca-ai-status ${cfg.tutorEndpoint?'ready':''}"><i></i>${cfg.tutorEndpoint?'Tutor endpoint installed':'Tutor setup pending'}</span></div><div class="ca-chat panel" id="caChat">${messages.length?messages.map(m=>`<div class="ca-message ${m.role}"><span>${m.role==='user'?'YOU':'C'}</span><div>${esc(m.text).replace(/\n/g,'<br>')}</div></div>`).join(''):`<div class="ca-tutor-empty"><span>✦</span><h3>Start with a concept, not a magic answer.</h3><p>Ask for an explanation, a worked problem, a comparison, or help finding the gap in your reasoning.</p><div><button data-tutor-prompt="Why does molecular geometry affect polarity?">Geometry → polarity</button><button data-tutor-prompt="Walk me through a limiting-reagent problem without skipping units.">Stoichiometry</button><button data-tutor-prompt="How do acid-base concepts from Gen Chem show up in organic chemistry?">Bridge to Organic</button></div></div>`}</div><form class="ca-tutor-form" id="caTutorForm"><textarea id="caTutorInput" rows="3" placeholder="Ask a chemistry question…"></textarea><div><label><input id="caTutorWeb" type="checkbox" checked> Allow web context when useful</label><button class="primary-button" type="submit">Ask Tutor ✦</button></div></form></section><aside class="ca-tutor-side"><article class="panel"><p class="eyebrow">CURRENT LEARNER CONTEXT</p><h3>${esc(goalInfo()[0])}</h3><p>${esc(adaptiveNext().copy)}</p></article><article class="panel"><p class="eyebrow">HOW IT ANSWERS</p><ol><li>Find relevant ChemWaypoint material.</li><li>Explain the governing chemistry.</li><li>Show units/reasoning for calculations.</li><li>Connect the concept forward.</li><li>Check your understanding.</li></ol></article><article class="panel ca-tutor-guardrail"><p class="eyebrow">LEARNING GUARDRAIL</p><p>The tutor is assistive. Chemistry calculations, safety-critical lab decisions, and externally sourced claims should still be checked against authoritative course/lab sources.</p></article></aside></div>`;
+    root.innerHTML=`<div class="ca-tutor-layout"><section class="ca-tutor-main"><div class="ca-page-head"><div><p class="eyebrow">COURSE-GROUNDED AI</p><h2>Ask ChemWaypoint</h2><p>The tutor retrieves the most relevant ChemWaypoint lesson context first, then teaches from that foundation. Web lookup is optional for current or external context.</p></div><span class="ca-ai-status"><i></i>Connection checked on send</span></div><div class="ca-chat panel" id="caChat">${messages.length?messages.map(m=>`<div class="ca-message ${m.role}"><span>${m.role==='user'?'YOU':'C'}</span><div>${esc(m.text).replace(/\n/g,'<br>')}</div></div>`).join(''):`<div class="ca-tutor-empty"><span>✦</span><h3>Start with a concept, not a magic answer.</h3><p>Ask for an explanation, a worked problem, a comparison, or help finding the gap in your reasoning.</p><div><button data-tutor-prompt="Why does molecular geometry affect polarity?">Geometry → polarity</button><button data-tutor-prompt="Walk me through a limiting-reagent problem without skipping units.">Stoichiometry</button><button data-tutor-prompt="How do acid-base concepts from Gen Chem show up in organic chemistry?">Bridge to Organic</button></div></div>`}</div><form class="ca-tutor-form" id="caTutorForm"><textarea id="caTutorInput" rows="3" placeholder="Ask a chemistry question…"></textarea><div><label><input id="caTutorWeb" type="checkbox" checked> Allow web context when useful</label><button class="primary-button" type="submit">Ask Tutor ✦</button></div></form></section><aside class="ca-tutor-side"><article class="panel"><p class="eyebrow">CURRENT LEARNER CONTEXT</p><h3>${esc(goalInfo()[0])}</h3><p>${esc(adaptiveNext().copy)}</p></article><article class="panel"><p class="eyebrow">HOW IT ANSWERS</p><ol><li>Find relevant ChemWaypoint material.</li><li>Explain the governing chemistry.</li><li>Show units/reasoning for calculations.</li><li>Connect the concept forward.</li><li>Check your understanding.</li></ol></article><article class="panel ca-tutor-guardrail"><p class="eyebrow">LEARNING GUARDRAIL</p><p>The tutor is assistive. Chemistry calculations, safety-critical lab decisions, and externally sourced claims should still be checked against authoritative course/lab sources.</p></article></aside></div>`;
     root.querySelectorAll('[data-tutor-prompt]').forEach(b=>b.addEventListener('click',()=>{const i=document.getElementById('caTutorInput');if(i){i.value=b.dataset.tutorPrompt;i.focus()}}));
     document.getElementById('caTutorForm')?.addEventListener('submit',askTutor);
     requestAnimationFrame(()=>{const c=document.getElementById('caChat');if(c)c.scrollTop=c.scrollHeight});
   }
   async function askTutor(e){
-    e.preventDefault();const input=document.getElementById('caTutorInput');const question=input?.value.trim();if(!question)return;const messages=tutorHistory();messages.push({role:'user',text:question,at:new Date().toISOString()});saveTutor(messages);renderTutor();
+    e.preventDefault();const epoch=sessionEpoch,userId=session?.user?.id;const input=document.getElementById('caTutorInput');const question=input?.value.trim();if(!question)return;const messages=tutorHistory();messages.push({role:'user',text:question,at:new Date().toISOString()});saveTutor(messages);renderTutor();
     const chat=document.getElementById('caChat');if(chat)chat.insertAdjacentHTML('beforeend','<div class="ca-message assistant ca-thinking"><span>C</span><div>Thinking through the chemistry…</div></div>');
     try{
-      const current=localStorage.getItem('chematlas-genchem-current')||'';const p=readProgress();const res=await fetch(cfg.tutorEndpoint||'/api/tutor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,context:courseContext(question),includeWeb:Boolean(document.getElementById('caTutorWeb')?.checked),learner:{goal:goalInfo()[0],currentModule:current,masterySummary:`${p.modules.length} lessons completed; ${(window.CHEM_GENCHEM?.modules||[]).filter(m=>window.ChemAtlasAssessment?.summarize(m.id).mastered).length} modules with mastery demonstrated; ${p.tools.length} practice engines cleared`}})});const data=await res.json();if(!res.ok)throw new Error(data.error||'Tutor request failed');messages.push({role:'assistant',text:data.answer||'No response returned.',at:new Date().toISOString()});
-    }catch(err){messages.push({role:'assistant',text:`Tutor connection note: ${err.message}. The course-grounded interface is installed; the server key/environment still needs to be connected if this is a configuration error.`,at:new Date().toISOString()});}
+      const current=localStorage.getItem('chematlas-genchem-current')||'';const p=readProgress();const res=await fetch(cfg.tutorEndpoint||'/api/tutor',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,context:courseContext(question),includeWeb:Boolean(document.getElementById('caTutorWeb')?.checked),learner:{goal:goalInfo()[0],currentModule:current,masterySummary:`${p.modules.length} lessons completed; ${(window.CHEM_GENCHEM?.modules||[]).filter(m=>window.ChemAtlasAssessment?.summarize(m.id).mastered).length} modules with mastery demonstrated; ${p.tools.length} practice engines cleared`}})});const data=await res.json();if(!currentSession(epoch,userId))return;if(!res.ok)throw new Error(data.error||'Tutor request failed');messages.push({role:'assistant',text:data.answer||'No response returned.',at:new Date().toISOString()});
+    }catch(err){if(!currentSession(epoch,userId))return;messages.push({role:'assistant',text:`Tutor connection note: ${err.message}. Your question is saved on this browser. Please try again when the connection is available.`,at:new Date().toISOString()});}
     saveTutor(messages);renderTutor();
   }
 
@@ -264,9 +302,9 @@
     const body=document.getElementById('caAccountBody');if(!body)return;
     const title=document.getElementById('caAccountTitle'),copy=document.getElementById('caAccountCopy');
     if(title)title.textContent=session?'Account & sync':'Keep your chemistry progress with you.';
-    if(copy)copy.textContent=session?'Manage your saved progress and email reminders.':'Guest mode stores progress on this browser. An account opens the full Learn sequence and syncs completion, reviews, and history across devices.';
+    if(copy)copy.textContent=session?'Manage your saved progress and reminders. Each account has separate browser progress.':'Guest mode keeps your work on this browser. Your first explicit sign-in can carry that work into the first account; later accounts keep separate progress.';
     if(session){
-      body.innerHTML=`<div class="ca-account-signed"><span>✓</span><strong>${esc(session.user?.email||'Signed in')}</strong><small>Cloud sync enabled</small></div>
+      body.innerHTML=`<div class="ca-account-signed"><span>✓</span><strong>${esc(session.user?.email||'Signed in')}</strong><small>Signed in</small></div>
         <section class="ca-reminder-settings" aria-labelledby="caReminderHeading"><h3 id="caReminderHeading">Email reminders</h3>
           <label for="caReviewReminders"><input id="caReviewReminders" type="checkbox" disabled><span>Remind me when reviews are due</span></label>
           <p>At most once a week, sent to your verified account email. Each message links to your reviews and lets you unsubscribe.</p>
@@ -276,8 +314,8 @@
       document.getElementById('caSyncNow')?.addEventListener('click',syncAll);
       document.getElementById('caSignOut')?.addEventListener('click',async()=>{await cloud?.auth.signOut();session=null;updateSyncBadge();renderAccount()});return;
     }
-    if(!cfg.supabaseUrl||!cfg.supabasePublishableKey){body.innerHTML=`<div class="ca-setup-note"><strong>Guest mode is active.</strong><p>The profile UI and sync model are installed, but ChemWaypoint needs its own Supabase project URL and publishable key before account creation can go live. No secret keys belong in this browser configuration.</p></div>`;return;}
-    body.innerHTML=`<form id="caAuthForm"><label>Email<input id="caEmail" type="email" autocomplete="email" required></label><label>Password<input id="caPassword" type="password" minlength="6" autocomplete="current-password" required></label><div class="ca-auth-actions"><button class="primary-button" type="submit">Sign in</button><button class="secondary-button" type="button" id="caSignUp">Create account</button></div><p id="caAuthFeedback" class="muted"></p></form>`;
+    if(!cfg.supabaseUrl||!cfg.supabasePublishableKey){body.innerHTML=`<div class="ca-setup-note"><strong>Guest mode is active.</strong><p>Account sync is unavailable right now. You can keep learning as a guest; your work stays in this browser.</p></div>`;return;}
+    body.innerHTML=`<form id="caAuthForm"><label>Email<input id="caEmail" type="email" autocomplete="email" required></label><label>Password<input id="caPassword" type="password" minlength="6" autocomplete="current-password" required></label><div class="ca-auth-actions"><button class="primary-button" type="submit">Sign in</button><button class="secondary-button" type="button" id="caSignUp">Create account</button></div><p id="caAuthFeedback" class="muted" role="status"></p></form>`;
     document.getElementById('caAuthForm')?.addEventListener('submit',e=>authSubmit(e,false));document.getElementById('caSignUp')?.addEventListener('click',e=>authSubmit(e,true));
   }
   async function loadReminderPreference(){
@@ -305,30 +343,69 @@
       });
     }catch(_){if(current())feedback.textContent='Could not load email preferences. Close and reopen Account & sync to retry.';}
   }
-  async function authSubmit(e,signup){e.preventDefault();const email=document.getElementById('caEmail')?.value.trim(),password=document.getElementById('caPassword')?.value;const f=document.getElementById('caAuthFeedback');if(!cloud){if(f)f.textContent='Cloud client is still loading.';return;}const {data,error}=signup?await cloud.auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/dashboard'}}):await cloud.auth.signInWithPassword({email,password});if(error){if(f)f.textContent=error.message;return;}session=data.session||session;if(f)f.textContent=signup&&!data.session?'Check your email to confirm the account.':'Signed in. Syncing your progress…';updateSyncBadge();if(session){await mergeCloudState();await refreshAdminAccess();}renderAccount();}
+  async function authSubmit(e,signup){
+    e.preventDefault();const email=document.getElementById('caEmail')?.value.trim(),password=document.getElementById('caPassword')?.value;
+    const feedback=document.getElementById('caAuthFeedback');
+    if(!cloud){if(feedback)feedback.textContent='The account service is still connecting. Please try again.';return;}
+    pendingGuestClaim=!session;
+    const epoch=sessionEpoch;
+    try{
+      const {data,error}=signup?await cloud.auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/dashboard'}}):await cloud.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      if(epoch!==sessionEpoch&&data.session?.user?.id!==session?.user?.id)return;
+      if(data.session)adoptSession(data.session,pendingGuestClaim);
+      const message=signup&&!data.session?'Check your email to confirm the account.':'Signed in. Syncing your progress…';
+      if(feedback)feedback.textContent=message;
+      updateSyncBadge();if(session){await mergeCloudState();await refreshAdminAccess();}renderAccount();
+      const currentFeedback=document.getElementById('caAuthFeedback');if(currentFeedback)currentFeedback.textContent=message;
+    }catch(error){if(feedback)feedback.textContent=error.message||'Could not sign in. Your browser progress is preserved.';}
+    finally{pendingGuestClaim=false;}
+  }
 
   function knownState(){return {[LS.goal]:localStorage.getItem(LS.goal),[LS.assessments]:safeJson(LS.assessments,[]),[LS.modules]:safeJson(LS.modules,[]),[LS.tools]:safeJson(LS.tools,[]),[LS.vsepr]:Number(localStorage.getItem(LS.vsepr)||0),[LS.stereo]:Number(localStorage.getItem(LS.stereo)||0),[LS.sn2]:Number(localStorage.getItem(LS.sn2)||0),[LS.history]:safeJson(LS.history,[]),[LS.tutor]:safeJson(LS.tutor,[])};}
-  function mergeValue(key,local,remote){if(key===LS.assessments)return window.ChemAtlasAssessment.merge(local,remote);if(remote==null)return local;if(local==null)return remote;if(key===LS.modules||key===LS.tools)return [...new Set([...(Array.isArray(remote)?remote:[]),...(Array.isArray(local)?local:[])])];if([LS.vsepr,LS.stereo,LS.sn2].includes(key))return Math.max(Number(local)||0,Number(remote)||0);if(key===LS.history||key===LS.tutor){const map=new Map();[...(Array.isArray(remote)?remote:[]),...(Array.isArray(local)?local:[])].forEach(x=>map.set(x.id||`${x.role}-${x.at}-${x.text}`,x));return [...map.values()].sort((a,b)=>String(a.at)<String(b.at)?1:-1).slice(0,key===LS.history?120:30);}return remote||local;}
-  async function mergeCloudState(){if(!cloud||!session||syncing)return;syncing=true;try{const {data,error}=await cloud.from('learner_state').select('state_key,state_value').eq('user_id',session.user.id);if(error)throw error;const remote=Object.fromEntries((data||[]).map(r=>[r.state_key,r.state_value]));const local=knownState();for(const [key,val] of Object.entries(local)){const merged=mergeValue(key,val,remote[key]);if(typeof merged==='string')nativeSetItem.call(localStorage,key,merged);else nativeSetItem.call(localStorage,key,JSON.stringify(merged));}await syncAll();renderProgress();renderLandingRecommendation();window.dispatchEvent(new Event('chematlas:progress-synced'));}catch(e){console.warn('ChemWaypoint cloud merge:',e.message)}finally{syncing=false;}}
-  let syncInFlight=false;
+  function mergeValue(key,local,remote){if(key===LS.assessments)return window.ChemAtlasAssessment.merge(local,remote);if(remote==null)return local;if(local==null)return remote;if(key===LS.modules||key===LS.tools)return [...new Set([...(Array.isArray(remote)?remote:[]),...(Array.isArray(local)?local:[])])];if([LS.vsepr,LS.stereo,LS.sn2].includes(key))return Math.max(Number(local)||0,Number(remote)||0);if(key===LS.history||key===LS.tutor){const map=new Map();[...(Array.isArray(remote)?remote:[]),...(Array.isArray(local)?local:[])].forEach(x=>map.set(x.id||`${x.role}-${x.at}-${x.text}`,x));return [...map.values()].sort((a,b)=>String(a.at)<String(b.at)?1:-1).slice(0,key===LS.history?Number.MAX_SAFE_INTEGER:30);}return remote||local;}
+  async function mergeCloudState(){
+    if(!cloud||!session||!currentSession()||syncingEpoch===sessionEpoch)return;
+    const epoch=sessionEpoch,userId=session.user.id;syncingEpoch=epoch;
+    try{
+      const {data,error}=await cloud.from('learner_state').select('state_key,state_value').eq('user_id',userId);
+      if(!currentSession(epoch,userId))return;if(error)throw error;
+      const remote=Object.fromEntries((data||[]).map(r=>[r.state_key,r.state_value])),local=knownState();
+      for(const [key,val]of Object.entries(local)){
+        const merged=mergeValue(key,val,remote[key]);
+        nativeSetItem.call(localStorage,key,typeof merged==='string'?merged:JSON.stringify(merged));
+      }
+      await syncAll();if(!currentSession(epoch,userId))return;
+      renderProgress();renderLandingRecommendation();window.dispatchEvent(new Event('chematlas:progress-synced'));
+    }catch(error){if(currentSession(epoch,userId))console.warn('ChemWaypoint cloud merge:',error.message);}
+    finally{if(syncingEpoch===epoch)syncingEpoch=null;}
+  }
+
+  let syncInFlight=null;
   async function syncAll(){
-    if(!cloud||!session)return;
-    if(syncInFlight){queueCloudSync();return;}
-    const userId=session.user.id;syncInFlight=true;
+    if(!cloud||!session||!currentSession())return;
+    if(syncInFlight===sessionEpoch){queueCloudSync();return;}
+    const userId=session.user.id,epoch=sessionEpoch;syncInFlight=epoch;
     try{
       const state=knownState();
       const rows=Object.entries(state).filter(([key])=>key!==LS.assessments).map(([state_key,state_value])=>({user_id:userId,state_key,state_value,updated_at:new Date().toISOString()}));
-      const {error}=await cloud.from('learner_state').upsert(rows,{onConflict:'user_id,state_key'});if(error)throw error;
+      const {error}=await cloud.from('learner_state').upsert(rows,{onConflict:'user_id,state_key'});if(!currentSession(epoch,userId))return;if(error)throw error;
       const merged=await cloud.rpc('merge_assessment_events',{p_events:state[LS.assessments]});if(merged.error)throw merged.error;
-      if(session?.user?.id!==userId)return;
+      if(!currentSession(epoch,userId))return;
       // Keep answers entered while the request was in flight, too.
       nativeSetItem.call(localStorage,LS.assessments,JSON.stringify(window.ChemAtlasAssessment.merge(safeJson(LS.assessments,[]),merged.data)));
-      updateSyncBadge('ok');
-    }catch(e){console.warn('ChemWaypoint sync:',e.message);updateSyncBadge('error');}
-    finally{syncInFlight=false;}
+      updateSyncBadge('ok');window.dispatchEvent(new Event('chematlas:progress-synced'));
+    }catch(e){if(currentSession(epoch,userId)){console.warn('ChemWaypoint sync:',e.message);updateSyncBadge('error');}}
+    finally{if(syncInFlight===epoch)syncInFlight=null;}
   }
-  let syncTimer;function queueCloudSync(){clearTimeout(syncTimer);syncTimer=setTimeout(syncAll,1200)}
-  function updateSyncBadge(status){const b=document.querySelector('.ca-sync-status');if(!b)return;if(session){b.classList.add('online');b.querySelector('b').textContent='Synced profile';b.querySelector('small').textContent=status==='error'?'sync issue':session.user?.email||'cloud progress';}else{b.classList.remove('online');b.querySelector('b').textContent='Guest';b.querySelector('small').textContent='local progress';}}
+  let syncTimer;function queueCloudSync(){clearTimeout(syncTimer);syncStatus='pending';updateSyncBadge();syncTimer=setTimeout(syncAll,1200)}
+  function updateSyncBadge(status){
+    if(status)syncStatus=status;
+    const badge=document.querySelector('.ca-sync-status');if(!badge)return;
+    badge.classList.toggle('online',Boolean(session));
+    badge.querySelector('b').textContent=!session?'Guest':syncStatus==='ok'?'Progress synced':syncStatus==='error'?'Sync needs attention':'Signed in';
+    badge.querySelector('small').textContent=!session?'local progress':syncStatus==='error'?'Please retry syncing':syncStatus==='ok'?'Saved on this account':'Syncing progress…';
+  }
 
   let cloudReady=false;
   async function initCloud(){
@@ -337,20 +414,22 @@
       cloud=await window.ChemAtlasCloud();if(!cloud){window.ChemAtlasViews?.setAccount(null);return;}
       cloud.auth.onAuthStateChange((_event,s)=>{
         // Defer Supabase work outside the auth callback to avoid the auth lock.
-        const changed=session?.user?.id!==s?.user?.id;session=s;
-        setTimeout(async()=>{if(!cloudReady)return;updateSyncBadge();if(s&&changed)await mergeCloudState();await refreshAdminAccess();},0);
+        const changed=session?.user?.id!==s?.user?.id;
+        try{adoptSession(s,pendingGuestClaim);}catch(error){console.warn('ChemWaypoint browser checkpoint:',error.message);return;}
+        const epoch=sessionEpoch;
+        setTimeout(async()=>{if(!cloudReady||epoch!==sessionEpoch)return;updateSyncBadge();if(s&&changed)await mergeCloudState();if(epoch===sessionEpoch)await refreshAdminAccess();},0);
       });
-      const {data,error}=await cloud.auth.getSession();if(error)throw error;session=data.session;
+      const epoch=sessionEpoch;const {data,error}=await cloud.auth.getSession();if(error&&epoch===sessionEpoch)throw error;if(epoch===sessionEpoch)adoptSession(data.session);
       if(session)await mergeCloudState();cloudReady=true;updateSyncBadge();await refreshAdminAccess();
     }catch(e){cloudReady=true;window.ChemAtlasViews?.setAccount(null);console.warn('ChemWaypoint cloud init:',e.message);}
   }
   let adminAccessRequest=0;
   async function refreshAdminAccess(){
-    const request=++adminAccessRequest;
+    const request=++adminAccessRequest,epoch=sessionEpoch;
     document.querySelectorAll('[data-site-admin-link]').forEach(el=>el.remove());
     if(!cloud||!session){window.ChemAtlasViews?.setAccount(null);return;}
     const {data,error}=await cloud.rpc('site_my_rights');
-    if(request!==adminAccessRequest)return;
+    if(request!==adminAccessRequest||epoch!==sessionEpoch)return;
     const rights=error?[]:(data||[]);
     window.ChemAtlasViews?.setAccount(session,rights,true);
     if(!rights.some(r=>r!=='publish'))return;
@@ -363,6 +442,6 @@
     const home=document.getElementById('homeView');if(!home||home.querySelector('.ca-dashboard-next'))return;const grid=home.querySelector('.dashboard-grid');if(!grid)return;const next=adaptiveNext();const card=document.createElement('article');card.className='panel ca-dashboard-next';card.innerHTML=`<p class="eyebrow">ADAPTIVE REVIEW</p><h3>${esc(next.title)}</h3><p>${esc(next.copy)}</p><button class="text-button" data-route="${esc(next.route)}">Continue →</button>`;grid.appendChild(card);
   }
 
-  function boot(){addShell();injectAdaptiveDashboard();initCloud();routeFromLocation();setInterval(()=>{if(document.getElementById('caProgressView')?.classList.contains('active-view'))renderProgress();},5000);}
+  function boot(){addShell();renderStreak();injectAdaptiveDashboard();initCloud();routeFromLocation();setInterval(()=>{renderStreak();if(document.getElementById('caProgressView')?.classList.contains('active-view'))renderProgress();},5000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();

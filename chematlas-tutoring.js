@@ -79,7 +79,7 @@
     landing.dataset.tutoringLanding = '1';
     landing.innerHTML = `
       <header class="ca-marketing-nav">
-        <button class="ca-marketing-brand" data-route="/"><span>⚛</span><strong>ChemWaypoint</strong></button>
+        <button class="ca-marketing-brand" data-route="/"><span aria-hidden="true">⚛︎</span><strong>ChemWaypoint</strong></button>
         <nav>
           <button data-route="/courses">Courses</button>
           <button data-route="/model-lab">Labs</button>
@@ -106,7 +106,7 @@
         </div>
 
         <div class="ca-marketing-demo">
-          <div class="ca-demo-top"><span>CONTINUE LEARNING</span><strong>General Chemistry I</strong></div>
+          <div class="ca-demo-top"><span>EXAMPLE LEARNING SESSION</span><strong>General Chemistry I</strong></div>
           <div class="ca-demo-card">
             <div>
               <small>MODULE 10 · IN PROGRESS</small>
@@ -123,7 +123,7 @@
           </div>
           <div class="ca-demo-tutor">
             <span>✦</span>
-            <div><small>ASK CHEMATLAS</small><strong>“Why is H₂O polar but CO₂ isn’t?”</strong></div>
+            <div><small>ASK CHEMWAYPOINT</small><strong>“Why is H₂O polar but CO₂ isn’t?”</strong></div>
           </div>
         </div>
       </section>
@@ -208,7 +208,10 @@
   function updateBreadcrumb() {
     const title = document.getElementById('pageTitle');
     const course = document.querySelector('.ca-breadcrumb-course');
-    if (course) course.textContent = location.pathname.startsWith('/organic') ? 'Organic Chemistry' : 'General Chemistry I';
+    const courseName = location.pathname.startsWith('/organic') ? 'Organic Chemistry' : Number(localStorage.getItem(LS.semester)||1)===2 ? 'General Chemistry II' : 'General Chemistry I';
+    if (course && course.textContent !== courseName) course.textContent = courseName;
+    const selectedCourse = document.querySelector('.ca-course-switcher-copy strong');
+    if (selectedCourse && selectedCourse.textContent !== courseName) selectedCourse.textContent = courseName;
     if (title && !document.body.classList.contains('ca-landing-mode')) title.textContent = routeLabel();
   }
 
@@ -218,7 +221,7 @@
     if (!sidebar || !nav) return;
 
     const mark = sidebar.querySelector('.brand-mark');
-    if (mark) mark.textContent = '⚛';
+    if (mark) mark.textContent = '⚛︎';
     const subtitle = sidebar.querySelector('.brand span');
     if (subtitle) subtitle.textContent = 'Chemistry tutor';
 
@@ -250,17 +253,11 @@
       group.querySelector('[data-ca-tutor-practice]')?.addEventListener('click', () => launchPractice());
     }
 
-    if (!sidebar.querySelector('.ca-sidebar-tutor')) {
-      const assist = document.createElement('button');
-      assist.className = 'ca-sidebar-tutor';
-      assist.innerHTML = '<span class="spark">✦</span><span><strong>Need a hand?</strong><small>Ask your chemistry tutor</small></span>';
-      assist.addEventListener('click', () => navigate('/tutor'));
-      nav.after(assist);
-
+    if (!sidebar.querySelector('.ca-sidebar-secondary')) {
       const secondary = document.createElement('div');
       secondary.className = 'ca-sidebar-secondary';
       secondary.innerHTML = '<button data-route-secondary="/organic">Organic Studio</button><button data-route-secondary="/curriculum">Degree map</button>';
-      assist.after(secondary);
+      nav.after(secondary);
       secondary.querySelectorAll('[data-route-secondary]').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.routeSecondary)));
     }
 
@@ -293,7 +290,7 @@
     const wrap = document.createElement('div');
     wrap.className = 'ca-top-search';
     wrap.innerHTML = `
-      <label><span>⌕</span><input type="search" placeholder="Search concepts..." aria-label="Search ChemWaypoint"><kbd>⌘ K</kbd></label>
+      <label><span>⌕</span><input type="search" placeholder="Search concepts..." aria-label="Search ChemWaypoint"></label>
       <div class="ca-search-results" hidden></div>`;
     topbar.insertBefore(wrap, actions);
 
@@ -322,24 +319,18 @@
       if (!wrap.contains(event.target)) results.hidden = true;
     });
     window.addEventListener('keydown', event => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault(); input.focus();
-      }
       if (event.key === 'Escape') { results.hidden = true; input.blur(); }
     });
   }
 
   function launchPractice(tool) {
+    const trigger = document.activeElement;
     navigate('/genchem');
     let attempts = 70;
     const tick = () => {
-      const launch = document.querySelector('.gc-practice-launch');
-      const overlay = document.getElementById('gcPracticeOverlay');
-      if (launch) launch.click();
-      else if (overlay) overlay.classList.add('open');
+      if (window.ChemAtlasPractice) window.ChemAtlasPractice.open(trigger);
       else if (attempts-- > 0) return setTimeout(tick, 100);
       else return;
-      document.body.style.overflow = 'hidden';
       if (tool) setTimeout(() => document.querySelector(`.gc-tool-tab[data-tool="${CSS.escape(tool)}"]`)?.click(), 100);
     };
     setTimeout(tick, 120);
@@ -352,7 +343,7 @@
   function recentHtml(history) {
     if (!history.length) return '<div class="ca-recent-item"><i>·</i><span><strong>Your activity will appear here</strong><small>Complete a lesson or practice set to start your history.</small></span></div>';
     return history.slice(0,3).map(item => `
-      <div class="ca-recent-item"><i>✓</i><span><strong>${esc(item.label || 'Chemistry activity')}</strong><small>${new Date(item.at || Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</small></span></div>
+      <div class="ca-recent-item"><i>${item.verified===false?'?':'✓'}</i><span><strong>${esc(item.label || 'Chemistry activity')}</strong><small>${new Date(item.at || Date.now()).toLocaleDateString(undefined,{month:'short',day:'numeric'})}${item.verified===false?' · not used for streaks':''}</small></span></div>
     `).join('');
   }
 
@@ -369,7 +360,7 @@
     const learning = currentLearning();
     const current = learning.current;
     const next = learning.next;
-    const history = safeJson(LS.history, []);
+    const history = window.ChemAtlasActivity?.history(safeJson('chematlas-assessment-events-v1',[]),safeJson(LS.history,[])) || safeJson(LS.history,[]);
     const renderSignature = [current?.id || '', learning.completed.join(','), history.length, history[0]?.id || history[0]?.at || '',JSON.stringify(window.ChemAtlasContent?.dashboard()),localStorage.getItem('chematlas-assessment-events-v1')].join('|');
     if (root.dataset.renderSignature === renderSignature) return;
     root.dataset.renderSignature = renderSignature;
@@ -471,12 +462,7 @@
     if (summary.dataset.signature !== summarySignature) {
       summary.dataset.signature = summarySignature;
       summary.innerHTML = `
-        <div>
-          <p class="ca-learn-overline">GENERAL CHEMISTRY ${semester === 2 ? 'II' : 'I'}</p>
-          <h2>Learn one idea at a time.</h2>
-          <p>Short explanations, a worked example, then progressive checks. Revisit earlier ideas as you learn new ones.</p>
-        </div>
-        <div class="ca-learn-progress" aria-label="${semesterDone} of ${semesterModules.length} lessons completed">
+        <div class="ca-learn-progress" role="progressbar" aria-label="Course lessons completed" aria-valuemin="0" aria-valuemax="${semesterModules.length}" aria-valuenow="${semesterDone}" aria-valuetext="${semesterDone} of ${semesterModules.length} lessons completed">
           <span><b>${semesterDone}</b> / ${semesterModules.length} completed</span>
           <div><i style="width:${semesterModules.length ? Math.round(semesterDone / semesterModules.length * 100) : 0}%"></i></div>
         </div>
@@ -495,8 +481,10 @@
       if ((prereq || objectives) && !header.querySelector('.ca-lesson-goals')) {
         const details = document.createElement('details');
         details.className = 'ca-lesson-goals';
-        details.innerHTML = '<summary>What will I learn?</summary><div class="ca-lesson-goals-body"></div>';
+        details.innerHTML = '<summary>Goals & lesson help</summary><div class="ca-lesson-goals-body"></div>';
         const body = details.querySelector('.ca-lesson-goals-body');
+        const subtitle = header.querySelector(':scope > p');
+        if (subtitle) body.appendChild(subtitle);
         if (prereq) body.appendChild(prereq);
         if (objectives) body.appendChild(objectives);
         header.appendChild(details);
@@ -513,7 +501,7 @@
             prompt: `I'm learning ${current.title}, specifically ${topic}. Help me reason through it one step at a time, then ask me a question to check my understanding.`
           }}));
         });
-        header.appendChild(tutor);
+        (header.querySelector('.ca-lesson-goals-body') || header).appendChild(tutor);
       }
     }
 
@@ -540,16 +528,18 @@
     focus.className = 'ca-focus-shell';
     focus.innerHTML = `
       <header class="ca-focus-head">
-        <div>
+        <div class="ca-step-progress">
           <span class="ca-focus-count">STEP <b>1</b> OF ${steps.length}</span>
-          <span class="ca-focus-kind">LEARN</span>
-          <h3 class="ca-focus-title">${esc(steps[0].label)}</h3>
+          <span class="ca-focus-title" hidden aria-hidden="true">${esc(steps[0].label)}</span>
+          <div class="ca-focus-meter" role="progressbar" aria-label="Lesson step" aria-valuemin="1" aria-valuemax="${steps.length}" aria-valuenow="1"><span></span></div>
         </div>
-        <div class="ca-focus-meter" aria-label="Lesson progress"><span></span></div>
+        <details class="ca-step-jump">
+          <summary>Jump to step</summary>
+          <nav class="ca-focus-dots" aria-label="Lesson steps">
+            ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span>${index + 1}</span><span class="ca-step-label">${esc(step.label)}</span></button>`).join('')}
+          </nav>
+        </details>
       </header>
-      <nav class="ca-focus-dots" aria-label="Lesson steps">
-        ${steps.map((step, index) => `<button type="button" data-focus-index="${index}" aria-label="Step ${index + 1}: ${esc(step.label)}"><span>${index + 1}</span>${esc(step.kind)}</button>`).join('')}
-      </nav>
     `;
 
     steps[0].el.before(focus);
@@ -558,7 +548,7 @@
     footer.className = 'ca-focus-footer';
     footer.setAttribute('aria-label','Lesson step navigation');
     footer.innerHTML = `
-      <button type="button" class="ca-focus-back">← Back</button>
+      <button type="button" class="ca-focus-back">← Previous</button>
       <span class="ca-focus-helper">Take your time. You can revisit any step.</span>
       <button type="button" class="ca-focus-next">Continue →</button>
     `;
@@ -614,9 +604,10 @@
       });
 
       focus.querySelector('.ca-focus-count b').textContent = String(activeIndex + 1);
-      focus.querySelector('.ca-focus-kind').textContent = steps[activeIndex].kind.toUpperCase();
       focus.querySelector('.ca-focus-title').textContent = steps[activeIndex].label;
       focus.querySelector('.ca-focus-meter span').style.width = `${((activeIndex + 1) / steps.length) * 100}%`;
+      focus.querySelector('.ca-focus-meter').setAttribute('aria-valuenow', String(activeIndex + 1));
+      focus.querySelector('.ca-focus-meter').setAttribute('aria-valuetext', `Step ${activeIndex + 1} of ${steps.length}: ${steps[activeIndex].label}`);
 
       focus.querySelectorAll('[data-focus-index]').forEach((button, i) => {
         const active = i === activeIndex;
@@ -645,7 +636,7 @@
     }
 
     focus.querySelectorAll('[data-focus-index]').forEach(button => {
-      button.addEventListener('click', () => showStep(Number(button.dataset.focusIndex), true));
+      button.addEventListener('click', () => { showStep(Number(button.dataset.focusIndex), true); focus.querySelector('.ca-step-jump').open=false; });
     });
     footer.querySelector('.ca-focus-back')?.addEventListener('click', () => showStep(activeIndex - 1, true));
     footer.querySelector('.ca-focus-next')?.addEventListener('click', () => {
@@ -662,14 +653,20 @@
 
   function setActiveNav() {
     const path = location.pathname;
-    document.querySelectorAll('.ca-tutor-nav').forEach(btn => btn.classList.remove('active'));
-    let selector = '[data-ca-tutor-route="/dashboard"]';
+    document.querySelectorAll('.ca-tutor-nav').forEach(btn => { btn.classList.remove('active'); btn.removeAttribute('aria-current'); });
+    let selector = path === '/dashboard' || path === '/' ? '[data-ca-tutor-route="/dashboard"]' : null;
     if (path.startsWith('/genchem')) selector = '[data-ca-tutor-route="/genchem"]';
     else if (path === '/model-lab') selector = '[data-ca-tutor-route="/model-lab"]';
     else if (path === '/tutor') selector = '[data-ca-tutor-route="/tutor"]';
     else if (path === '/companion') selector = '[data-ca-tutor-route="/companion"]';
     else if (path === '/progress') selector = '[data-ca-tutor-route="/progress"]';
-    document.querySelector('.ca-tutor-nav' + selector)?.classList.add('active');
+    const active = selector ? document.querySelector('.ca-tutor-nav' + selector) : [...document.querySelectorAll('.ca-tutor-nav[data-target]')].find(btn=>btn.dataset.target===path);
+    active?.classList.add('active');
+    active?.setAttribute('aria-current', 'page');
+    document.querySelectorAll('[data-route-secondary]').forEach(btn=>{
+      const current=path===btn.dataset.routeSecondary||path.startsWith(btn.dataset.routeSecondary+'/');
+      btn.classList.toggle('active',current);if(current)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current');
+    });
   }
 
   function cleanupV2() {
