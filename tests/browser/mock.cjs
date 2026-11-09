@@ -51,10 +51,11 @@ async function main(){
   await page.setViewportSize({width:390,height:844});
   await page.screenshot({path:path.join(output,'companion-mobile.png'),fullPage:true});
   const practiceChecks=await require('./practice.cjs')(page,output);
+  const displayChecks=await require('./labs-tutor.cjs')(page,output);
   assert.equal(errors.length,0,errors.join('\n'));
   assert(!requests.some(url=>new URL(url).hostname.endsWith('.supabase.co')),'Production backend must never be requested.');
   const report={engine:'Chromium',mode:'mock',checks:['real app boot','demo banner','account-form sign-in','guest evidence merged into first synthetic account','production fetch rejected before network','mock Tutor response','five-question simulated Companion practice','desktop screenshot','mobile screenshot'],uncaughtErrors:errors,externalRequestsBlocked:blocked.length,productionBackendRequests:0};
-  report.checks.push(...practiceChecks);
+  report.checks.push(...practiceChecks,...displayChecks);
   fs.writeFileSync(path.join(output,'report.json'),JSON.stringify(report,null,2));
   console.log('PASS: '+report.checks.length+' Chromium checks; evidence in .local/browser-evidence.');
  }finally{await browser?.close();await new Promise(resolve=>server.close(resolve));}

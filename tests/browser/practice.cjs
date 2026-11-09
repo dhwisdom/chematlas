@@ -2,8 +2,8 @@
 const assert=require('node:assert/strict'),path=require('node:path');
 
 // Measure rendered text, so later theme overrides cannot silently hide lab labels.
-async function contrast(page){
- const failures=await page.locator('#gcPracticeOverlay').evaluate(root=>{
+async function contrast(page,selector='#gcPracticeOverlay'){
+ const failures=await page.locator(selector).evaluate(root=>{
   const rgb=s=>(s.match(/[\d.]+/g)||[]).map(Number);
   const luminance=channels=>channels.slice(0,3).map(n=>{n/=255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4;}).reduce((sum,n,i)=>sum+n*[.2126,.7152,.0722][i],0);
   const problems=[];
@@ -20,7 +20,7 @@ async function contrast(page){
   }
   return problems;
  });
- assert.deepEqual(failures,[],'Practice Lab text must have at least 4.5:1 contrast.');
+ assert.deepEqual(failures,[],`${selector} text must have at least 4.5:1 contrast.`);
 }
 
 module.exports=async function practice(page,output){
@@ -92,3 +92,4 @@ module.exports=async function practice(page,output){
  }
  return checks;
 };
+module.exports.contrast=contrast;

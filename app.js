@@ -86,14 +86,14 @@
     return { ...p, sx:w/2+p.x*base*perspective, sy:h/2-p.y*base*perspective, perspective };
   }
 
-  function drawAtom(a) {
+  function drawAtom(a,outline) {
     const baseRadius = currentStyle === 'sphere' ? (sphereRadii[a.element]||.42)*42 : 11;
     const r=Math.max(6,baseRadius*a.perspective*zoom);
     const color=atomColors[a.element]||'#b8c8d3';
     const g=ctx.createRadialGradient(a.sx-r*.35,a.sy-r*.4,r*.08,a.sx,a.sy,r);
     g.addColorStop(0,'#ffffff'); g.addColorStop(.17,color); g.addColorStop(1,'#14212b');
     ctx.beginPath(); ctx.arc(a.sx,a.sy,r,0,Math.PI*2); ctx.fillStyle=g; ctx.fill();
-    ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,.16)'; ctx.stroke();
+    ctx.lineWidth=1; ctx.strokeStyle=outline; ctx.stroke();
     if (currentStyle === 'stick' && r > 9) {
       ctx.fillStyle = a.element === 'C' ? '#f1f5f7' : '#07111a';
       ctx.font = `700 ${Math.max(8,r*.72)}px system-ui`;
@@ -109,6 +109,9 @@
     const atoms=parseXYZ(mol.xyz);
     const bonds=inferBonds(atoms);
     const w=canvas.clientWidth, h=canvas.clientHeight;
+    const palette=getComputedStyle(canvas);
+    const bondRgb=palette.getPropertyValue('--model-bond-rgb').trim()||'183,202,214';
+    const atomOutline=palette.getPropertyValue('--model-atom-outline').trim()||'rgba(255,255,255,.16)';
     ctx.clearRect(0,0,w,h);
 
     const halo=ctx.createRadialGradient(w/2,h/2,20,w/2,h/2,Math.min(w,h)*.46);
@@ -122,12 +125,12 @@
       const alpha=Math.max(.32,Math.min(.88,.58+z*.06));
       ctx.beginPath(); ctx.moveTo(a.sx,a.sy); ctx.lineTo(b.sx,b.sy);
       ctx.lineCap='round'; ctx.lineWidth=(currentStyle==='sphere'?7:9)*((a.perspective+b.perspective)/2)*zoom;
-      ctx.strokeStyle=`rgba(183,202,214,${alpha})`; ctx.stroke();
+      ctx.strokeStyle=`rgba(${bondRgb},${alpha})`; ctx.stroke();
       if(currentStyle==='stick'){
         ctx.beginPath(); ctx.moveTo(a.sx,a.sy); ctx.lineTo(b.sx,b.sy); ctx.lineWidth=Math.max(1,ctx.lineWidth*.24); ctx.strokeStyle='rgba(255,255,255,.36)'; ctx.stroke();
       }
     });
-    rotated.slice().sort((a,b)=>a.z-b.z).forEach(drawAtom);
+    rotated.slice().sort((a,b)=>a.z-b.z).forEach(a=>drawAtom(a,atomOutline));
   }
 
   function resizeCanvas() {
