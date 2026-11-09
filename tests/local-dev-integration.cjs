@@ -11,8 +11,11 @@ async function check(){
   assert.equal(response.status,200);
   assert.match(await response.text(),/ChemWaypoint/);
   const config=await(await fetch('http://127.0.0.1:3000/data/platform-config.js')).text();
-  assert.match(config,/"mode":"local"/);
-  assert(!config.includes('supabase.co'));
+  const generated=config.match(/^globalThis\.CHEMATLAS_BUILD_CONFIG=(.*);/);
+  assert(generated,'The frontend must contain explicit generated configuration.');
+  const published=JSON.parse(generated[1]);
+  assert.equal(published.mode,'local');
+  assert.equal(published.supabaseUrl,runtime().SUPABASE_URL);
  }finally{await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));}
 }
 
