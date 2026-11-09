@@ -11,12 +11,14 @@ This branch is for local development and mock frontend review. It creates no hos
 
 The Node commands below are identical in Windows PowerShell and macOS Terminal. No Bash activation, global Supabase installation, Supabase login, hosted project linking, production key, or OpenAI key is needed.
 
+The current published local-development branch is `fix/practice-lab-contrast` (PR #27). It includes the setup foundation from PR #26 and the accepted Labs/Tutor light-theme and startup fixes. `chore/local-dev-safety` stops before those fixes.
+
 ## Install and run
 
 ```text
 git clone https://github.com/dhwisdom/chematlas.git
 cd chematlas
-git switch chore/local-dev-safety
+git switch fix/practice-lab-contrast
 npm ci
 npm test
 npm run dev:mock
@@ -126,7 +128,7 @@ For your existing checkout, open PowerShell:
 Set-Location 'C:\Users\dalto\GitHub\chematlas'
 git status --short
 git fetch origin
-git switch chore/local-dev-safety
+git switch fix/practice-lab-contrast
 git pull --ff-only
 node --version
 docker version
@@ -161,7 +163,7 @@ mkdir -p ~/GitHub
 cd ~/GitHub
 git clone https://github.com/dhwisdom/chematlas.git
 cd chematlas
-git switch chore/local-dev-safety
+git switch fix/practice-lab-contrast
 node --version
 docker version
 npm ci
@@ -169,7 +171,7 @@ npm test
 npm run dev:local
 ```
 
-For an existing checkout, use `cd ~/GitHub/chematlas`, check `git status --short`, save personal changes if needed, then `git fetch origin`, `git switch chore/local-dev-safety`, and `git pull --ff-only` before the Node commands. Substitute your existing checkout's path if different.
+For an existing checkout, use `cd ~/GitHub/chematlas`, check `git status --short`, save personal changes if needed, then `git fetch origin`, `git switch fix/practice-lab-contrast`, and `git pull --ff-only` before the Node commands. Substitute your existing checkout's path if different.
 
 Open **http://127.0.0.1:3000**. In another Terminal window:
 
