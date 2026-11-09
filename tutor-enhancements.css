@@ -23,9 +23,12 @@
 #caTutorV2 .ca-thread-sync small{font-size:.68rem;color:var(--muted,#8ea0b8)}
 #caTutorV2 .ca-tutor-main-v2{min-width:0}
 #caTutorV2 .ca-tutor-head-v2{margin-bottom:14px}
-#caTutorV2 .ca-tutor-head-v2 h2{max-width:720px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#caTutorV2 .ca-tutor-head-v2>div{min-width:0}
+#caTutorV2 .ca-tutor-head-v2 h2{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 #caTutorV2 .ca-chat-v2{height:min(62vh,680px);min-height:440px;overflow-y:auto;padding:18px;scroll-behavior:smooth}
-#caTutorV2 .ca-message{display:grid;grid-template-columns:34px minmax(0,1fr);gap:11px;align-items:start;margin:0 0 16px}
+#caTutorV2 .ca-message{display:grid;grid-template-columns:34px minmax(0,1fr);gap:11px;align-items:start;margin:0 0 16px;max-width:100%}
+#caTutorV2 .ca-message.user>span{grid-column:1;grid-row:1}
+#caTutorV2 .ca-message.user>.ca-message-body{grid-column:2;grid-row:1}
 #caTutorV2 .ca-message>span{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;font-size:.68rem;font-weight:800;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06)}
 #caTutorV2 .ca-message.assistant>span{background:linear-gradient(145deg,rgba(52,127,255,.26),rgba(100,97,255,.16));color:#a8ceff;border-color:rgba(88,166,255,.20)}
 #caTutorV2 .ca-message-body{min-width:0}

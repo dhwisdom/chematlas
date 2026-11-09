@@ -242,15 +242,7 @@ button,input,textarea,select{font:inherit}
 #labView .lesson-header h2{color:var(--text)!important;font-size:27px!important}
 #labView .lesson-header p:not(.eyebrow){color:#71828a!important}
 .lab-layout{grid-template-columns:minmax(0,1.55fr) 330px!important;gap:16px!important}
-.molecule-panel,.model-info .panel{
-  background:#091721!important;border:1px solid #1d3443!important;color:#edf6fb!important;border-radius:10px!important;box-shadow:none!important
-}
-.model-toolbar{background:#0d1d29!important;border-bottom-color:#203a4a!important}.model-toolbar label{color:#86a0af!important}.model-toolbar select{background:#07141e!important;color:#fff!important;border-color:#284556!important}
-.segmented{background:#07141e!important;border-color:#284556!important}.seg{color:#8ca4b2!important}.seg.active{background:#153346!important;color:#fff!important}
-.viewer{
-  height:540px!important;background:radial-gradient(circle at center,#17364b 0,#07131e 70%)!important
-}
-.model-info .panel p,.model-info .panel span{color:#8fa8b8}.model-info .panel strong,.model-info .panel h3{color:#edf6fb}.why-card{background:linear-gradient(145deg,rgba(98,230,207,.06),#0c1924)!important}
+.viewer{height:540px!important}
 
 /* Organic */
 #organicView{max-width:1280px;margin:0 auto}
@@ -283,7 +275,7 @@ button,input,textarea,select{font:inherit}
 #caTutorV2 .ca-thread-item>span{background:#e7f4f1!important;color:var(--accent)!important}
 #caTutorV2 .ca-thread-item small,#caTutorV2 .ca-thread-empty,#caTutorV2 .ca-memory-note{color:var(--muted)!important}
 #caTutorV2 .ca-new-chat{background:#edf6f2!important;border-color:#c8dfd7!important;color:var(--accent)!important;border-radius:7px!important}
-#caTutorV2 .ca-message>span{background:#edf3f0!important;border-color:#e1e8e4!important;color:#5b747b!important}
+#caTutorV2 .ca-message>span{background:#edf3f0!important;border-color:#e1e8e4!important;color:var(--ca-ink-soft)!important}
 #caTutorV2 .ca-message.assistant>span{background:#e7f4f1!important;border-color:#cde3db!important;color:var(--accent)!important}
 #caTutorV2 .ca-message-copy{color:#425d69!important}
 #caTutorV2 .ca-message.user .ca-message-copy{background:#f5f8f6!important;border-color:#e5eae7!important;border-radius:8px!important}
@@ -342,6 +334,7 @@ button,input,textarea,select{font:inherit}
   .gc-workspace{grid-template-columns:1fr!important}.gc-syllabus{position:static!important;max-height:none!important}.ca-learning-sequence{grid-template-columns:repeat(2,1fr)}
   .lab-layout{grid-template-columns:1fr!important}.viewer{height:430px!important}
   #caTutorV2.ca-tutor-v2{display:block!important}.ca-home-welcome{align-items:flex-start;flex-direction:column}
+  #caTutorV2 .ca-tutor-side-v2{grid-template-columns:minmax(0,1fr)!important}
 }
 @media(max-width:560px){
   .ca-continue-copy{padding:22px}.ca-continue h3{font-size:24px}.ca-continue-footer{grid-template-columns:1fr auto}.ca-continue-footer .primary-button{grid-column:1/-1}
@@ -707,22 +700,37 @@ body.ca-landing-mode .main{background:#f7f8f5!important}
 .gc-tool-card,.gc-question-card,.gc-result-card{border-color:#e5ebe6!important;border-radius:8px!important;background:#fff!important}
 .gc-practice-shell .primary-button{background:#0b7b79!important;color:#fff!important}
 
-/* Lab: exact intentional dark workspace, not a leftover dark theme */
+/* Labs use the shared light palette; model drawing colors live on the canvas. */
+#labView,#caTutorView{--muted:var(--ca-ink-soft)}
 #labView .lesson-header h2{font-family:"Plus Jakarta Sans","DM Sans",sans-serif!important;color:#1b344a!important;font-size:25px!important}
-#labView .lesson-header p:not(.eyebrow){color:#778790!important;font-size:11px!important}
+#labView .lesson-header p:not(.eyebrow){color:var(--muted)!important;font-size:14px!important}
 .lab-layout{gap:13px!important}
-.molecule-panel,.model-info .panel{
-  border:1px solid #263f4b!important;border-radius:8px!important;background:#152c38!important;color:#e8f0ed!important;
+#labView .molecule-panel,#labView .model-info .panel{
+  border:1px solid var(--border)!important;border-radius:8px!important;background:var(--panel)!important;color:var(--text)!important;
   box-shadow:0 8px 24px rgba(26,52,64,.09)!important
 }
-.model-toolbar{min-height:38px!important;background:#1b3541!important;border-bottom-color:rgba(218,237,230,.1)!important}
-.model-toolbar label{color:#cad8d4!important}.model-toolbar select{border-color:rgba(218,237,230,.11)!important;background:rgba(9,25,34,.4)!important}
-.segmented{border-color:rgba(218,237,230,.11)!important;background:rgba(9,25,34,.4)!important}.seg{color:#91a9a7!important}.seg.active{background:rgba(57,124,119,.22)!important;color:#8fe0d1!important}
-.viewer{background:radial-gradient(circle at center,#1b3541 0,#152c38 72%)!important}
-.viewer-help{color:#789397!important}
-.model-info .panel{border-color:rgba(213,230,225,.11)!important;background:#1b3541!important}.model-info .panel p,.model-info .panel span{color:#91a9a7!important}.model-info .panel strong,.model-info .panel h3{color:#d8e5df!important}
-.polarity-badge{border-color:rgba(213,230,225,.13)!important;color:#b8cbc6!important}.polarity-badge.polar{border-color:rgba(117,208,193,.35)!important;color:#8fe0d1!important}
-.property-list div{border-bottom-color:rgba(213,230,225,.09)!important}
+#labView .model-toolbar{min-height:44px;background:var(--panel2);border-bottom-color:var(--border)}
+#labView .model-toolbar label{color:var(--muted)}
+#labView .model-toolbar select{border-color:#718992;background:var(--panel);color:var(--text);min-height:44px}
+#labView .segmented{border-color:#718992;background:var(--panel2)}
+#labView .seg{color:var(--text);min-height:44px}
+#labView .seg.active{background:var(--ca-teal-pale);color:var(--ca-teal-dark)}
+#labView .viewer{background:var(--panel2)!important;--model-bond-rgb:69,91,109;--model-atom-outline:var(--ca-ink-soft)}
+#labView .viewer-help{color:var(--muted);font-size:12px}
+#labView .model-info .panel p,#labView .model-info .panel span{color:var(--muted)}
+#labView .model-info .panel strong,#labView .model-info .panel h3{color:var(--text)}
+#labView .model-info .eyebrow{color:var(--accent)!important}
+#labView .polarity-badge{border-color:#718992;color:var(--text);background:var(--panel2)}
+#labView .polarity-badge.polar{border-color:var(--accent);color:var(--ca-teal-dark);background:var(--ca-teal-pale)}
+#labView .property-list div{border-bottom-color:var(--border)}
+#labView .lesson-copy li>span{background:var(--ca-teal-pale);color:var(--ca-teal-dark)}
+#labView .lesson-copy li p{color:var(--muted)}
+#labView .answer{background:var(--panel);color:var(--text);border-color:#718992;min-height:44px}
+#labView .answer:hover,#labView .answer.selected{background:var(--ca-teal-pale);color:var(--ca-teal-dark);border-color:var(--accent)}
+#labView .answer.selected{box-shadow:inset 0 0 0 1px var(--accent)}
+#labView .quiz-result.good{color:#245b36}
+#labView .quiz-result.bad{color:#8a302a}
+#labView :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 
 /* Organic Studio = light tutoring shell + dark manipulation canvas */
 .organic-hero,.organic-bridge,.organic-info .panel{box-shadow:0 3px 12px rgba(29,57,68,.025)!important}
@@ -731,6 +739,15 @@ body.ca-landing-mode .main{background:#f7f8f5!important}
 .organic-info .panel{border-color:#e7ebe7!important;background:#fff!important;color:#17324a!important}.organic-info .panel p{color:#647b81!important}
 
 /* Tutor exact light family */
+#caTutorView .ca-page-head p{color:var(--muted)!important}
+#caTutorView .ca-tutor-empty button{background:var(--panel2);color:var(--text);border-color:#718992;min-height:44px;font:inherit}
+#caTutorView .ca-tutor-empty button:hover{background:var(--ca-teal-pale);border-color:var(--accent)}
+#caTutorV2 .ca-message-body{background:transparent;border:0;padding:0}
+#caTutorV2 .ca-message-meta .ca-meta-pill{color:var(--muted)!important}
+#caTutorV2 .ca-context-details summary,#caTutorV2 .ca-context-details summary::before,#caTutorV2 .ca-inline-citation{color:var(--accent)}
+#caTutorV2 .ca-memory-on{color:var(--ca-teal-dark);background:var(--ca-teal-pale);border-color:var(--accent)}
+#caTutorView .ca-copilot-label>b,#caTutorView .ca-copilot-label>span{color:var(--ca-teal-dark)}
+#caTutorView :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 #caTutorV2 .ca-thread-rail,#caTutorV2 .panel,#caTutorV2 .ca-chat-v2{border-color:#e4e9e5!important;border-radius:12px!important;background:#fff!important;box-shadow:0 3px 12px rgba(29,57,68,.025)!important}
 #caTutorV2 .ca-message.user .ca-message-copy{border-color:#e2efeb!important;border-radius:10px 2px 10px 10px!important;background:#eff7f3!important;color:#31594f!important}
 #caTutorV2 .ca-message.assistant .ca-message-copy{color:#475e6c!important}

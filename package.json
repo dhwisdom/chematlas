@@ -8,7 +8,7 @@
   "scripts": {
     "build": "node scripts/build.cjs",
     "dev:mock": "node scripts/dev.cjs mock",
-    "dev:local": "node scripts/dev.cjs local",
+    "dev:local": "node scripts/local-dev.cjs",
     "backend:start": "node scripts/backend.cjs start",
     "backend:stop": "node scripts/backend.cjs stop",
     "backend:reset": "node scripts/backend.cjs reset",
