@@ -11,7 +11,7 @@ This branch is for local development and mock frontend review. It creates no hos
 
 The Node commands below are identical in Windows PowerShell and macOS Terminal. No Bash activation, global Supabase installation, Supabase login, hosted project linking, production key, or OpenAI key is needed.
 
-The isolated reconciliation is on local branch `integration/review-baseline`; it is not a production release. See `docs/integration-baseline.md` for exact inputs and validation.
+The isolated reconciliation is on branch `integration/review-baseline`; it is not a production release. See `docs/integration-baseline.md` for exact inputs and validation.
 
 The current published local-development branch is `fix/practice-lab-contrast` (PR #27). It includes the setup foundation from PR #26 and the accepted Labs/Tutor light-theme and startup fixes. `chore/local-dev-safety` stops before those fixes.
 

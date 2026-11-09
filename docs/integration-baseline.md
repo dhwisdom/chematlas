@@ -1,6 +1,6 @@
 # Isolated integration baseline
 
-Reviewed 2026-11-09 on local branch `integration/review-baseline`. This branch is not pushed, merged to main, or deployed. The existing Windows setup and its 12 successful integration checks remain accepted prior evidence; this report distinguishes fresh cloud-workspace results.
+Reviewed 2026-11-09 on local branch `integration/review-baseline`. This branch is approved for publication to GitHub for isolated testing only; it is not merged to main or deployed. The existing Windows setup and its 12 successful integration checks remain accepted prior evidence; this report distinguishes fresh cloud-workspace results.
 
 ## Inputs and reconciliation
 
@@ -49,8 +49,8 @@ This directly reproduces severe extraction-related storage pressure and strongly
 
 Real Auth/database/RLS/connector tests remain blocked before startup, not failed application assertions. Repeating the same pull on this environment is not useful. The smallest safe next step is to bring this integration commit to the already working Windows checkout without publishing it, then run `npm run dev:local` and `npm run test:integration`. Alternatively, the environment provider can supply a supported copy-on-write Docker storage driver and adequate workspace capacity; changing the managed daemon was not attempted. No additional subscription or paid resource was provisioned.
 
-The code baseline remains commit `15d7217`; this follow-up changes only the report. The combined branch still needs real database integration verification, production migration-history reconciliation, and separately approved release configuration. Existing mock/browser passes do not establish production RLS correctness.
+The code baseline remains commit `15d7217`; the storage-investigation follow-up changed only the report. A later publication-safety commit disables automatic Vercel deployment for this branch. The combined branch still needs real database integration verification, production migration-history reconciliation, and separately approved release configuration. Existing mock/browser passes do not establish production RLS correctness.
 
 ## Release limits
 
-This is a review baseline, not approval for production. Production environment configuration, the documented migration-history reconciliation, and release ordering still require separate review. Mock and fixture-based browser results cannot prove real database RLS. No hosted project, production record, email delivery, paid API call, recurring task, or deployment was created. The integration branch remains local to avoid triggering Git-based deployments.
+This is a review baseline, not approval for production. Production environment configuration, the documented migration-history reconciliation, and release ordering still require separate review. Mock and fixture-based browser results cannot prove real database RLS. No hosted project, production record, email delivery, paid API call, recurring task, or deployment was created. Automatic Vercel deployments are disabled specifically for `integration/review-baseline` in `vercel.json`; no other branch deployment setting is changed. The GitHub workflow has no push trigger.
