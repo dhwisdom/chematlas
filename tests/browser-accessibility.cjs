@@ -71,6 +71,26 @@ test('mobile drawer exposes state, excludes hidden controls, dismisses and survi
   await p.setViewportSize({width:800,height:1000});await menu.waitFor({state:'visible'});await p.waitForFunction(()=>document.querySelector('.sidebar').inert);
   assert.equal(await sidebar.evaluate(e=>e.inert),true);
 });
+test('course selector contains wrapped text at 200% zoom-equivalent and mobile viewports',async t=>{
+  const p=await setup(t);
+  // Halve BOTH dimensions for browser-zoom reflow; deviceScaleFactor alone does not zoom layout.
+  for(const [width,height] of [[1440,1000],[960,540],[720,450],[390,844],[320,568]]){
+    await p.setViewportSize({width,height});
+    if(width<=820&&!await p.locator('.sidebar').evaluate(el=>el.classList.contains('open')))await p.locator('#mobileMenu').click();
+    const card=p.locator('.ca-course-switcher');await card.scrollIntoViewIfNeeded();
+    const bounds=await card.evaluate(el=>{
+      const box=el.getBoundingClientRect();
+      return {width:box.width,height:box.height,children:[...el.querySelectorAll('small,strong,button')].map(child=>{
+        const rect=child.getBoundingClientRect();return {label:child.textContent.trim(),contained:rect.top>=box.top+1&&rect.bottom<=box.bottom-1&&rect.left>=box.left+1&&rect.right<=box.right-1};
+      }),overflow:el.scrollWidth>el.clientWidth+1};
+    });
+    assert(bounds.children.every(child=>child.contained),JSON.stringify({viewport:[width,height],...bounds}));
+    assert.equal(bounds.overflow,false,'Course selector must not overflow horizontally.');
+    const control=card.getByRole('button',{name:'Open course library'});await control.focus();await p.keyboard.press('Enter');
+    await p.waitForFunction(()=>location.pathname==='/courses');
+    await p.goto(base+'/genchem/measurement');await p.locator('.ca-focus-shell').waitFor();
+  }
+});
 test('module and assessment transitions keep focus and preserve first-answer evidence',async t=>{
   const p=await setup(t);
   await p.locator('[data-module="atoms-moles"]').focus();await p.keyboard.press('Enter');

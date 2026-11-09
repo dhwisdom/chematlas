@@ -30,8 +30,9 @@ button,input,textarea,select{font:inherit}
 }
 .ca-tutor-nav .icon{width:20px;text-align:center;font-size:15px}
 .ca-practice-dot{margin-left:auto;width:6px;height:6px;border-radius:50%}
+/* Keep the card tall enough for wrapped text when zoom reduces sidebar height. */
 .ca-course-switcher{
-  display:flex;align-items:center;gap:9px
+  display:flex;align-items:center;gap:9px;flex-shrink:0
 }
 .ca-course-switcher-icon{
   display:grid;width:32px;height:32px;place-items:center;border-radius:8px;font-size:15px
