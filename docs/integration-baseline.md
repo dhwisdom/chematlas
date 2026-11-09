@@ -33,9 +33,23 @@ The local-environment implementation of Companion already includes the account/r
 - Generated Companion bundles are reproducible; `git diff --check` passes.
 - Synthetic screenshot/report evidence: [report](integration-evidence/report.json), [desktop Labs](integration-evidence/labs-1440.png), [mobile Labs](integration-evidence/labs-390.png), [desktop Tutor](integration-evidence/tutor-chat-1440.png), [mobile Tutor](integration-evidence/tutor-chat-390.png). Desktop Labs and mobile Tutor were visually inspected.
 
-## Local backend blocker
+## Local backend blocker — isolated retry investigation
 
-The guarded `npm run backend:start` attempt downloaded several local images but did not reach readiness while pulling `ghcr.io/supabase/postgres:17.11.0.011`. During that attempt, a test rerun hit `ENOSPC` creating `dist/`. The image pull and startup processes were terminated; no containers reached a running state. Subsequent disk/inode checks reported free space, and the final unit/UI rerun passed 107/107. The cause of the transient filesystem error is unconfirmed. No Docker volumes or user data were deleted. Real Auth/database/RLS/connector integration checks were not run on this combined branch. The next step is to run `npm run dev:local` and `npm run test:integration` on the working Windows setup, or after the cloud image/download environment is resolved.
+The guarded initial startup did not reach readiness while pulling `ghcr.io/supabase/postgres:17.11.0.011`; a concurrent test rerun hit `ENOSPC` creating `dist/`. After stopping startup, the final unit/UI rerun passed 107/107.
+
+The authorized follow-up isolated the Postgres pull without changing application code or Docker settings:
+
+- Docker 28.4.0 uses `vfs`, rooted at `/var/lib/docker` on the same 32 GiB filesystem as the workspace.
+- Before retry: approximately 5 GiB used, 25 GiB free; inode usage 6%. Five other Supabase images were present (987.1 MB reported image size). No containers or volumes existed. The local Docker context and loopback network binding were verified.
+- Registry access, manifests, checksums, and layer downloads succeeded. The amd64 manifest has 28 layers totaling approximately 318 MiB compressed. No network/authentication denial was observed.
+- During extraction, filesystem use grew through 9, 14, 20, and 24 GiB to about 27 GiB. A monitor terminated only this exact image pull when free space fell below 3 GiB (3,087,613,952 bytes observed), before another full-disk error.
+- Docker automatically released the incomplete extraction after cancellation: filesystem use returned to approximately 5 GiB, with 25 GiB free. The Postgres image remained unavailable; the original five images remained, with zero containers and zero volumes. No prune, volume deletion, unrelated-data removal, or daemon reconfiguration was performed.
+
+This directly reproduces severe extraction-related storage pressure and strongly explains the earlier `ENOSPC`. Docker documents that [vfs deep-copies each parent layer](https://docs.docker.com/engine/storage/drivers/vfs-driver/), unlike copy-on-write drivers. The precise final space requirement was not measured because the pull was deliberately stopped with workspace headroom.
+
+Real Auth/database/RLS/connector tests remain blocked before startup, not failed application assertions. Repeating the same pull on this environment is not useful. The smallest safe next step is to bring this integration commit to the already working Windows checkout without publishing it, then run `npm run dev:local` and `npm run test:integration`. Alternatively, the environment provider can supply a supported copy-on-write Docker storage driver and adequate workspace capacity; changing the managed daemon was not attempted. No additional subscription or paid resource was provisioned.
+
+The code baseline remains commit `15d7217`; this follow-up changes only the report. The combined branch still needs real database integration verification, production migration-history reconciliation, and separately approved release configuration. Existing mock/browser passes do not establish production RLS correctness.
 
 ## Release limits
 
