@@ -33,7 +33,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npm run backend:start
+      - name: Start both services and verify backend reuse
+        run: node --require ./tests/offline.cjs tests/local-dev-integration.cjs
       - run: npm run test:integration
       - run: npm run backend:reset
       - run: npm run test:integration

@@ -26,10 +26,9 @@ Open **http://127.0.0.1:3000**. Ctrl+C stops the frontend. This mode requires no
 
 Both frontend commands print a three-step startup bar followed by **READY** and the browser URL. Once ready, the terminal stays running; silence while idle is normal. A `[browser] Page sent (HTTP 200).` message confirms a page request was served, not that browser JavaScript or backend requests have finished. Check the browser for those results. HTTP errors are logged by status only; URLs, query strings, passwords, and request bodies are not logged. These commands rebuild files when started; after editing source, stop and restart the frontend, then refresh the browser. In PowerShell, use `npm.cmd` instead of `npm` if script execution is blocked.
 
-For real local Auth/database/Companion testing, stop the mock server and run:
+For real local Auth/database/Companion testing, open Docker Desktop (or your compatible local engine), stop the mock server, and run one command:
 
 ```text
-npm run backend:start
 npm run dev:local
 ```
 
@@ -38,6 +37,10 @@ Open the same address. In a second terminal:
 ```text
 npm run test:integration
 ```
+
+`dev:local` automatically runs the guarded `backend:start` command before building or serving the frontend. It resumes an already running backend, retains your local data and fixture passwords, and prints a waiting message every five seconds while the backend starts. If Docker or the backend fails, it stops with an error instead of opening a frontend that cannot sign in. You do not need a separate backend terminal. Docker itself must already be running.
+
+Ctrl+C stops the frontend; the backend containers stay running so data and sessions remain available between frontend restarts. When finished, use `npm run backend:stop` to stop those services while retaining data. In Windows PowerShell, the equivalent commands are `npm.cmd run dev:local` and `npm.cmd run backend:stop`.
 
 `backend:start` creates/validates a loopback-bound local Docker network, starts Supabase, applies the local migration chain and seed, then creates synthetic Auth users through the local Auth admin API. First startup fails if a migration fails; it never substitutes mocked tests for real integration tests.
 
@@ -61,6 +64,7 @@ Studio, Storage, Realtime, and analytics are disabled to keep the test stack sma
 | Command | Effect |
 | --- | --- |
 | `npm run backend:status` | Checks local services and privately refreshes connection information |
+| `npm run dev:local` | Starts/resumes the guarded local backend, then serves the frontend in one terminal |
 | `npm run backend:stop` | Stops this project's services; retains local development data |
 | `npm run backend:start` | Starts/resumes local services and idempotently ensures synthetic accounts |
 | `npm run backend:seed` | Ensures synthetic accounts without resetting the database |
@@ -128,7 +132,6 @@ node --version
 docker version
 npm ci
 npm test
-npm run backend:start
 npm run dev:local
 ```
 
@@ -163,7 +166,6 @@ node --version
 docker version
 npm ci
 npm test
-npm run backend:start
 npm run dev:local
 ```
 

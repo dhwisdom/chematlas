@@ -40,3 +40,37 @@ test('full frontend boot uses synthetic sign-in and never loads a production bac
  assert(dom.window.document.querySelector('#caCompanionView'));assert(dom.window.document.body.textContent.includes('Synthetic data'));
  assert(!requests.some(url=>new URL(url).hostname.endsWith('.supabase.co')));
 });
+
+const {develop}=require('../scripts/local-dev.cjs');
+test('combined startup waits for the backend before exposing a working frontend',async t=>{
+ let release,frontendStarted=false;
+ const ready=new Promise(resolve=>{release=resolve;}),messages=[];
+ const pending=develop({backend:()=>ready,frontend:()=>{
+   frontendStarted=true;return start('mock',0,{log:()=>{}});
+ },log:message=>messages.push(message)});
+ assert.equal(frontendStarted,false);
+ assert(!messages.some(message=>message.includes('[backend] Ready.')));
+ release();
+ const server=await pending;t.after(()=>server.close());
+ assert.equal(frontendStarted,true);
+ const response=await fetch('http://127.0.0.1:'+server.address().port);
+ assert.equal(response.status,200);
+ assert.match(await response.text(),/ChemWaypoint/);
+});
+
+test('combined startup fails closed when the backend fails',async()=>{
+ let frontendStarted=false;
+ await assert.rejects(develop({backend:async()=>{throw Error('Backend unavailable.');},frontend:()=>{frontendStarted=true;},log:()=>{}}),/Backend unavailable.*Frontend was not started/);
+ assert.equal(frontendStarted,false);
+});
+
+test('combined command retains the real backend production guard',()=>{
+ const {spawnSync}=require('node:child_process'),path=require('node:path');
+ const result=spawnSync(process.execPath,[path.resolve(__dirname,'../scripts/local-dev.cjs')],{
+  env:{...process.env,APP_ENV:'production'},encoding:'utf8',timeout:10000
+ });
+ assert.equal(result.status,1);
+ assert.match(result.stderr,/Local commands cannot run in production mode/);
+ assert.match(result.stderr,/Frontend was not started/);
+ assert(!result.stdout.includes('READY'));
+});

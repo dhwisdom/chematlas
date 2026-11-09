@@ -33,7 +33,7 @@ function status(){
 }
 function runtime(){guard();const r=JSON.parse(fs.readFileSync(path.join(state,'runtime.json'),'utf8'));localUrl(r.SUPABASE_URL,['http:']);localUrl(r.DATABASE_URL,['postgres:','postgresql:']);return r;}
 async function assertDatabase(client){const r=await client.query("select name from dev_guard.identity where name='chemwaypoint-local-only'");if(r.rowCount!==1)throw Error('Not the disposable ChemWaypoint local database.');}
-async function seed(r){
+async function seed(r,{preservePasswords=false}={}){
   const {createClient}=require('@supabase/supabase-js');
   const client=createClient(r.SUPABASE_URL,r.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
   const {Client}=require('pg'),db=new Client({connectionString:r.DATABASE_URL});await db.connect();
@@ -44,11 +44,17 @@ async function seed(r){
     for(let attempt=0;attempt<12;attempt++){const check=await client.auth.admin.listUsers({page:1,perPage:1});if(!check.error){ready=true;break;}await new Promise(resolve=>setTimeout(resolve,500));}
     if(!ready)throw Error('Local Auth did not reconnect after database startup/reset.');
     const fixtureFile=path.join(state,'accounts.json');
-    const password=fs.existsSync(fixtureFile)?JSON.parse(fs.readFileSync(fixtureFile,'utf8')).password:crypto.randomBytes(24).toString('base64url');
+    const fixtureExists=fs.existsSync(fixtureFile);
+    const password=fixtureExists?JSON.parse(fs.readFileSync(fixtureFile,'utf8')).password:crypto.randomBytes(24).toString('base64url');
     const accounts=[];
     for(const [name,confirmed]of [['learner-a',true],['learner-b',true],['editor',true],['unconfirmed',false]]){
       const email=name+'@example.invalid';let {data,error}=await client.auth.admin.createUser({email,password,email_confirm:confirmed});
-      if(error){const found=await db.query('select id from auth.users where email=$1',[email]);if(found.rowCount!==1)throw error;const updated=await client.auth.admin.updateUserById(found.rows[0].id,{password});if(updated.error)throw updated.error;data=updated.data;}
+      if(error){
+        const found=await db.query('select id from auth.users where email=$1',[email]);if(found.rowCount!==1)throw error;
+        // Normal restarts must not reset passwords and invalidate learner sessions.
+        if(preservePasswords&&fixtureExists)data={user:{id:found.rows[0].id}};
+        else{const updated=await client.auth.admin.updateUserById(found.rows[0].id,{password});if(updated.error)throw updated.error;data=updated.data;}
+      }
       const id=data.user.id;accounts.push({email,id});
       if(name==='editor')await db.query('insert into public.site_admins(user_id) values($1) on conflict do nothing',[id]);
       if(name==='learner-a')await db.query("insert into public.learner_state(user_id,state_key,state_value) values($1,'chematlas-genchem-completed-v1','[\"measurement\"]') on conflict do nothing",[id]);
@@ -89,7 +95,7 @@ async function main(action){
     // CLI's clean environment uses a verified endpoint, never a remote context.
     const result=spawnSync(process.execPath,[cli,'start','--network-id',network],{cwd:root,env:{...cleanEnv(),DOCKER_HOST:endpoint},encoding:'utf8',maxBuffer:8*1024*1024});
     if(result.status!==0){fs.writeFileSync(path.join(state,'startup.log'),(result.stdout||'')+(result.stderr||''),{mode:0o600});throw Error('Local startup failed. Inspect ignored .local/startup.log; no mock fallback was substituted.');}
-    const r=status();await seed(r);console.log('Local backend ready. Run npm run dev:local.');
+    const r=status();await seed(r,{preservePasswords:true});console.log('Local backend ready.');
   }else if(action==='stop'){run(['stop']);console.log('Local backend stopped; data retained.');}
   else if(action==='status'){const r=status();console.log('Local backend: '+r.SUPABASE_URL+' (credentials saved privately)');}
   else if(action==='seed')await seed(runtime());
