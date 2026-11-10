@@ -592,3 +592,46 @@ test('Companion Practice again cannot dismiss a result during a pending saved-re
  assert.equal(await p.getByText('Saved explanation for retry race',{exact:true}).count(),0);
  assert.equal(reads,2);assert(actions.every(action=>['get_last_practice_result','get_learning_progress'].includes(action)));
 });
+
+test('stale startup repair and readiness retries cannot replace Tutor or Courses navigation',async t=>{
+ for(const kind of ['repair','retry'])for(const destination of ['tutor','courses']){
+  const p=await setup(t);
+  await p.addInitScript(kind=>{
+   const timeout=window.setTimeout,query=document.querySelector.bind(document);
+   window.__startupCallbacks=[];let delayed=false;
+   if(kind==='retry')document.querySelector=function(selector){
+    if(!delayed&&selector==='.genchem-nav'&&new Error().stack.includes('tryOpen')){delayed=true;return null;}
+    return query(selector);
+   };
+   window.setTimeout=function(fn,ms,...args){
+    const stack=new Error().stack;
+    if((kind==='repair'&&ms===80&&stack.includes('platform-route-fix.js'))||(kind==='retry'&&ms===150&&stack.includes('tryOpen'))){window.__startupCallbacks.push(()=>fn(...args));return -1;}
+    return timeout(fn,ms,...args);
+   };
+  },kind);
+  await p.goto(base+'/genchem/measurement?section=1');
+  await p.locator('.ca-focus-shell').waitFor();await p.waitForFunction(()=>!document.documentElement.hasAttribute('data-ca-starting'));
+  assert.equal(await p.evaluate(()=>window.__startupCallbacks.length),1,kind+' callback captured');
+  if(destination==='tutor'){
+   await p.locator('.ca-lesson-goals summary').click();await p.locator('.ca-inline-tutor').click();await p.locator('#caTutorV2').waitFor();
+  }else await p.locator('.ca-course-switcher button').click();
+  await p.evaluate(()=>window.__startupCallbacks.splice(0).forEach(fn=>fn()));
+  await p.waitForTimeout(100);
+  assert.equal(new URL(p.url()).pathname,'/'+destination,kind+' preserves destination');
+  assert.equal(await p.locator(destination==='tutor'?'#caTutorForm button[type="submit"]':'.open-organic').first().isVisible(),true);
+  await p.close();
+ }
+});
+
+test('startup routing retains canonical aliases and section or review queries',async t=>{
+ const p=await setup(t);await cloudFixture(p);
+ for(const suffix of ['?section=1','?review=1']){
+  await p.goto(base+'/genchem/acid-base'+suffix);
+  await p.waitForFunction(()=>location.pathname==='/genchem/acidbase'&&document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module==='acidbase');
+  if(suffix.includes('section'))await p.waitForFunction(()=>document.querySelector('.ca-focus-meter')?.getAttribute('aria-valuenow')==='2');
+  else await p.locator('.gc-check').waitFor({state:'visible'});
+  await p.waitForTimeout(250);
+  assert.equal(new URL(p.url()).search,suffix);
+  assert.equal(new URL(p.url()).pathname,'/genchem/acidbase');
+ }
+});

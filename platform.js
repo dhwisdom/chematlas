@@ -177,10 +177,16 @@
   }
   function clickCore(view){ document.body.classList.remove('ca-landing-mode'); document.querySelector(`.nav-item[data-view="${view}"]`)?.click(); }
 
+  // User interaction or history navigation supersedes pending startup routing.
+  let lessonNavigationEpoch=0;
+  document.addEventListener('click',()=>{lessonNavigationEpoch++;},true);
+  window.addEventListener('popstate',()=>{lessonNavigationEpoch++;},true);
   function openGenchem(moduleId){
     document.body.classList.remove('ca-landing-mode');
     let attempts=0;
+    const ownEpoch=lessonNavigationEpoch,requestedUrl=location.href;
     const tryOpen=()=>{
+      if(ownEpoch!==lessonNavigationEpoch||location.href!==requestedUrl)return;
       const btn=document.querySelector('.genchem-nav');
       if(btn?.dataset.genchemReady==='1'){
         // A ready event can finish routing before this startup retry fires.

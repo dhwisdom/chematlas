@@ -23,10 +23,17 @@
     if (location.pathname !== path) history[mode]({}, '', path+query);
   };
 
+  let navigationEpoch=0;
+  document.addEventListener('click',()=>{navigationEpoch++;},true);
+  window.addEventListener('popstate',()=>{navigationEpoch++;},true);
+  const checkpoint=()=>{const epoch=navigationEpoch,url=location.href;return ()=>epoch===navigationEpoch&&url===location.href;};
+
   function openCanonicalModule(id) {
     const slug = canonical(id);
     if (!validModule(slug)) return;
+    const current=checkpoint();
     const open = () => {
+      if(!current())return;
       const nav = document.querySelector('.genchem-nav');
       if (!nav || nav.dataset.genchemReady !== '1') return setTimeout(open, 100);
       // The main router may already have opened this lesson. Do not reset an
@@ -34,7 +41,8 @@
       if(document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module===slug){setPath(slug);return;}
       nav.dataset.genchemModule = slug;
       nav.click();
-      setTimeout(() => setPath(slug), 0);
+      const afterClick=checkpoint();
+      setTimeout(() => {if(afterClick())setPath(slug);}, 0);
     };
     open();
   }
@@ -63,7 +71,8 @@
     const slug = canonical(requested);
     if (slug !== requested || validModule(slug)) {
       if (slug !== requested) history.replaceState({}, '', `/genchem/${slug}${location.search}${location.hash}`);
-      setTimeout(() => openCanonicalModule(slug), 80);
+      const current=checkpoint();
+      setTimeout(() => {if(current())openCanonicalModule(slug);}, 80);
     }
   }
 
