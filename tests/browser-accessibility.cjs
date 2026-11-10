@@ -559,3 +559,36 @@ test('Companion last result survives refresh, has an empty state and rejects sta
  await p.evaluate(()=>window.__cloudFixture.change(null));await p.waitForFunction(()=>document.querySelector('#cwLastResult').disabled);
  assert.equal(reads,4);assert(actions.every(action=>['get_last_practice_result','get_learning_progress'].includes(action)),'Viewing saved results must never submit another attempt');
 });
+
+test('Companion Practice again cannot dismiss a result during a pending saved-result read',async t=>{
+ const p=await setup(t);await cloudFixture(p);
+ let release;const actions=[];
+ const result={moduleId:'atoms-moles',correct:2,total:3,details:[{correct:false,question:'Synthetic question',explanation:'Saved explanation for retry race'}]};
+ let reads=0;
+ await p.route('**/functions/v1/chemwaypoint-site-companion',async route=>{
+  const {action}=route.request().postDataJSON();actions.push(action);
+  if(action==='get_last_practice_result'){
+   if(++reads===2)await new Promise(resolve=>{release=resolve;});
+   await route.fulfill({json:{result}});
+  }else await route.fulfill({json:{completed:1,total:19,mastered:0,dueForReview:[],recommendedNext:null}});
+ });
+ await p.goto(base+'/companion');await p.locator('#cwTab-practice').click();
+ await p.locator('#cwLastResult').click();await p.getByText('Saved explanation for retry race',{exact:true}).waitFor();
+ const again=p.locator('[data-cw-action="again"]');assert.equal(await again.isEnabled(),true);
+ await p.locator('#cwLastResult').click();
+ await p.waitForFunction(()=>document.querySelector('[data-cw-action="again"]').disabled);
+ // Force event dispatch to exercise the handler guard as well as native disabled behavior.
+ await again.dispatchEvent('click');
+ assert.match(await p.locator('#cwPractice').innerText(),/Saved explanation for retry race/);
+ // Re-rendering the practice panel must preserve the disabled state too.
+ await p.locator('#cwTab-chat').click();await p.locator('#cwTab-practice').click();
+ assert.equal(await again.isDisabled(),true);
+ await again.dispatchEvent('click');
+ assert.match(await p.locator('#cwPractice').innerText(),/Saved explanation for retry race/);
+ while(!release)await p.waitForTimeout(10);
+ release();await p.waitForFunction(()=>!document.querySelector('#cwLastResult').disabled);
+ assert.equal(await again.isEnabled(),true);
+ await again.click();await p.getByText('One concept, a few good questions.',{exact:true}).waitFor();
+ assert.equal(await p.getByText('Saved explanation for retry race',{exact:true}).count(),0);
+ assert.equal(reads,2);assert(actions.every(action=>['get_last_practice_result','get_learning_progress'].includes(action)));
+});
