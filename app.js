@@ -231,34 +231,69 @@
   }));
   const menu = document.getElementById('mobileMenu');
   const sidebar = document.querySelector('.sidebar');
+  const main = document.querySelector('.main');
+  const closeMenu = document.getElementById('mobileMenuClose');
+  const backdrop = document.getElementById('mobileMenuBackdrop');
   const mobile = matchMedia('(max-width:820px)');
+  const navigationOpen = () => mobile.matches && sidebar.classList.contains('open');
+  const navigationControls = () => [...sidebar.querySelectorAll('button,a[href],select,input,textarea,summary,[tabindex]')]
+    .filter(el => el.tabIndex >= 0 && !el.disabled && !el.closest('[inert]') && el.checkVisibility());
   function syncNavigation() {
-    const open = mobile.matches && sidebar.classList.contains('open');
+    const open = navigationOpen();
     menu.setAttribute('aria-expanded', String(open));
+    backdrop.hidden = !open;
+    main.inert = open;
+    document.body.classList.toggle('ca-nav-open', open);
+    if (open) {
+      sidebar.setAttribute('role', 'dialog');
+      sidebar.setAttribute('aria-modal', 'true');
+    } else {
+      sidebar.removeAttribute('role');
+      sidebar.removeAttribute('aria-modal');
+    }
     // Inert also excludes controls injected into the sidebar after startup.
     sidebar.inert = mobile.matches && !open;
     if (sidebar.inert && sidebar.contains(document.activeElement)) menu.focus();
   }
+  function dismissNavigation(restoreFocus = true) {
+    sidebar.classList.remove('open');
+    syncNavigation();
+    if (restoreFocus && mobile.matches) menu.focus();
+  }
   menu.addEventListener('click', () => {
     sidebar.classList.toggle('open');
     syncNavigation();
-    if (mobile.matches && sidebar.classList.contains('open')) {
-      [...sidebar.querySelectorAll('button,a[href],select,input')]
-        .find(el => !el.disabled && el.checkVisibility())?.focus();
-    }
+    if (navigationOpen()) navigationControls()[0]?.focus();
   });
+  closeMenu.addEventListener('click', () => dismissNavigation());
+  backdrop.addEventListener('click', () => dismissNavigation());
+  // Close before opening a sibling account overlay or native reference dialog.
+  sidebar.addEventListener('click', event => {
+    if (event.target.closest('[data-account-open],[data-periodic-open]') && navigationOpen()) dismissNavigation(false);
+  }, true);
   document.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || !mobile.matches || !sidebar.classList.contains('open')) return;
-    event.preventDefault();
-    sidebar.classList.remove('open');
-    syncNavigation();
-    menu.focus();
+    if (!navigationOpen() || document.querySelector('dialog:modal')) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      dismissNavigation();
+    } else if (event.key === 'Tab') {
+      const controls = navigationControls(), first = controls[0], last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }
   });
   // Existing route handlers close the drawer by removing its open class.
   new MutationObserver(syncNavigation).observe(sidebar, {attributes:true, attributeFilter:['class']});
+  window.addEventListener('popstate', () => dismissNavigation(false));
   mobile.addEventListener('change', () => {
-    sidebar.classList.remove('open');
-    syncNavigation();
+    const needsDesktopFocus = !mobile.matches && [menu, closeMenu].includes(document.activeElement);
+    dismissNavigation(false);
+    if (needsDesktopFocus) {
+      // The menu controls disappear on desktop. Keep focus in visible navigation,
+      // avoiding search because its separate breakpoint handler moves it next.
+      const controls = navigationControls().filter(el => !el.closest('.ca-top-search'));
+      (controls.find(el => el.classList.contains('active')) || controls[0])?.focus();
+    }
   });
   syncNavigation();
 

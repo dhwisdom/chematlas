@@ -201,3 +201,7 @@ The browser suite uses only mock data and blocks outbound requests. It checks re
 Codex Cloud with an existing Chromium installation can set `CHROMIUM_EXECUTABLE_PATH` for the browser command. In PowerShell use `$env:CHROMIUM_EXECUTABLE_PATH = 'path-to-chromium.exe'`; in macOS/Linux use `CHROMIUM_EXECUTABLE_PATH=/path/to/chromium npm run test:browser`. Leave it unset to use Playwright's installed browser.
 
 The accessibility suite uses the guarded mock server and pinned axe-core. It covers keyboard navigation, all 19 Learn modules, account switching with delayed responses, resource readability, and Companion failure/retry behavior. Set `CHROMIUM_EXECUTABLE` to use an existing browser for that suite (`CHROMIUM_EXECUTABLE_PATH` remains the variable for `test:browser`).
+
+## Mobile responsive acceptance
+
+Run `npm run test:mobile` for the guarded mock viewport and mobile-navigation checks. See [mobile development review](mobile-responsive-review.md) for scope, verification limits, and physical-device acceptance.

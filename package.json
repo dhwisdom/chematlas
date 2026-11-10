@@ -18,7 +18,8 @@
     "test:integration": "node scripts/integration.cjs",
     "build:companion": "node scripts/build-companion-bridge.cjs",
     "test:browser": "node --require ./tests/offline.cjs tests/browser/mock.cjs",
-    "test:accessibility": "node --require ./tests/offline.cjs --test tests/browser-accessibility.cjs"
+    "test:accessibility": "node --require ./tests/offline.cjs --test tests/browser-accessibility.cjs",
+    "test:mobile": "node --require ./tests/offline.cjs tests/browser/mobile.cjs"
   },
   "devDependencies": {
     "@supabase/supabase-js": "2.117.2",

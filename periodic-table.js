@@ -20,7 +20,12 @@
   // Keep Escape confined to this reference, including when opened over Practice Lab.
   dialog.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();dialog.close();}});
   dialog.addEventListener('click',e=>{const button=e.target.closest('[data-element]');if(button)detail(button.dataset.element);if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
-  dialog.addEventListener('close',()=>{if(opener?.isConnected)opener.focus({preventScroll:true});});
+  dialog.addEventListener('close',()=>{
+   // Mobile navigation closes before this dialog opens. Its original button can
+   // therefore be inert; return to the visible menu rather than a hidden control.
+   const target=opener?.isConnected&&!opener.closest('[inert]')?opener:document.getElementById('mobileMenu');
+   target?.focus({preventScroll:true});
+  });
   function filter(){
    const q=dialog.querySelector('#ptSearch').value.trim().toLowerCase(),family=dialog.querySelector('#ptFamily').value;
    const found=elements.filter(e=>(!family||e.category===family)&&(!q||(/^\d+$/.test(q)?e.number===Number(q):[e.symbol,e.name,String(e.number),e.name==='Aluminum'?'aluminium':'',e.name==='Cesium'?'caesium':''].some(v=>v.toLowerCase().includes(q)))));

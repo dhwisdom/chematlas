@@ -285,14 +285,26 @@
   function installSearch() {
     const topbar = document.querySelector('.topbar');
     const actions = topbar?.querySelector('.top-actions');
-    if (!topbar || !actions || topbar.querySelector('.ca-top-search')) return;
+    if (!topbar || !actions || document.querySelector('.ca-top-search')) return;
 
     const wrap = document.createElement('div');
     wrap.className = 'ca-top-search';
     wrap.innerHTML = `
       <label><span>⌕</span><input type="search" placeholder="Search concepts..." aria-label="Search ChemWaypoint"></label>
       <div class="ca-search-results" hidden></div>`;
-    topbar.insertBefore(wrap, actions);
+    const mobileSearch = matchMedia('(max-width:820px)');
+    const placeSearch = () => {
+      const sidebar = document.querySelector('.sidebar');
+      const focused = wrap.contains(document.activeElement) ? document.activeElement : null;
+      if (mobileSearch.matches && sidebar) sidebar.insertBefore(wrap, sidebar.querySelector('.nav-list'));
+      else topbar.insertBefore(wrap, actions);
+      if (focused) {
+        if (mobileSearch.matches && sidebar?.inert) document.getElementById('mobileMenu')?.focus();
+        else focused.focus({preventScroll:true});
+      }
+    };
+    placeSearch();
+    mobileSearch.addEventListener('change', placeSearch);
 
     const input = wrap.querySelector('input');
     const results = wrap.querySelector('.ca-search-results');

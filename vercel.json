@@ -69,7 +69,8 @@
   "outputDirectory": "dist",
   "git": {
     "deploymentEnabled": {
-      "integration/review-baseline": false
+      "integration/review-baseline": false,
+      "feat/mobile-responsive-review": false
     }
   }
 }

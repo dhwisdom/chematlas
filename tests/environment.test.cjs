@@ -54,3 +54,11 @@ test('production builds cannot silently ship mocks when explicit production sett
   for(const env of [{VERCEL_ENV:'production'},{VERCEL_ENV:'production',APP_ENV:'mock'},{VERCEL_ENV:'production',APP_ENV:'local'}])assert.throws(()=>config(env),/explicit production/);
   assert.throws(()=>config({APP_ENV:'production'},'mock'),/Conflicting/);
 });
+
+// Review-only branches must not create deployments merely by being published.
+test('review branches retain explicit automatic deployment guards',()=>{
+ const deployments=JSON.parse(fs.readFileSync('vercel.json','utf8')).git.deploymentEnabled;
+ assert.equal(deployments['integration/review-baseline'],false);
+ assert.equal(deployments['feat/mobile-responsive-review'],false);
+ assert.equal(Object.values(deployments).some(value=>value===true),false,'No enabled pattern may override a review branch guard.');
+});

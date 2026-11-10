@@ -53,10 +53,13 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npx --no-install playwright install --with-deps chromium
       - run: npm run test:browser
+      - run: npm run test:mobile
       - uses: actions/upload-artifact@v4
         if: success()
         with:
           name: mock-chromium-evidence
-          path: .local/browser-evidence/
+          path: |
+            .local/browser-evidence/
+            .local/mobile-evidence/
           retention-days: 3
           include-hidden-files: true
