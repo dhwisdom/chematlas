@@ -35,12 +35,12 @@ The project-details response did not expose the configured Production Branch fie
 Passed in the isolated development checkout:
 
 - `npm ci` with a writable temporary npm cache, Node 24.22.1.
-- `npm test`: **112 passed, 0 failed**. This includes the new mobile-navigation DOM regression and all existing tests.
+- `npm test`: **114 passed, 0 failed**. This includes the new mobile-navigation DOM regression and all existing tests.
 - `npm run build`: guarded **mock** build.
 - `git diff --check`.
 - Focused code review of drawer, routing and search changes.
 
-**Rendered browser acceptance is blocked, not passed.** System Chromium failed before opening a page because this execution environment disallows its process-singleton Unix socket. The supported Playwright headless-shell installer returned an invalid/empty archive. A separate cloud browser could not reach the isolated localhost server. No screenshots or rendered viewport results were produced. DOM tests do not prove actual layout, native inert, touch behavior or mobile keyboard behavior.
+**Rendered browser acceptance is blocked, not passed.** System Chromium failed before opening a page because this execution environment disallows its process-singleton Unix socket. The supported Playwright headless-shell installer returned an invalid/empty archive. A separate cloud browser could not reach the isolated localhost server. No screenshots or rendered viewport results were produced in that cloud environment. DOM tests do not prove actual layout, native inert, touch behavior or mobile keyboard behavior.
 
 The local real-database integration suite was not rerun here because no Docker executable is available. This pass does not change backend or data logic. Previous integration results for the base commit are not results for this commit.
 
@@ -84,3 +84,9 @@ This patch leaves account rendering and authentication behavior unchanged. A sep
 The feature branch carries `git.deploymentEnabled["feat/mobile-responsive-review"] = false` from its first published commit, while retaining the existing disabled integration branch. [Vercel documents this branch-specific control](https://vercel.com/docs/project-configuration/git-configuration) as disabling automatic deployments. No enabled glob conflicts with either guard. The repository has only its root `vercel.json`, and its GitHub workflow has no push trigger. Publication does not create a PR, dispatch CI, or request a Vercel deployment. Manual deployment or removing the guard would require a separately approved action.
 
 When publishing through GitHub Git-data tools, create an unreferenced commit with the guarded final tree, compare its tree SHA against the locally tested tree, and only then create the new feature branch pointing directly to that guarded commit. Do not temporarily create the feature branch from an unguarded base. The published commit may have different metadata/SHA from the local development commits; verify tree identity rather than assuming commit identity.
+
+## 320px dashboard correction
+
+Windows validation of published commit `9fd68a8` reported accessibility **34/34** and mock-browser **27/27** passing. The mobile suite then stopped at `/dashboard`, 320px wide: document scroll width was 346px because the dashboard's secondary column retained a 310px desktop minimum.
+
+The later desktop declarations overrode the earlier responsive rules. The correction places dashboard/Continue-card breakpoints after their desktop definitions, allows nested grid items to shrink, and wraps phone metadata and footer actions. Two CSS cascade regression tests fail on the old rules and pass with this correction; they are structural tests, not rendered layout evidence. The mobile browser test now also checks stacked columns and dashboard card bounds. The corrected snapshot still needs a Windows mobile-suite rerun; the earlier Windows passes do not validate this new snapshot.

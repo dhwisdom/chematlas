@@ -27,6 +27,22 @@ async function main(){
    for(const route of ['/','/dashboard','/genchem/measurement','/tutor','/companion','/progress']){
     await ready(route);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,`${route} must fit ${width}px`);
+    if(route==='/dashboard'){
+     const dashboard=await page.locator('.ca-home-grid').evaluate(grid=>{
+      const bounds=grid.getBoundingClientRect();
+      return {columns:getComputedStyle(grid).gridTemplateColumns.split(' ').length,width:bounds.width,
+       cards:[...grid.querySelectorAll('.ca-home-side,.ca-mastery,.ca-recent,.ca-ask-strip')].map(card=>{
+        const rect=card.getBoundingClientRect();return {name:card.className,width:rect.width,contained:rect.left>=bounds.left-1&&rect.right<=bounds.right+1};
+       })};
+     });
+     if(width<=1100)assert.equal(dashboard.columns,1,`Dashboard must stack at ${width}px`);
+     assert(dashboard.cards.length>0&&dashboard.cards.every(card=>card.contained),JSON.stringify({width,...dashboard}));
+     if(width<=820){
+      const card=await page.locator('.ca-continue').evaluate(el=>({columns:getComputedStyle(el).gridTemplateColumns.split(' ').length,width:el.clientWidth,copyWidth:el.querySelector('.ca-continue-copy').getBoundingClientRect().width}));
+      assert.equal(card.columns,1,`Continue lesson must stack at ${width}px`);
+      assert(card.copyWidth>=card.width-2,'Continue lesson text must not be compressed into a desktop column');
+     }
+    }
     if(route==='/'&&width<=520){
      const columns=await page.locator('.ca-marketing-hero').evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length);
      assert.equal(columns,1,'Phone landing hero must be one column');
