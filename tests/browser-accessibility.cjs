@@ -706,3 +706,37 @@ test('the latest visible lesson click wins when URL writes are queued together',
  assert.equal(new URL(p.url()).pathname,'/genchem/formulas');
  assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'formulas');
 });
+
+
+for(const kind of ['repair','retry'])test(`lesson selection supersedes a held startup ${kind} before its URL write`,async t=>{
+ const p=await setup(t);await cloudFixture(p);
+ await p.addInitScript(kind=>{
+  const timeout=setTimeout,query=document.querySelector.bind(document);let delayed=false;
+  window.__oldNavigation=[];window.__selectedLessonWrites=[];
+  if(kind==='retry')document.querySelector=function(selector){
+   if(!delayed&&selector==='.genchem-nav'&&new Error().stack.includes('tryOpen')){delayed=true;return null;}
+   return query(selector);
+  };
+  window.setTimeout=function(fn,ms,...args){
+   const stack=new Error().stack;
+   if((kind==='repair'&&ms===80&&stack.includes('platform-route-fix.js'))||(kind==='retry'&&ms===150&&stack.includes('tryOpen'))){window.__oldNavigation.push(()=>fn(...args));return -1;}
+   if(ms===0&&stack.includes('platform-route-fix.js')){window.__selectedLessonWrites.push(()=>fn(...args));return -2;}
+   return timeout(fn,ms,...args);
+  };
+ },kind);
+ await p.goto(base+'/genchem/measurement');await p.locator('.ca-focus-shell').waitFor();
+ await p.waitForFunction(()=>window.ChemAtlasLearnerState?.owner==='account:A'&&window.__oldNavigation.length===1);
+ await p.waitForTimeout(250);
+ await p.evaluate(()=>window.__selectedLessonWrites.splice(0).forEach(fn=>fn()));
+ await p.locator('[data-module="atoms-moles"]').click();
+ assert.equal(new URL(p.url()).pathname,'/genchem/measurement');
+ assert.equal(await p.evaluate(()=>window.__selectedLessonWrites.length),1);
+ assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'atoms-moles');
+ // Release old work first, while the chosen lesson's URL is deliberately still pending.
+ await p.evaluate(()=>window.__oldNavigation.splice(0).forEach(fn=>fn()));
+ assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'atoms-moles');
+ assert.equal(await p.evaluate(()=>window.__selectedLessonWrites.length),1);
+ await p.evaluate(()=>window.__selectedLessonWrites.splice(0).forEach(fn=>fn()));
+ assert.equal(new URL(p.url()).pathname,'/genchem/atoms-moles');
+ assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'atoms-moles');
+});

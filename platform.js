@@ -185,7 +185,7 @@
     history[method]=function(...args){const before=location.href;const result=original.apply(this,args);if(location.href!==before)navigationEpoch++;return result;};
   }
   window.addEventListener('popstate',()=>{navigationEpoch++;},true);
-  window.ChemAtlasNavigation={checkpoint(){const epoch=navigationEpoch,url=location.href;return ()=>epoch===navigationEpoch&&url===location.href;}};
+  window.ChemAtlasNavigation={beginLessonNavigation(){navigationEpoch++;},checkpoint(){const epoch=navigationEpoch,url=location.href;return ()=>epoch===navigationEpoch&&url===location.href;}};
   function openGenchem(moduleId){
     document.body.classList.remove('ca-landing-mode');
     let attempts=0;

@@ -50,7 +50,11 @@
     const target = event.target.closest('[data-module],[data-module-nav]');
     if (!target) return;
     const id = target.dataset.module || target.dataset.moduleNav;
-    if (id && target.closest('#genchemView')) deferPath(id,'pushState');
+    if (id && target.closest('#genchemView')) {
+      // Selection changes the lesson before its URL write; supersede startup work now.
+      window.ChemAtlasNavigation.beginLessonNavigation();
+      deferPath(id,'pushState');
+    }
   }, true);
 
   document.addEventListener('click', event => {
