@@ -202,7 +202,7 @@
   }
 
   function routeFromLocation(){
-    const p=location.pathname.replace(/\/+$/,'') || '/';
+    const p=window.ChemAtlasBoot.resolveLocation();
     if(p==='/'){showLanding();return;}
     if(p==='/dashboard'){clickCore('home');return;}
     if(p==='/curriculum'){clickCore('curriculum');return;}

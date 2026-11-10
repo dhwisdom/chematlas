@@ -2,17 +2,7 @@
   if (window.__CHEMATLAS_ROUTE_FIX__) return;
   window.__CHEMATLAS_ROUTE_FIX__ = true;
 
-  const aliases = {
-    'intermolecular-forces': 'imf',
-    'molecular-geometry': 'geometry',
-    'acid-base': 'acidbase',
-    'acid-base-buffers': 'acidbase',
-    'electrochemistry': 'electrochem',
-    'electronic-structure': 'electronic',
-    'periodic-trends': 'periodic'
-  };
-
-  const canonical = id => aliases[id] || id;
+  const canonical = id => window.ChemAtlasBoot.canonicalModule(id);
   const validModule = id => (window.CHEM_GENCHEM?.modules || []).some(m => m.id === id);
   const setPath = (id, mode = 'replaceState') => {
     if (!id) return;

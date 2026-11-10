@@ -323,7 +323,7 @@ test('all 19 Learn modules keep optional jumps, keyboard Previous/Continue and s
   await p.goto(base+'/genchem/measurement?section=1');await p.waitForFunction(()=>document.querySelector('.ca-focus-meter')?.getAttribute('aria-valuenow')==='2');
   await p.goto(base+'/genchem/measurement');await p.waitForFunction(()=>document.querySelector('.ca-focus-meter')?.getAttribute('aria-valuenow')==='2');
   await p.goto(base+'/genchem/measurement?review=1');await p.locator('.gc-check').waitFor({state:'visible'});
-  await p.goto(base+'/genchem/acid-base?review=1');await p.waitForFunction(()=>window.ChemAtlasLearnerState?.owner==='account:A');await p.locator('.gc-check').waitFor({state:'visible'});
+  await p.goto(base+'/genchem/acid-base?review=1');await p.waitForFunction(()=>window.ChemAtlasLearnerState?.owner==='account:A'&&document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module==='acidbase');await p.locator('.gc-check').waitFor({state:'visible'});
   assert.equal(await p.evaluate(()=>location.pathname+location.search),'/genchem/acidbase?review=1');
   await p.setViewportSize({width:390,height:900});
   await p.locator('.ca-step-jump summary').focus();await p.keyboard.press('Enter');
@@ -646,7 +646,7 @@ test('a lesson disclosure does not cancel pending alias repair',async t=>{
  });
  await p.waitForFunction(()=>window.__aliasRepairs.length===1);
  assert.equal(new URL(p.url()).pathname,'/genchem/acidbase');
- assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'measurement');
+ assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'acidbase');
  await p.locator('.ca-lesson-goals summary').click();
  await p.evaluate(()=>window.__aliasRepairs.splice(0).forEach(fn=>fn()));
  await p.waitForFunction(()=>document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module==='acidbase');
@@ -739,4 +739,39 @@ for(const kind of ['repair','retry'])test(`lesson selection supersedes a held st
  await p.evaluate(()=>window.__selectedLessonWrites.splice(0).forEach(fn=>fn()));
  assert.equal(new URL(p.url()).pathname,'/genchem/atoms-moles');
  assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'atoms-moles');
+});
+
+test('alias entry is ready on the requested lesson before mobile interaction under delayed platform loading',async t=>{
+ const p=await setup(t);await cloudFixture(p);
+ // Reproduce Gen Chem becoming ready before the main router loads.
+ await p.route('**/platform.js',async route=>{
+  await p.waitForFunction(()=>document.querySelector('.genchem-nav')?.dataset.genchemReady==='1');
+  await route.continue();
+ });
+ await p.addInitScript(()=>{
+  const timeout=setTimeout;window.__aliasStartup=[];window.__revealedModules=[];
+  new MutationObserver(records=>{
+   if(records.some(r=>r.target===document.documentElement)&&!document.documentElement.hasAttribute('data-ca-starting'))window.__revealedModules.push(document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module);
+  }).observe(document,{attributes:true,subtree:true,attributeFilter:['data-ca-starting']});
+  window.setTimeout=function(fn,ms,...args){
+   const stack=new Error().stack;
+   if((ms===80&&stack.includes('platform-route-fix.js'))||(ms===150&&stack.includes('tryOpen'))){window.__aliasStartup.push(()=>fn(...args));return -1;}
+   return timeout(fn,ms,...args);
+  };
+ });
+ await p.goto(base+'/genchem/acid-base?review=1#connected');
+ await p.waitForFunction(()=>window.ChemAtlasLearnerState?.owner==='account:A'&&document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module==='acidbase'&&!document.documentElement.hasAttribute('data-ca-starting'));
+ await p.locator('.gc-check').waitFor({state:'visible'});
+ assert.equal(new URL(p.url()).pathname+new URL(p.url()).search+new URL(p.url()).hash,'/genchem/acidbase?review=1#connected');
+ assert.deepEqual(await p.evaluate(()=>window.__revealedModules),['acidbase']);
+ assert.equal(await p.evaluate(()=>window.__aliasStartup.length),1);
+ await p.setViewportSize({width:390,height:900});
+ await p.locator('.ca-step-jump summary').focus();await p.keyboard.press('Enter');
+ const first=await p.locator('[data-focus-index]').first().elementHandle();
+ await p.evaluate(()=>window.__aliasStartup.splice(0).forEach(fn=>fn()));
+ assert.equal(await first.evaluate(e=>e.isConnected),true);
+ assert.equal(await p.locator('.ca-step-jump').evaluate(e=>e.open),true);
+ await p.locator('[data-focus-index]').first().click();
+ await p.locator('.ca-focus-next').focus();await p.keyboard.press('Enter');
+ assert.equal(await p.locator('.ca-focus-meter').getAttribute('aria-valuenow'),'2');
 });
