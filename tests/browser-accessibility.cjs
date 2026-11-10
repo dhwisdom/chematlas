@@ -530,3 +530,32 @@ test('five fixes: real browser preflight rejection is distinguishable from a ser
  assert.doesNotMatch(await p.locator('#cwPracticeStatus').innerText(),/Failed to fetch/);
  await fiveEvidence(p,'companion-preflight',{environment:'local browser against unchanged bundled handler; not live-service evidence',trace,failures});
 });
+
+test('Companion last result survives refresh, has an empty state and rejects stale account responses',async t=>{
+ const p=await setup(t);await cloudFixture(p);
+ let reads=0,release,hold=false;const actions=[];
+ const result={moduleId:'atoms-moles',correct:2,total:3,details:[{correct:false,question:'Synthetic saved question',explanation:'Synthetic saved explanation'}]};
+ await p.route('**/functions/v1/chemwaypoint-site-companion',async route=>{
+  const body=route.request().postDataJSON();actions.push(body.action);
+  if(body.action==='get_last_practice_result'){
+   reads++;const owner=await p.evaluate(()=>window.ChemAtlasLearnerState.owner);
+   if(hold)await new Promise(resolve=>release=resolve);
+   await route.fulfill({json:{result:owner==='account:A'?result:null}}).catch(()=>{});
+  }else await route.fulfill({json:{completed:1,total:19,mastered:0,dueForReview:[],recommendedNext:null}});
+ });
+ const open=async()=>{await p.goto(base+'/companion');await p.locator('#cwTab-practice').click();await p.locator('#cwLastResult').waitFor();};
+ await open();await p.locator('#cwLastResult').click();await p.getByText('Synthetic saved explanation',{exact:true}).waitFor();
+ assert.match(await p.locator('#cwPractice').innerText(),/2 of 3/);
+ await p.reload();await p.locator('#cwTab-practice').click();assert.equal(await p.getByText('Synthetic saved explanation',{exact:true}).count(),0);
+ await p.locator('#cwLastResult').click();await p.getByText('Synthetic saved explanation',{exact:true}).waitFor();
+ await p.evaluate(()=>window.__cloudFixture.change('B'));await p.waitForFunction(()=>window.ChemAtlasLearnerState.owner==='account:B');
+ await p.waitForFunction(()=>!document.querySelector('#cwPractice').textContent.includes('Synthetic saved explanation'));
+ await p.locator('#cwLastResult').click();await p.getByText(/No saved Companion results yet/).waitFor();
+ await p.evaluate(()=>window.__cloudFixture.change('A'));await p.waitForTimeout(100);
+ hold=true;await p.locator('#cwLastResult').click();await p.waitForFunction(()=>document.querySelector('#cwLastResult').disabled);
+ while(!release)await p.waitForTimeout(10);
+ await p.evaluate(()=>window.__cloudFixture.change('B'));await p.waitForFunction(()=>window.ChemAtlasLearnerState.owner==='account:B');release();await p.waitForTimeout(150);
+ assert.equal(await p.getByText('Synthetic saved explanation',{exact:true}).count(),0);
+ await p.evaluate(()=>window.__cloudFixture.change(null));await p.waitForFunction(()=>document.querySelector('#cwLastResult').disabled);
+ assert.equal(reads,4);assert(actions.every(action=>['get_last_practice_result','get_learning_progress'].includes(action)),'Viewing saved results must never submit another attempt');
+});

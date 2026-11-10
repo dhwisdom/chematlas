@@ -48,6 +48,7 @@
     if(!session||options.headers?.Authorization!=='Bearer '+session.access_token)return response({error:'Sign into a synthetic demo account.'},401);
     const {action,args={}}=JSON.parse(options.body||'{}'), modules=window.CHEM_GENCHEM?.modules||[];
     if(action==='get_learning_progress'){const rows=database().learner_state||[],own=rows.filter(r=>r.user_id===session.user.id),events=own.find(r=>r.state_key==='chematlas-assessment-events-v1')?.state_value||[],legacy=own.find(r=>r.state_key==='chematlas-genchem-completed-v1')?.state_value||[];const lessons=modules.map(m=>({...m,...window.ChemAtlasAssessment.summarize(m.id,events,legacy),url:'/genchem/'+m.id}));return response({simulated:true,completed:lessons.filter(m=>m.complete).length,mastered:lessons.filter(m=>m.mastered).length,total:lessons.length,dueForReview:lessons.filter(m=>m.due),recommendedNext:lessons.find(m=>!m.complete)||null});}
+    if(action==='get_last_practice_result')return response({result:database().companion_results?.[session.user.id]||null});
     if(action==='lookup_compound')return response({compounds:[{CID:2244,MolecularFormula:'C9H8O4',MolecularWeight:'180.16',IUPACName:'Synthetic aspirin reference fixture',url:'https://pubchem.ncbi.nlm.nih.gov/compound/2244'}]});
     if(action==='create_practice_set'){
       const m=modules.find(m=>m.id===args.module_id);if(!m)return response({error:'Lesson not found'},404);
@@ -58,7 +59,7 @@
       if(saved.result){if(JSON.stringify(saved.choices)!==JSON.stringify(args.choices))return response({error:'Demo answers already submitted'},422);return response(saved.result);}
       const at=Date.now(),run={id:args.session_id,type:'start',moduleId:saved.moduleId,at,mode:'lesson',eligible:false,questionIds:saved.questions.map(q=>q.id)};
       const events=[run,...saved.questions.map((q,i)=>({id:run.id+'-answer-'+i,type:'answer',moduleId:saved.moduleId,run:run.id,questionId:q.id,choice:args.choices[i],correct:q.answer===args.choices[i],at:at+i+1})),{id:run.id+'-finish',type:'finish',moduleId:saved.moduleId,run:run.id,at:at+10}];
-      await client.rpc('merge_assessment_events',{p_events:events});saved.choices=args.choices;saved.result={simulated:true,saved:true,moduleId:saved.moduleId,correct:saved.questions.filter((q,i)=>q.answer===args.choices[i]).length,total:saved.questions.length,mastery:{label:'Simulated result — stored only in this browser demo'},details:[]};return response(saved.result);
+      await client.rpc('merge_assessment_events',{p_events:events});saved.choices=args.choices;saved.result={simulated:true,saved:true,moduleId:saved.moduleId,correct:saved.questions.filter((q,i)=>q.answer===args.choices[i]).length,total:saved.questions.length,mastery:{label:'Simulated result — stored only in this browser demo'},details:[]};const db=database();db.companion_results={...db.companion_results,[saved.userId]:saved.result};save(db);return response(saved.result);
     }
     return response({error:'Use local mode for this integration.'},400);
   }};

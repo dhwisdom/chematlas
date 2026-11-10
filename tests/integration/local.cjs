@@ -42,15 +42,19 @@ async function companion(action,args={},token=sessionA.access_token){
  return {response,body:await response.json()};
 }
 test('real website Companion grades, saves once, rejects cross-account access and reconciles progress',async()=>{
+ assert.equal((await companion('get_last_practice_result')).body.result,null);
  const made=await companion('create_practice_set',{module_id:'atoms-moles'});assert.equal(made.response.status,200,JSON.stringify(made.body));
  assert(made.body.questions.every(q=>!('answer' in q)));const id=made.body.sessionId,choices=made.body.questions.map(()=>0);
  const foreign=await companion('submit_practice_set',{session_id:id,choices},sessionB.access_token);assert.equal(foreign.response.status,404);
  const saved=await companion('submit_practice_set',{session_id:id,choices});assert.equal(saved.response.status,200,JSON.stringify(saved.body));assert.equal(saved.body.saved,true);
  assert(saved.body.url.startsWith('http://127.0.0.1:3000/'));
+ const last=await companion('get_last_practice_result',{user_id:sessionB.user.id});assert.equal(last.response.status,200);assert.equal(last.body.result.sessionId,id);assert.deepEqual(last.body.result.details,saved.body.details);
+ assert.equal((await companion('get_last_practice_result',{user_id:sessionA.user.id},sessionB.access_token)).body.result,null);
  const retry=await companion('submit_practice_set',{session_id:id,choices});assert.equal(retry.response.status,200);assert.equal(retry.body.completedAt,saved.body.completedAt);
  const changed=await companion('submit_practice_set',{session_id:id,choices:choices.map(()=>1)});assert.equal(changed.response.status,422);
  const progress=await companion('get_learning_progress');assert.equal(progress.response.status,200);assert(progress.body.lessons.find(m=>m.id==='atoms-moles').complete);
  const expired=await companion('create_practice_set',{module_id:'measurement'});
+ assert.equal((await companion('get_last_practice_result')).body.result.sessionId,id,'A newer unfinished set must not hide the saved result');
  await db.query("update public.companion_practice_sessions set expires_at=now()-interval '1 minute' where id=$1 and user_id=$2",[expired.body.sessionId,sessionA.user.id]);
  assert.equal((await companion('submit_practice_set',{session_id:expired.body.sessionId,choices})).response.status,422);
  assert.equal((await companion('get_learning_progress',{},'invalid')).response.status,401);

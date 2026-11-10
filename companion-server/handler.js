@@ -43,6 +43,11 @@ async function handleBridge(req){
  if(action==='get_companion_status')return json({accountConnected:!!userId,lessonsAvailable:modules.length,accountMatching:'Uses your signed-in ChemWaypoint account.',source:SOURCE,website:SITE_ORIGIN});
 
  const state=await learnerState(userId);
+ if(action==='get_last_practice_result'){
+ const rows=await rest('companion_practice_sessions?user_id=eq.'+encodeURIComponent(userId)+'&submitted_at=not.is.null&result=not.is.null&select=result&order=submitted_at.desc,id.desc&limit=1');
+ const result=rows[0]?.result;
+ return json({result:result?{...result,url:SITE_ORIGIN+'/progress',mastery:summarize(result.moduleId,state.events,state.legacy)}:null});
+ }
  if(action==='get_learning_progress')return json(progressFor(modules,state));
  if(action==='create_practice_set'){
  const m=modules.find(m=>m.id===args.module_id);if(!m)return json({error:'Lesson not found'},404);
