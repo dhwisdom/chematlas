@@ -18,6 +18,25 @@ test('local destinations reject credentials tricks, lookalike hosts, remote data
 function browser(cfg,host='https://review.vercel.app'){
  const d=new JSDOM('<body></body>',{url:host,runScripts:'outside-only'});d.window.fetch=async()=>{throw Error('Unexpected real fetch');};d.window.CHEMATLAS_BUILD_CONFIG=cfg;return d;
 }
+test('development notice remains in page flow below navigation overlays',async()=>{
+ for(const mode of ['mock','test','local']){
+  const dom=browser({mode,supabaseUrl:mode==='local'?'http://127.0.0.1:54321':'https://mock.chemwaypoint.invalid'},'http://127.0.0.1:3000');
+  try{
+   dom.window.eval(source);await new Promise(resolve=>dom.window.document.addEventListener('DOMContentLoaded',resolve,{once:true}));
+   const note=dom.window.document.querySelector('body > [role="note"]');assert(note);
+   assert.match(note.textContent,mode==='local'?/LOCAL TEST DATA/:/FRONTEND DEMO/);
+   assert.equal(note.style.position,'relative');assert.equal(note.style.zIndex,'1','the note must not overlay drawer controls');
+   assert.notEqual(note.style.display,'none');assert.equal(note.hidden,false);
+  }finally{dom.window.close();}
+ }
+});
+test('production does not add a development notice',async()=>{
+ const dom=browser({mode:'production',canonicalHost:'www.chemwaypoint.com',supabaseUrl:'https://zslxoqvqxdqwykzdogor.supabase.co'},'https://www.chemwaypoint.com');
+ try{
+  dom.window.eval(source);await new Promise(resolve=>dom.window.document.addEventListener('DOMContentLoaded',resolve,{once:true}));
+  assert.equal(dom.window.document.querySelector('[role="note"]'),null);
+ }finally{dom.window.close();}
+});
 test('browser refuses injected production config on a preview host before initializing the client',()=>{
  const dom=browser({mode:'production',canonicalHost:'www.chemwaypoint.com',supabaseUrl:'https://zslxoqvqxdqwykzdogor.supabase.co'});
  assert.throws(()=>dom.window.eval(source),/forbidden/);dom.window.close();

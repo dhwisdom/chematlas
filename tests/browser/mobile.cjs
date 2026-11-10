@@ -53,8 +53,22 @@ async function main(){
   }
   await page.setViewportSize({width:390,height:844});await ready('/dashboard');
   const menu=page.locator('#mobileMenu'),sidebar=page.locator('.sidebar');
+  const demoNote=page.getByRole('note').filter({hasText:'FRONTEND DEMO'});
+  const visibleDemoNote=async()=>{
+   await page.evaluate(()=>scrollTo({top:0,left:0,behavior:'instant'}));
+   assert.equal(await demoNote.isVisible(),true,'development warning must remain visible');
+   await page.waitForFunction(()=>{
+    const el=[...document.querySelectorAll('[role="note"]')].find(note=>note.textContent.includes('FRONTEND DEMO'));
+    const bounds=el.getBoundingClientRect();return el.contains(document.elementFromPoint(bounds.left+bounds.width/2,bounds.top+bounds.height/2));
+   }); // Wait for the drawer's exit transition before checking the revealed warning.
+  };
+  await visibleDemoNote();
   for(const dismiss of ['close','backdrop','escape']){
    await menu.click();await page.locator('#mobileMenuClose').waitFor({state:'visible'});
+   await page.waitForFunction(()=>{
+    const button=document.getElementById('mobileMenuClose'),bounds=button.getBoundingClientRect();
+    return button.contains(document.elementFromPoint(bounds.left+bounds.width/2,bounds.top+bounds.height/2));
+   });
    assert.equal(await page.locator('.main').evaluate(el=>el.inert),true);
    assert.equal(await sidebar.getAttribute('aria-modal'),'true');
    // Native <summary> controls must remain in the focus loop, including collapsed task options.
@@ -65,8 +79,9 @@ async function main(){
    else if(dismiss==='backdrop')await page.locator('#mobileMenuBackdrop').click({position:{x:380,y:300}});
    else await page.keyboard.press('Escape');
    await closed();assert.equal(await menu.evaluate(el=>document.activeElement===el),true);
+   await visibleDemoNote();
   }
-  checks.push('Touch close, outside tap, Escape, native summary focus loop and background inert');
+  checks.push('Visible development warning, unobstructed touch close, outside tap, Escape, native summary focus loop and background inert');
   await menu.click();await sidebar.locator('[data-periodic-open]').click();await closed();
   await page.locator('#ptSearch').waitFor({state:'visible'});await page.keyboard.press('Escape');
   await page.locator('#caPeriodicTable').waitFor({state:'hidden'});

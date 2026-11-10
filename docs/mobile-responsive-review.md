@@ -35,7 +35,7 @@ The project-details response did not expose the configured Production Branch fie
 Passed in the isolated development checkout:
 
 - `npm ci` with a writable temporary npm cache, Node 24.22.1.
-- `npm test`: **114 passed, 0 failed**. This includes the new mobile-navigation DOM regression and all existing tests.
+- `npm test`: **116 passed, 0 failed**. This includes the new mobile-navigation DOM regression and all existing tests.
 - `npm run build`: guarded **mock** build.
 - `git diff --check`.
 - Focused code review of drawer, routing and search changes.
@@ -90,3 +90,9 @@ When publishing through GitHub Git-data tools, create an unreferenced commit wit
 Windows validation of published commit `9fd68a8` reported accessibility **34/34** and mock-browser **27/27** passing. The mobile suite then stopped at `/dashboard`, 320px wide: document scroll width was 346px because the dashboard's secondary column retained a 310px desktop minimum.
 
 The later desktop declarations overrode the earlier responsive rules. The correction places dashboard/Continue-card breakpoints after their desktop definitions, allows nested grid items to shrink, and wraps phone metadata and footer actions. Two CSS cascade regression tests fail on the old rules and pass with this correction; they are structural tests, not rendered layout evidence. The mobile browser test now also checks stacked columns and dashboard card bounds. The corrected snapshot still needs a Windows mobile-suite rerun; the earlier Windows passes do not validate this new snapshot.
+
+## Development warning stacking correction
+
+Windows mobile validation of `0087539` passed the 320px route/containment checks, then found the development warning intercepting clicks on the drawer Close button. Its original inline `z-index:9999` sat above the fixed navigation. The warning now keeps its text, colors and normal page-flow position at a low stacking level, beneath navigation and modal overlays. It is not hidden or removed, and production mode still creates no warning. As with other page content, the open drawer temporarily covers part of it.
+
+A DOM regression fails on the old stacking value and covers mock, test and local modes; a separate test checks that production adds no warning. Browser acceptance also checks the warning is visible/uncovered before and after drawer dismissal, and that the Close control receives the center-point pointer hit. The updated browser assertions require a Windows rerun; DOM style checks alone do not prove pointer behavior.

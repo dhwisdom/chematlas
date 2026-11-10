@@ -31,7 +31,8 @@
       const banner = document.createElement('div');
       banner.textContent = config.mode === 'local' ? 'LOCAL TEST DATA · AI and outbound email disabled' : 'FRONTEND DEMO · Synthetic data and simulated services';
       banner.setAttribute('role','note');
-      banner.style.cssText='padding:8px;background:#fff2c2;color:#333;text-align:center;position:relative;z-index:9999';
+      // Keep the warning visible in page flow, below navigation and modal overlays.
+      banner.style.cssText='padding:8px;background:#fff2c2;color:#333;text-align:center;position:relative;z-index:1';
       document.body.prepend(banner);
     });
   }
