@@ -24,3 +24,6 @@ test('Continue lesson card keeps one shrinkable column on phone widths',()=>{
  for(const width of [320,390,430,768,820])assert.equal(property('.ca-continue','grid-template-columns',width),'minmax(0,1fr)',`Continue card at ${width}px`);
  assert.equal(property('.ca-continue','grid-template-columns',1440),'minmax(0,1.12fr) minmax(270px,.88fr)','desktop card remains two columns');
 });
+test('responsive search is moved, not hidden before its focus can be recovered',()=>{
+ for(const width of [320,390,820,821,1440])assert.notEqual(property('.ca-top-search','display',width),'none',`search must remain focusable before relocation at ${width}px`);
+});

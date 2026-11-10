@@ -106,10 +106,14 @@ async function main(){
   await page.setViewportSize({width:821,height:600});await closed();assert.equal(await sidebar.evaluate(el=>el.inert),false);
   assert.equal(await page.locator('.topbar .ca-top-search').count(),1);
   await page.waitForFunction(()=>document.activeElement.closest('.sidebar')&&!['mobileMenu','mobileMenuClose'].includes(document.activeElement.id)&&document.activeElement.checkVisibility());
-  await search.focus();
-  await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>document.activeElement.id==='mobileMenu');
-  await menu.click();await search.focus();
-  await page.setViewportSize({width:821,height:600});await page.waitForFunction(()=>document.activeElement.matches('.topbar .ca-top-search input'));
+  for(let repeat=0;repeat<2;repeat++){
+   await search.focus();assert.equal(await search.evaluate(el=>el===document.activeElement),true);
+   await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>document.activeElement.id==='mobileMenu');
+   assert.equal(await page.locator('.sidebar .ca-top-search').count(),1);
+   await menu.click();await search.focus();
+   await page.setViewportSize({width:821,height:600});await page.waitForFunction(()=>document.activeElement.matches('.topbar .ca-top-search input'));
+   assert.equal(await page.locator('.ca-top-search').count(),1,'breakpoint changes must not duplicate search');
+  }
   await page.setViewportSize({width:390,height:430});await page.waitForFunction(()=>document.querySelector('.sidebar').inert);
   await menu.click();await page.locator('#mobileMenuClose').click();await closed();
   // Existing account-overlay keyboard/short-height accessibility is a separate known gap.

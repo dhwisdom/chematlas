@@ -9,7 +9,11 @@ w.addEventListener('error',event=>errors.push(event.error));
 const media={matches:true,listeners:[],addEventListener(type,fn){this.listeners.push(fn);}};
 w.matchMedia=()=>media;
 w.HTMLElement.prototype.checkVisibility=function(){return !(this.id==='mobileMenuClose'&&!media.matches)&&!this.hidden&&!this.closest('[hidden]');};
-Object.defineProperty(w.HTMLElement.prototype,'inert',{get(){return this.hasAttribute('inert');},set(value){this.toggleAttribute('inert',Boolean(value));}});
+Object.defineProperty(w.HTMLElement.prototype,'inert',{get(){return this.hasAttribute('inert');},set(value){
+ this.toggleAttribute('inert',Boolean(value));
+ // Native inert can clear focus immediately; do not let jsdom conceal that ordering bug.
+ if(value&&this.contains(d.activeElement))d.activeElement.blur();
+}});
 // jsdom has no native modal top layer. Browser tests verify that behavior.
 const query=d.querySelector.bind(d);d.querySelector=selector=>selector==='dialog:modal'?null:query(selector);
 const sidebar=d.querySelector('.sidebar'),menu=d.querySelector('#mobileMenu'),main=d.querySelector('.main'),close=d.querySelector('#mobileMenuClose'),backdrop=d.querySelector('#mobileMenuBackdrop');
@@ -34,7 +38,7 @@ const key=(key,shiftKey=false)=>d.dispatchEvent(new w.KeyboardEvent('keydown',{k
   const button=sidebar.querySelector(selector);button.addEventListener('click',()=>{openAtAction=sidebar.classList.contains('open');},{once:true});button.click();assert.equal(openAtAction,false,'drawer closes before nested surface opens');assert.equal(main.inert,false);
  }
  menu.click();assert.equal(d.activeElement,close);media.matches=false;media.listeners.forEach(fn=>fn());assert.equal(d.activeElement,sidebar.querySelector('.nav-item.active'),'desktop breakpoint moves focus from hidden Close to active navigation');assert.equal(sidebar.inert,false);assert.equal(main.inert,false);assert(backdrop.hidden);assert.equal(sidebar.classList.contains('open'),false);
- media.matches=true;media.listeners.forEach(fn=>fn());assert(sidebar.inert);assert.equal(main.inert,false);
+ media.matches=true;media.listeners.forEach(fn=>fn());assert(sidebar.inert);assert.equal(main.inert,false);assert.equal(d.activeElement,menu,'focus leaves sidebar before native inert clears it');
  menu.focus();media.matches=false;media.listeners.forEach(fn=>fn());assert.equal(d.activeElement,sidebar.querySelector('.nav-item.active'),'hidden menu trigger also receives desktop fallback');
  media.matches=true;media.listeners.forEach(fn=>fn());
  const tutoring=fs.readFileSync('chematlas-tutoring.js','utf8');

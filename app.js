@@ -252,8 +252,10 @@
       sidebar.removeAttribute('aria-modal');
     }
     // Inert also excludes controls injected into the sidebar after startup.
-    sidebar.inert = mobile.matches && !open;
-    if (sidebar.inert && sidebar.contains(document.activeElement)) menu.focus();
+    const sidebarInert = mobile.matches && !open;
+    // Move focus before native inert can reset activeElement to the document body.
+    if (sidebarInert && sidebar.contains(document.activeElement)) menu.focus();
+    sidebar.inert = sidebarInert;
   }
   function dismissNavigation(restoreFocus = true) {
     sidebar.classList.remove('open');
