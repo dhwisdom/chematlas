@@ -177,16 +177,21 @@
   }
   function clickCore(view){ document.body.classList.remove('ca-landing-mode'); document.querySelector(`.nav-item[data-view="${view}"]`)?.click(); }
 
-  // User interaction or history navigation supersedes pending startup routing.
-  let lessonNavigationEpoch=0;
-  document.addEventListener('click',()=>{lessonNavigationEpoch++;},true);
-  window.addEventListener('popstate',()=>{lessonNavigationEpoch++;},true);
+  // Track actual URL transitions, including leaving and returning to the same URL.
+  // Ordinary lesson interactions must not cancel an unfinished alias repair.
+  let navigationEpoch=0;
+  for(const method of ['pushState','replaceState']){
+    const original=history[method];
+    history[method]=function(...args){const before=location.href;const result=original.apply(this,args);if(location.href!==before)navigationEpoch++;return result;};
+  }
+  window.addEventListener('popstate',()=>{navigationEpoch++;},true);
+  window.ChemAtlasNavigation={checkpoint(){const epoch=navigationEpoch,url=location.href;return ()=>epoch===navigationEpoch&&url===location.href;}};
   function openGenchem(moduleId){
     document.body.classList.remove('ca-landing-mode');
     let attempts=0;
-    const ownEpoch=lessonNavigationEpoch,requestedUrl=location.href;
+    const current=window.ChemAtlasNavigation.checkpoint();
     const tryOpen=()=>{
-      if(ownEpoch!==lessonNavigationEpoch||location.href!==requestedUrl)return;
+      if(!current())return;
       const btn=document.querySelector('.genchem-nav');
       if(btn?.dataset.genchemReady==='1'){
         // A ready event can finish routing before this startup retry fires.

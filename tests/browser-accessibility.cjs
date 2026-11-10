@@ -635,3 +635,57 @@ test('startup routing retains canonical aliases and section or review queries',a
   assert.equal(new URL(p.url()).pathname,'/genchem/acidbase');
  }
 });
+
+test('a lesson disclosure does not cancel pending alias repair',async t=>{
+ const p=await setup(t);await cloudFixture(p);
+ await p.waitForTimeout(250);
+ await p.evaluate(()=>{
+  const original=setTimeout;window.__aliasRepairs=[];
+  window.setTimeout=function(fn,ms,...args){if(ms===80&&new Error().stack.includes('platform-route-fix.js')){window.__aliasRepairs.push(()=>fn(...args));return -1;}return original(fn,ms,...args);};
+  history.pushState({},'','/genchem/acid-base?section=1');window.dispatchEvent(new PopStateEvent('popstate'));
+ });
+ await p.waitForFunction(()=>window.__aliasRepairs.length===1);
+ assert.equal(new URL(p.url()).pathname,'/genchem/acidbase');
+ assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'measurement');
+ await p.locator('.ca-lesson-goals summary').click();
+ await p.evaluate(()=>window.__aliasRepairs.splice(0).forEach(fn=>fn()));
+ await p.waitForFunction(()=>document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module==='acidbase');
+ assert.equal(new URL(p.url()).search,'?section=1');
+ assert.equal(await p.locator('.ca-focus-meter').getAttribute('aria-valuenow'),'2');
+});
+
+test('queued Gen Chem URL writes cannot overwrite a newer destination',async t=>{
+ for(const destination of ['tutor','courses']){
+  const p=await setup(t);await p.waitForTimeout(250);
+  await p.evaluate(()=>{
+   const original=setTimeout;window.__pathWrites=[];
+   window.setTimeout=function(fn,ms,...args){if(ms===0&&new Error().stack.includes('platform-route-fix.js')){window.__pathWrites.push(()=>fn(...args));return -1;}return original(fn,ms,...args);};
+   // The production router also opens this hidden adapter with .click().
+   document.querySelector('.genchem-nav').click();
+  });
+  assert.equal(await p.evaluate(()=>window.__pathWrites.length),1);
+  if(destination==='tutor'){await p.locator('.ca-lesson-goals summary').click();await p.locator('.ca-inline-tutor').click();await p.locator('#caTutorV2').waitFor();}
+  else await p.locator('.ca-course-switcher button').click();
+  await p.evaluate(()=>window.__pathWrites.splice(0).forEach(fn=>fn()));
+  assert.equal(new URL(p.url()).pathname,'/'+destination);
+  assert.equal(await p.locator(destination==='tutor'?'#caTutorForm button[type="submit"]':'.open-organic').first().isVisible(),true);
+  await p.close();
+ }
+});
+
+test('navigation checkpoints ignore neutral clicks but invalidate an away-and-back URL transition',async t=>{
+ const p=await setup(t);await p.waitForTimeout(250);
+ const checks=await p.evaluate(()=>{
+  const same=window.ChemAtlasNavigation.checkpoint();document.querySelector('.ca-lesson-goals summary').click();
+  const neutral=same();const initial=location.href;history.pushState({},'','/courses');history.replaceState({},'',initial);
+  return {neutral,returned:same()};
+ });
+ assert.deepEqual(checks,{neutral:true,returned:false});
+});
+
+test('Gen Chem II onboarding opens its canonical lesson after choosing the goal',async t=>{
+ const p=await setup(t);await cloudFixture(p);await p.goto(base+'/');
+ await p.waitForFunction(()=>window.ChemAtlasLearnerState?.owner==='account:A');
+ await p.locator('[data-start-learning]').first().click();await p.locator('[data-goal="genchem2"]').click();
+ await p.waitForFunction(()=>location.pathname==='/genchem/imf'&&document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module==='imf');
+});

@@ -23,10 +23,9 @@
     if (location.pathname !== path) history[mode]({}, '', path+query);
   };
 
-  let navigationEpoch=0;
-  document.addEventListener('click',()=>{navigationEpoch++;},true);
-  window.addEventListener('popstate',()=>{navigationEpoch++;},true);
-  const checkpoint=()=>{const epoch=navigationEpoch,url=location.href;return ()=>epoch===navigationEpoch&&url===location.href;};
+  // platform.js loads this adapter after installing the shared navigation guard.
+  const checkpoint=()=>window.ChemAtlasNavigation.checkpoint();
+  const deferPath=(id,mode='replaceState')=>{const current=checkpoint();setTimeout(()=>{if(current())setPath(id,mode);},0);};
 
   function openCanonicalModule(id) {
     const slug = canonical(id);
@@ -51,18 +50,18 @@
     const target = event.target.closest('[data-module],[data-module-nav]');
     if (!target) return;
     const id = target.dataset.module || target.dataset.moduleNav;
-    if (id && target.closest('#genchemView')) setTimeout(() => setPath(id, 'pushState'), 0);
+    if (id && target.closest('#genchemView')) deferPath(id,'pushState');
   }, true);
 
   document.addEventListener('click', event => {
     const nav = event.target.closest('.genchem-nav');
-    if (nav?.dataset.genchemModule) setTimeout(() => setPath(nav.dataset.genchemModule), 0);
+    if (nav?.dataset.genchemModule) deferPath(nav.dataset.genchemModule);
   });
 
   document.addEventListener('click', event => {
     const goal = event.target.closest('[data-goal="genchem2"]');
-    if (goal) setTimeout(() => openCanonicalModule('imf'), 10);
-  }, true);
+    if (goal) openCanonicalModule('imf');
+  });
 
   function repairLocation() {
     const match = location.pathname.match(/^\/genchem\/([^/]+)$/);
