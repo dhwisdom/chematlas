@@ -689,3 +689,20 @@ test('Gen Chem II onboarding opens its canonical lesson after choosing the goal'
  await p.locator('[data-start-learning]').first().click();await p.locator('[data-goal="genchem2"]').click();
  await p.waitForFunction(()=>location.pathname==='/genchem/imf'&&document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module==='imf');
 });
+
+
+test('the latest visible lesson click wins when URL writes are queued together',async t=>{
+ const p=await setup(t);await cloudFixture(p);await p.waitForTimeout(250);
+ await p.evaluate(()=>{
+  const original=setTimeout;window.__lessonWrites=[];
+  window.setTimeout=function(fn,ms,...args){if(ms===0&&new Error().stack.includes('platform-route-fix.js')){window.__lessonWrites.push(()=>fn(...args));return -1;}return original(fn,ms,...args);};
+ });
+ await p.locator('[data-module="atoms-moles"]').click();
+ await p.locator('[data-module="formulas"]').click();
+ assert.equal(await p.evaluate(()=>window.__lessonWrites.length),2);
+ assert.equal(new URL(p.url()).pathname,'/genchem/measurement');
+ assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'formulas');
+ await p.evaluate(()=>window.__lessonWrites.splice(0).forEach(fn=>fn()));
+ assert.equal(new URL(p.url()).pathname,'/genchem/formulas');
+ assert.equal(await p.locator('#genchemView.active-view .gc-module-link.active').getAttribute('data-module'),'formulas');
+});

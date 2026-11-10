@@ -25,7 +25,8 @@
 
   // platform.js loads this adapter after installing the shared navigation guard.
   const checkpoint=()=>window.ChemAtlasNavigation.checkpoint();
-  const deferPath=(id,mode='replaceState')=>{const current=checkpoint();setTimeout(()=>{if(current())setPath(id,mode);},0);};
+  let pendingPathWrite=0;
+  const deferPath=(id,mode='replaceState')=>{const write=++pendingPathWrite,current=checkpoint();setTimeout(()=>{if(write===pendingPathWrite&&current())setPath(id,mode);},0);};
 
   function openCanonicalModule(id) {
     const slug = canonical(id);
@@ -40,8 +41,7 @@
       if(document.querySelector('#genchemView.active-view .gc-module-link.active')?.dataset.module===slug){setPath(slug);return;}
       nav.dataset.genchemModule = slug;
       nav.click();
-      const afterClick=checkpoint();
-      setTimeout(() => {if(afterClick())setPath(slug);}, 0);
+      deferPath(slug);
     };
     open();
   }
